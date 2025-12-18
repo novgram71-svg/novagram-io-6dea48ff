@@ -37,7 +37,23 @@ export const useStories = () => {
   });
 };
 
+export const useStoryViewCount = (storyId: string) => {
+  return useQuery({
+    queryKey: ['storyViewCount', storyId],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('story_views')
+        .select('*', { count: 'exact', head: true })
+        .eq('story_id', storyId);
+
+      if (error) throw error;
+      return count || 0;
+    },
+  });
+};
+
 export const useRecordStoryView = () => {
+  const queryClient = useQueryClient();
   const { user } = useAuth();
 
   return useMutation({
@@ -52,6 +68,9 @@ export const useRecordStoryView = () => {
         );
 
       if (error) throw error;
+    },
+    onSuccess: (_, storyId) => {
+      queryClient.invalidateQueries({ queryKey: ['storyViewCount', storyId] });
     },
   });
 };
