@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { X, ChevronLeft, ChevronRight, Eye } from 'lucide-react';
-import { StoryWithUser, useRecordStoryView } from '@/hooks/useStories';
+import { X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { StoryWithUser, useRecordStoryView, useStoryViewCount } from '@/hooks/useStories';
 import { useAuth } from '@/hooks/useAuth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { formatDistanceToNow } from 'date-fns';
+import StoryViewers from './StoryViewers';
 
 interface StoryViewerProps {
   story: StoryWithUser;
@@ -15,13 +16,16 @@ const StoryViewer = ({ story, onClose }: StoryViewerProps) => {
   const [progress, setProgress] = useState(0);
   const { user } = useAuth();
   const recordView = useRecordStoryView();
+  const { data: viewCount } = useStoryViewCount(story.id);
 
   useEffect(() => {
     // Record story view
     if (user && story.user_id !== user.id) {
       recordView.mutate(story.id);
     }
+  }, [story.id, user]);
 
+  useEffect(() => {
     // Progress bar and auto-advance
     const duration = 5000;
     const interval = 50;
@@ -39,16 +43,16 @@ const StoryViewer = ({ story, onClose }: StoryViewerProps) => {
     }, interval);
 
     return () => clearInterval(timer);
-  }, [story.id, onClose, user, recordView]);
+  }, [story.id, onClose]);
 
   const timeAgo = formatDistanceToNow(new Date(story.created_at), { addSuffix: true });
   const isOwnStory = user?.id === story.user_id;
 
   return (
-    <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm animate-fade-in">
       <div className="h-full flex items-center justify-center">
         {/* Story Container */}
-        <div className="relative w-full max-w-md h-[85vh] max-h-[700px] bg-background rounded-lg overflow-hidden shadow-2xl">
+        <div className="relative w-full max-w-md h-[85vh] max-h-[700px] bg-background rounded-lg overflow-hidden shadow-2xl animate-scale-in">
           {/* Progress Bar */}
           <div className="absolute top-0 left-0 right-0 z-10 p-2">
             <div className="h-1 bg-secondary rounded-full overflow-hidden">
@@ -75,7 +79,7 @@ const StoryViewer = ({ story, onClose }: StoryViewerProps) => {
               variant="ghost"
               size="icon"
               onClick={onClose}
-              className="text-white hover:text-white hover:bg-white/20"
+              className="text-white hover:text-white hover:bg-white/20 transition-all duration-200"
             >
               <X className="w-6 h-6" />
             </Button>
@@ -105,10 +109,7 @@ const StoryViewer = ({ story, onClose }: StoryViewerProps) => {
           {/* Story Views (for own stories) */}
           {isOwnStory && (
             <div className="absolute bottom-4 left-0 right-0 z-10 px-4">
-              <button className="flex items-center gap-2 text-white/90 text-sm">
-                <Eye className="w-5 h-5" />
-                <span>Views</span>
-              </button>
+              <StoryViewers storyId={story.id} viewCount={viewCount || 0} />
             </div>
           )}
         </div>

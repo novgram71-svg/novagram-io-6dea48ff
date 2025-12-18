@@ -11,6 +11,7 @@ import Messages from "./pages/Messages";
 import Create from "./pages/Create";
 import Notifications from "./pages/Notifications";
 import Auth from "./pages/Auth";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,6 +32,7 @@ const App = () => (
             <Route path="/messages" element={<Messages />} />
             <Route path="/create" element={<Create />} />
             <Route path="/notifications" element={<Notifications />} />
+            <Route path="/admin" element={<Admin />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

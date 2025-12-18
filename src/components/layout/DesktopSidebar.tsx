@@ -1,7 +1,8 @@
-import { Home, Search, PlusSquare, MessageCircle, User, Heart, LogOut } from 'lucide-react';
+import { Home, Search, PlusSquare, MessageCircle, User, Heart, LogOut, Shield } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
+import { useIsAdmin } from '@/hooks/useAdmin';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const navItems = [
@@ -16,6 +17,7 @@ const navItems = [
 const DesktopSidebar = () => {
   const location = useLocation();
   const { user, profile, signOut } = useAuth();
+  const { data: isAdmin } = useIsAdmin();
 
   const handleSignOut = async () => {
     await signOut();
@@ -24,8 +26,8 @@ const DesktopSidebar = () => {
   return (
     <aside className="hidden md:flex flex-col fixed left-0 top-0 h-screen w-64 bg-sidebar border-r border-sidebar-border p-4">
       {/* Logo */}
-      <Link to="/" className="flex items-center gap-2 px-4 py-6">
-        <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+      <Link to="/" className="flex items-center gap-2 px-4 py-6 group">
+        <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center transition-transform duration-200 group-hover:scale-110">
           <span className="text-primary-foreground font-bold text-lg">N</span>
         </div>
         <h1 className="text-xl font-bold gradient-text">Novagram</h1>
@@ -43,7 +45,7 @@ const DesktopSidebar = () => {
                 <Link
                   to={item.path}
                   className={cn(
-                    'nova-nav-item',
+                    'nova-nav-item transition-all duration-200 hover:scale-[1.02]',
                     isActive && 'nova-nav-item-active'
                   )}
                 >
@@ -56,6 +58,25 @@ const DesktopSidebar = () => {
               </li>
             );
           })}
+          
+          {/* Admin Link */}
+          {isAdmin && (
+            <li>
+              <Link
+                to="/admin"
+                className={cn(
+                  'nova-nav-item transition-all duration-200 hover:scale-[1.02]',
+                  location.pathname === '/admin' && 'nova-nav-item-active'
+                )}
+              >
+                <Shield 
+                  className="w-6 h-6 text-primary" 
+                  fill={location.pathname === '/admin' ? 'currentColor' : 'none'}
+                />
+                <span className="font-medium text-primary">Admin</span>
+              </Link>
+            </li>
+          )}
         </ul>
       </nav>
 
@@ -65,7 +86,7 @@ const DesktopSidebar = () => {
           <>
             <Link 
               to="/profile" 
-              className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-sidebar-accent transition-colors"
+              className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-sidebar-accent transition-all duration-200 hover:scale-[1.01]"
             >
               <Avatar className="w-10 h-10">
                 <AvatarImage src={profile.avatar_url || ''} alt={profile.username} />
@@ -80,7 +101,7 @@ const DesktopSidebar = () => {
             <div className="flex items-center gap-2 mt-2 px-2">
               <button 
                 onClick={handleSignOut}
-                className="nova-nav-item flex-1 justify-center text-destructive hover:text-destructive"
+                className="nova-nav-item flex-1 justify-center text-destructive hover:text-destructive transition-all duration-200 hover:scale-105"
               >
                 <LogOut className="w-5 h-5" />
                 <span className="text-sm">Sign Out</span>
@@ -90,7 +111,7 @@ const DesktopSidebar = () => {
         ) : (
           <Link 
             to="/auth" 
-            className="flex items-center gap-3 px-4 py-3 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+            className="flex items-center gap-3 px-4 py-3 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-200 hover:scale-[1.02]"
           >
             <User className="w-5 h-5" />
             <span className="font-medium">Sign In</span>
