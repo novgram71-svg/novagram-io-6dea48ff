@@ -5,10 +5,12 @@ import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { useConversations, useMessages, useSendMessage, Conversation } from '@/hooks/useMessages';
 import { useProfileById } from '@/hooks/useProfiles';
+import { useTypingIndicator } from '@/hooks/useTypingIndicator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import TypingIndicator from '@/components/chat/TypingIndicator';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -27,6 +29,7 @@ const Messages = () => {
   const { data: messages, isLoading: messagesLoading } = useMessages(selectedConversation?.id || null);
   const { data: profileFromState } = useProfileById(stateUserId);
   const sendMessage = useSendMessage();
+  const { isPartnerTyping, setTyping } = useTypingIndicator(selectedConversation?.id || null);
 
   // Handle navigation from profile page
   useEffect(() => {
@@ -71,12 +74,22 @@ const Messages = () => {
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !selectedConversation) return;
     
+    setTyping(false);
     await sendMessage.mutateAsync({
       receiverId: selectedConversation.id,
       content: newMessage,
     });
     
     setNewMessage('');
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewMessage(e.target.value);
+    if (e.target.value.trim()) {
+      setTyping(true);
+    } else {
+      setTyping(false);
+    }
   };
 
   return (
@@ -178,7 +191,9 @@ const Messages = () => {
                   </Avatar>
                   <div>
                     <p className="font-semibold text-sm">{selectedConversation.username}</p>
-                    <p className="text-xs text-muted-foreground">Active now</p>
+                    <p className="text-xs text-muted-foreground">
+                      {isPartnerTyping ? 'typing...' : 'Active now'}
+                    </p>
                   </div>
                 </div>
                 <Button variant="ghost" size="icon">
@@ -228,6 +243,7 @@ const Messages = () => {
                     <p className="text-center">No messages yet. Say hello!</p>
                   </div>
                 )}
+                {isPartnerTyping && <TypingIndicator />}
                 <div ref={messagesEndRef} />
               </div>
 
@@ -236,7 +252,7 @@ const Messages = () => {
                 <div className="flex items-center gap-3">
                   <Input
                     value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
+                    onChange={handleInputChange}
                     placeholder="Type a message..."
                     className="flex-1 nova-input"
                     onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
