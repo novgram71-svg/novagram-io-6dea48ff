@@ -30,7 +30,7 @@ const PostCard = ({ post }: PostCardProps) => {
       navigate('/auth');
       return;
     }
-    likeMutation.mutate({ postId: post.id, isLiked });
+    likeMutation.mutate({ postId: post.id, isLiked, postOwnerId: post.user_id });
   };
 
   const formatCount = (count: number) => {
@@ -136,6 +136,7 @@ const PostCard = ({ post }: PostCardProps) => {
       {/* Comments Sheet */}
       <CommentsSheet
         postId={post.id}
+        postOwnerId={post.user_id}
         open={commentsOpen}
         onOpenChange={setCommentsOpen}
       />

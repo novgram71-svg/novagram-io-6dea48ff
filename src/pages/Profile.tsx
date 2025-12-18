@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useParams, Navigate, Link } from 'react-router-dom';
-import { Grid3X3, Bookmark, LogOut } from 'lucide-react';
+import { useParams, Navigate, Link, useNavigate } from 'react-router-dom';
+import { Grid3X3, Bookmark, LogOut, UserPlus, UserCheck, MessageCircle } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile, useProfileStats, useIsFollowing, useToggleFollow } from '@/hooks/useProfiles';
@@ -11,10 +11,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import EditProfileDialog from '@/components/profile/EditProfileDialog';
-import { UserPlus, UserCheck, MessageCircle } from 'lucide-react';
 
 const Profile = () => {
   const { username } = useParams();
+  const navigate = useNavigate();
   const { user, profile: currentUserProfile, signOut, loading: authLoading } = useAuth();
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   
@@ -38,6 +38,11 @@ const Profile = () => {
   const handleToggleFollow = () => {
     if (!profile) return;
     toggleFollow.mutate({ targetUserId: profile.id, isFollowing: isFollowing || false });
+  };
+
+  const handleMessage = () => {
+    if (!profile) return;
+    navigate('/messages', { state: { selectedUserId: profile.id, selectedUsername: profile.username } });
   };
 
   const handleSignOut = async () => {
@@ -153,12 +158,15 @@ const Profile = () => {
                         </>
                       )}
                     </Button>
-                    <Link to="/messages">
-                      <Button variant="secondary" size="sm" className="transition-all duration-200 hover:scale-105">
-                        <MessageCircle className="w-4 h-4 mr-2" />
-                        Message
-                      </Button>
-                    </Link>
+                    <Button 
+                      variant="secondary" 
+                      size="sm" 
+                      onClick={handleMessage}
+                      className="transition-all duration-200 hover:scale-105"
+                    >
+                      <MessageCircle className="w-4 h-4 mr-2" />
+                      Message
+                    </Button>
                   </div>
                 ) : (
                   <Link to="/auth">

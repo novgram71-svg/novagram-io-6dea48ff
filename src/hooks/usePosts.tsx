@@ -68,7 +68,7 @@ export const useLikePost = () => {
   const { user } = useAuth();
 
   return useMutation({
-    mutationFn: async ({ postId, isLiked }: { postId: string; isLiked: boolean }) => {
+    mutationFn: async ({ postId, isLiked, postOwnerId }: { postId: string; isLiked: boolean; postOwnerId?: string }) => {
       if (!user) throw new Error('Not authenticated');
 
       if (isLiked) {
@@ -83,6 +83,16 @@ export const useLikePost = () => {
           .from('likes')
           .insert({ post_id: postId, user_id: user.id });
         if (error) throw error;
+
+        // Create notification for post owner
+        if (postOwnerId && postOwnerId !== user.id) {
+          await supabase.from('notifications').insert({
+            user_id: postOwnerId,
+            actor_id: user.id,
+            type: 'like',
+            post_id: postId,
+          });
+        }
       }
     },
     onSuccess: () => {
