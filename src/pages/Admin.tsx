@@ -1,31 +1,52 @@
 import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { Users, Image, MessageSquare, Download, ChevronRight, ArrowLeft, Eye } from 'lucide-react';
+import { Users, Image, MessageSquare, Download, ChevronRight, AlertTriangle, Ban, CheckCircle, XCircle } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin, useAllUsers, useAllPosts, useConversationPartners, useConversation } from '@/hooks/useAdmin';
+import { useAllReports, useUpdateReportStatus, useAllBannedUsers, useBanUser, useUnbanUser, useIsBanned } from '@/hooks/useUserModeration';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 const Admin = () => {
   const { user, loading: authLoading } = useAuth();
   const { data: isAdmin, isLoading: adminLoading } = useIsAdmin();
   const { data: users, isLoading: usersLoading } = useAllUsers();
   const { data: posts, isLoading: postsLoading } = useAllPosts();
+  const { data: reports, isLoading: reportsLoading } = useAllReports();
+  const { data: bannedUsers, isLoading: bannedLoading } = useAllBannedUsers();
   
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const [selectedChatPartner, setSelectedChatPartner] = useState<string | null>(null);
   
   const { data: chatPartners } = useConversationPartners(selectedUser);
   const { data: conversation } = useConversation(selectedUser, selectedChatPartner);
+  
+  const updateReportStatus = useUpdateReportStatus();
+  const banUser = useBanUser();
+  const unbanUser = useUnbanUser();
 
   const selectedUserProfile = users?.find(u => u.id === selectedUser);
   const selectedPartnerProfile = chatPartners?.find((p: any) => p.id === selectedChatPartner);
+  
+  const bannedUserIds = new Set(bannedUsers?.map((b: any) => b.user_id) || []);
 
   if (authLoading || adminLoading) {
     return (
@@ -70,18 +91,33 @@ const Admin = () => {
     URL.revokeObjectURL(url);
   };
 
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return <Badge variant="outline" className="bg-yellow-500/10 text-yellow-500 border-yellow-500/20">Pending</Badge>;
+      case 'resolved':
+        return <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20">Resolved</Badge>;
+      case 'dismissed':
+        return <Badge variant="outline" className="bg-muted text-muted-foreground">Dismissed</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+
+  const pendingReportsCount = reports?.filter((r: any) => r.status === 'pending').length || 0;
+
   return (
     <MainLayout>
       <div className="max-w-6xl mx-auto pb-8">
         <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-lg border-b border-border">
           <div className="px-4 py-3">
             <h1 className="text-2xl font-bold gradient-text">Admin Panel</h1>
-            <p className="text-sm text-muted-foreground">Manage users, posts, and messages</p>
+            <p className="text-sm text-muted-foreground">Manage users, posts, reports, and messages</p>
           </div>
         </header>
 
         <Tabs defaultValue="users" className="p-4">
-          <TabsList className="mb-4">
+          <TabsList className="mb-4 flex-wrap">
             <TabsTrigger value="users" className="gap-2">
               <Users className="w-4 h-4" />
               Users
@@ -89,6 +125,15 @@ const Admin = () => {
             <TabsTrigger value="posts" className="gap-2">
               <Image className="w-4 h-4" />
               Posts
+            </TabsTrigger>
+            <TabsTrigger value="reports" className="gap-2 relative">
+              <AlertTriangle className="w-4 h-4" />
+              Reports
+              {pendingReportsCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  {pendingReportsCount}
+                </span>
+              )}
             </TabsTrigger>
             <TabsTrigger value="chats" className="gap-2">
               <MessageSquare className="w-4 h-4" />
@@ -113,24 +158,88 @@ const Admin = () => {
                         <Skeleton key={i} className="h-16 w-full" />
                       ))
                     ) : (
-                      users?.map((user) => (
-                        <div
-                          key={user.id}
-                          className="flex items-center gap-4 p-4 rounded-xl bg-secondary/50 hover:bg-secondary transition-colors animate-fade-in"
-                        >
-                          <Avatar className="w-12 h-12">
-                            <AvatarImage src={user.avatar_url || ''} />
-                            <AvatarFallback>{user.username[0].toUpperCase()}</AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1">
-                            <p className="font-semibold">{user.username}</p>
-                            <p className="text-sm text-muted-foreground">{user.email || 'No email'}</p>
+                      users?.map((u) => {
+                        const isBanned = bannedUserIds.has(u.id);
+                        return (
+                          <div
+                            key={u.id}
+                            className={`flex items-center gap-4 p-4 rounded-xl transition-colors animate-fade-in ${
+                              isBanned ? 'bg-destructive/10' : 'bg-secondary/50 hover:bg-secondary'
+                            }`}
+                          >
+                            <Avatar className="w-12 h-12">
+                              <AvatarImage src={u.avatar_url || ''} />
+                              <AvatarFallback>{u.username[0].toUpperCase()}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <p className="font-semibold">{u.username}</p>
+                                {isBanned && (
+                                  <Badge variant="destructive" className="text-xs">Banned</Badge>
+                                )}
+                              </div>
+                              <p className="text-sm text-muted-foreground">{u.email || 'No email'}</p>
+                            </div>
+                            <div className="text-right text-sm text-muted-foreground">
+                              <p>Joined {formatDistanceToNow(new Date(u.created_at))} ago</p>
+                            </div>
+                            <div className="flex gap-2">
+                              {isBanned ? (
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="outline" size="sm" className="text-green-500 hover:text-green-600">
+                                      <CheckCircle className="w-4 h-4 mr-1" />
+                                      Unban
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Unban {u.username}?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        This will restore their access to the platform.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction onClick={() => unbanUser.mutate({ userId: u.id })}>
+                                        Unban
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              ) : (
+                                u.id !== user.id && (
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
+                                        <Ban className="w-4 h-4 mr-1" />
+                                        Ban
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>Ban {u.username}?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          This will prevent this user from accessing the platform.
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction 
+                                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                          onClick={() => banUser.mutate({ userId: u.id })}
+                                        >
+                                          Ban User
+                                        </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                )
+                              )}
+                            </div>
                           </div>
-                          <div className="text-right text-sm text-muted-foreground">
-                            <p>Joined {formatDistanceToNow(new Date(user.created_at))} ago</p>
-                          </div>
-                        </div>
-                      ))
+                        );
+                      })
                     )}
                   </div>
                 </ScrollArea>
@@ -186,6 +295,128 @@ const Admin = () => {
             </Card>
           </TabsContent>
 
+          {/* Reports Tab */}
+          <TabsContent value="reports" className="animate-fade-in">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <AlertTriangle className="w-5 h-5" />
+                  User Reports ({reports?.length || 0})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-[60vh]">
+                  <div className="space-y-4">
+                    {reportsLoading ? (
+                      Array.from({ length: 3 }).map((_, i) => (
+                        <Skeleton key={i} className="h-32 w-full" />
+                      ))
+                    ) : reports && reports.length > 0 ? (
+                      reports.map((report: any) => {
+                        const reportedIsBanned = bannedUserIds.has(report.reported_user_id);
+                        return (
+                          <div
+                            key={report.id}
+                            className="p-4 rounded-xl bg-secondary/50 border border-border animate-fade-in"
+                          >
+                            <div className="flex items-start justify-between mb-3">
+                              <div className="flex items-center gap-3">
+                                <Avatar className="w-10 h-10">
+                                  <AvatarImage src={report.reported?.avatar_url || ''} />
+                                  <AvatarFallback>{report.reported?.username?.[0]?.toUpperCase()}</AvatarFallback>
+                                </Avatar>
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <p className="font-semibold">{report.reported?.username}</p>
+                                    {reportedIsBanned && (
+                                      <Badge variant="destructive" className="text-xs">Banned</Badge>
+                                    )}
+                                  </div>
+                                  <p className="text-xs text-muted-foreground">
+                                    Reported by @{report.reporter?.username}
+                                  </p>
+                                </div>
+                              </div>
+                              {getStatusBadge(report.status)}
+                            </div>
+
+                            <div className="mb-3">
+                              <p className="text-sm font-medium capitalize">{report.reason.replace('_', ' ')}</p>
+                              {report.description && (
+                                <p className="text-sm text-muted-foreground mt-1">{report.description}</p>
+                              )}
+                              <p className="text-xs text-muted-foreground mt-2">
+                                {formatDistanceToNow(new Date(report.created_at))} ago
+                              </p>
+                            </div>
+
+                            <div className="flex gap-2 flex-wrap">
+                              {report.status === 'pending' && (
+                                <>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => updateReportStatus.mutate({ reportId: report.id, status: 'resolved' })}
+                                  >
+                                    <CheckCircle className="w-4 h-4 mr-1" />
+                                    Resolve
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => updateReportStatus.mutate({ reportId: report.id, status: 'dismissed' })}
+                                  >
+                                    <XCircle className="w-4 h-4 mr-1" />
+                                    Dismiss
+                                  </Button>
+                                </>
+                              )}
+                              {!reportedIsBanned && (
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="destructive" size="sm">
+                                      <Ban className="w-4 h-4 mr-1" />
+                                      Ban User
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Ban {report.reported?.username}?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        This will prevent this user from accessing the platform.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction 
+                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                        onClick={() => {
+                                          banUser.mutate({ userId: report.reported_user_id, reason: report.reason });
+                                          updateReportStatus.mutate({ reportId: report.id, status: 'resolved' });
+                                        }}
+                                      >
+                                        Ban User
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="text-center py-12 text-muted-foreground">
+                        <AlertTriangle className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                        <p>No reports yet</p>
+                      </div>
+                    )}
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           {/* Chats Tab */}
           <TabsContent value="chats" className="animate-fade-in">
             <div className="grid md:grid-cols-3 gap-4">
@@ -197,22 +428,22 @@ const Admin = () => {
                 <CardContent>
                   <ScrollArea className="h-[50vh]">
                     <div className="space-y-2">
-                      {users?.map((user) => (
+                      {users?.map((u) => (
                         <button
-                          key={user.id}
+                          key={u.id}
                           onClick={() => {
-                            setSelectedUser(user.id);
+                            setSelectedUser(u.id);
                             setSelectedChatPartner(null);
                           }}
                           className={`w-full flex items-center gap-3 p-3 rounded-lg transition-colors ${
-                            selectedUser === user.id ? 'bg-primary text-primary-foreground' : 'hover:bg-secondary'
+                            selectedUser === u.id ? 'bg-primary text-primary-foreground' : 'hover:bg-secondary'
                           }`}
                         >
                           <Avatar className="w-8 h-8">
-                            <AvatarImage src={user.avatar_url || ''} />
-                            <AvatarFallback>{user.username[0].toUpperCase()}</AvatarFallback>
+                            <AvatarImage src={u.avatar_url || ''} />
+                            <AvatarFallback>{u.username[0].toUpperCase()}</AvatarFallback>
                           </Avatar>
-                          <span className="text-sm font-medium truncate">{user.username}</span>
+                          <span className="text-sm font-medium truncate">{u.username}</span>
                           <ChevronRight className="w-4 h-4 ml-auto" />
                         </button>
                       ))}
