@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Link, useNavigate } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
+import CommentsSheet from './CommentsSheet';
 
 interface PostCardProps {
   post: PostWithUser;
@@ -16,6 +17,7 @@ const PostCard = ({ post }: PostCardProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const likeMutation = useLikePost();
+  const [commentsOpen, setCommentsOpen] = useState(false);
   
   const isLiked = user ? post.likes.some(like => like.user_id === user.id) : false;
   const likeCount = post.likes.length;
@@ -67,7 +69,7 @@ const PostCard = ({ post }: PostCardProps) => {
         <img
           src={post.image_url}
           alt={post.caption || ''}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover transition-transform duration-300"
           loading="lazy"
         />
       </div>
@@ -86,7 +88,10 @@ const PostCard = ({ post }: PostCardProps) => {
             >
               <Heart className="w-6 h-6" fill={isLiked ? 'currentColor' : 'none'} />
             </button>
-            <button className="text-foreground hover:text-primary transition-colors hover:scale-110">
+            <button 
+              onClick={() => setCommentsOpen(true)}
+              className="text-foreground hover:text-primary transition-colors hover:scale-110"
+            >
               <MessageCircle className="w-6 h-6" />
             </button>
             <button className="text-foreground hover:text-primary transition-colors hover:scale-110">
@@ -119,11 +124,21 @@ const PostCard = ({ post }: PostCardProps) => {
 
         {/* Comments Link */}
         {commentCount > 0 && (
-          <button className="text-muted-foreground text-sm mt-2 hover:text-foreground transition-colors">
+          <button 
+            onClick={() => setCommentsOpen(true)}
+            className="text-muted-foreground text-sm mt-2 hover:text-foreground transition-colors"
+          >
             View all {commentCount} comments
           </button>
         )}
       </div>
+
+      {/* Comments Sheet */}
+      <CommentsSheet
+        postId={post.id}
+        open={commentsOpen}
+        onOpenChange={setCommentsOpen}
+      />
     </article>
   );
 };
