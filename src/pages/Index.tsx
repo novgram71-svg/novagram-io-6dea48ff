@@ -1,13 +1,29 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import MainLayout from '@/components/layout/MainLayout';
+import StoriesBar from '@/components/stories/StoriesBar';
+import Feed from '@/components/posts/Feed';
 
 const Index = () => {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
+    <MainLayout>
+      <div className="max-w-2xl mx-auto">
+        {/* Mobile Header */}
+        <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-lg border-b border-border md:hidden">
+          <div className="flex items-center justify-between px-4 py-3">
+            <h1 className="text-xl font-bold gradient-text">Novagram</h1>
+          </div>
+        </header>
+
+        {/* Stories */}
+        <section className="border-b border-border bg-card/50">
+          <StoriesBar />
+        </section>
+
+        {/* Feed */}
+        <section className="py-6">
+          <Feed />
+        </section>
       </div>
-    </div>
+    </MainLayout>
   );
 };
 
