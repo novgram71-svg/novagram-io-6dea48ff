@@ -1,13 +1,35 @@
-import { useState } from 'react';
-import { mockStories, currentUser } from '@/lib/mockData';
+import { useState, useMemo } from 'react';
+import { useStories, StoryWithUser } from '@/hooks/useStories';
+import { useAuth } from '@/hooks/useAuth';
 import StoryAvatar from './StoryAvatar';
 import StoryViewer from './StoryViewer';
-import { Story } from '@/lib/mockData';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const StoriesBar = () => {
-  const [selectedStory, setSelectedStory] = useState<Story | null>(null);
+  const { data: stories, isLoading } = useStories();
+  const { user, profile } = useAuth();
+  const [selectedStory, setSelectedStory] = useState<StoryWithUser | null>(null);
 
-  const handleStoryClick = (story: Story) => {
+  // Group stories by user
+  const groupedStories = useMemo(() => {
+    if (!stories) return [];
+    
+    const userStoriesMap = new Map<string, StoryWithUser[]>();
+    
+    stories.forEach(story => {
+      const existing = userStoriesMap.get(story.user_id) || [];
+      userStoriesMap.set(story.user_id, [...existing, story]);
+    });
+    
+    return Array.from(userStoriesMap.entries()).map(([userId, userStories]) => ({
+      userId,
+      username: userStories[0].profiles.username,
+      avatar: userStories[0].profiles.avatar_url,
+      stories: userStories,
+    }));
+  }, [stories]);
+
+  const handleStoryClick = (story: StoryWithUser) => {
     setSelectedStory(story);
   };
 
@@ -15,34 +37,52 @@ const StoriesBar = () => {
     setSelectedStory(null);
   };
 
+  if (isLoading) {
+    return (
+      <div className="w-full overflow-x-auto scrollbar-hide">
+        <div className="flex gap-4 px-4 py-4 min-w-max">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="flex flex-col items-center gap-2">
+              <Skeleton className="w-16 h-16 rounded-full" />
+              <Skeleton className="w-12 h-3" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  const currentUserStories = groupedStories.find(g => g.userId === user?.id);
+  const otherStories = groupedStories.filter(g => g.userId !== user?.id);
+
   return (
     <>
       <div className="w-full overflow-x-auto scrollbar-hide">
         <div className="flex gap-4 px-4 py-4 min-w-max">
-          {/* Current User Story */}
-          <StoryAvatar
-            imageUrl={currentUser.profilePhoto}
-            username={currentUser.username}
-            isOwn={true}
-            hasStory={mockStories.some(s => s.userId === 'current')}
-            onClick={() => {
-              const ownStory = mockStories.find(s => s.userId === 'current');
-              if (ownStory) handleStoryClick(ownStory);
-            }}
-          />
+          {/* Current User Story Slot */}
+          {user && profile && (
+            <StoryAvatar
+              imageUrl={profile.avatar_url || ''}
+              username="Your story"
+              isOwn={true}
+              hasStory={!!currentUserStories}
+              onClick={() => {
+                if (currentUserStories?.stories[0]) {
+                  handleStoryClick(currentUserStories.stories[0]);
+                }
+              }}
+            />
+          )}
 
           {/* Other Stories */}
-          {mockStories
-            .filter(story => story.userId !== 'current')
-            .map((story) => (
-              <StoryAvatar
-                key={story.id}
-                imageUrl={story.user.profilePhoto}
-                username={story.user.username}
-                isViewed={story.isViewed}
-                onClick={() => handleStoryClick(story)}
-              />
-            ))}
+          {otherStories.map((userStories) => (
+            <StoryAvatar
+              key={userStories.userId}
+              imageUrl={userStories.avatar || ''}
+              username={userStories.username}
+              onClick={() => handleStoryClick(userStories.stories[0])}
+            />
+          ))}
         </div>
       </div>
 

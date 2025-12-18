@@ -1,17 +1,19 @@
 import { Home, Search, PlusSquare, MessageCircle, User } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-
-const navItems = [
-  { icon: Home, path: '/', label: 'Home' },
-  { icon: Search, path: '/search', label: 'Search' },
-  { icon: PlusSquare, path: '/create', label: 'Create' },
-  { icon: MessageCircle, path: '/messages', label: 'Messages' },
-  { icon: User, path: '/profile', label: 'Profile' },
-];
+import { useAuth } from '@/hooks/useAuth';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const MobileNav = () => {
   const location = useLocation();
+  const { user, profile } = useAuth();
+
+  const navItems = [
+    { icon: Home, path: '/', label: 'Home' },
+    { icon: Search, path: '/search', label: 'Search' },
+    { icon: PlusSquare, path: '/create', label: 'Create' },
+    { icon: MessageCircle, path: '/messages', label: 'Messages' },
+  ];
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-lg border-t border-border md:hidden">
@@ -42,6 +44,27 @@ const MobileNav = () => {
             </Link>
           );
         })}
+        
+        {/* Profile with avatar or login */}
+        <Link
+          to={user ? '/profile' : '/auth'}
+          className={cn(
+            'flex flex-col items-center gap-1 p-2 rounded-lg transition-all duration-200',
+            location.pathname === '/profile' || location.pathname === '/auth'
+              ? 'text-primary' 
+              : 'text-muted-foreground hover:text-foreground'
+          )}
+        >
+          {user && profile ? (
+            <Avatar className="w-6 h-6">
+              <AvatarImage src={profile.avatar_url || ''} alt={profile.username} />
+              <AvatarFallback className="text-xs">{profile.username[0].toUpperCase()}</AvatarFallback>
+            </Avatar>
+          ) : (
+            <User className="w-6 h-6" />
+          )}
+          <span className="text-xs font-medium">{user ? 'Profile' : 'Login'}</span>
+        </Link>
       </div>
     </nav>
   );

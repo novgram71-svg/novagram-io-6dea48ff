@@ -1,45 +1,53 @@
-import { useState } from 'react';
-import { Send, ArrowLeft, MoreVertical, Phone, Video } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Send, ArrowLeft, MoreVertical } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
-import { mockConversations, mockUsers } from '@/lib/mockData';
+import { useAuth } from '@/hooks/useAuth';
+import { useConversations, useMessages, useSendMessage, Conversation } from '@/hooks/useMessages';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-
-interface Message {
-  id: string;
-  senderId: string;
-  text: string;
-  timestamp: string;
-}
+import { formatDistanceToNow } from 'date-fns';
+import { Navigate } from 'react-router-dom';
 
 const Messages = () => {
-  const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
+  const { user, loading: authLoading } = useAuth();
+  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [newMessage, setNewMessage] = useState('');
-  const [messages, setMessages] = useState<Message[]>([
-    { id: '1', senderId: 'other', text: 'Hey! How are you?', timestamp: '10:30 AM' },
-    { id: '2', senderId: 'current', text: "I'm great! Just working on some projects.", timestamp: '10:32 AM' },
-    { id: '3', senderId: 'other', text: "That's awesome! Would love to see what you're building.", timestamp: '10:33 AM' },
-    { id: '4', senderId: 'current', text: "I'll share some sneak peeks soon! 😊", timestamp: '10:35 AM' },
-    { id: '5', senderId: 'other', text: "Can't wait! By the way, loved your latest post!", timestamp: '10:36 AM' },
-  ]);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  const { data: conversations, isLoading: conversationsLoading } = useConversations();
+  const { data: messages, isLoading: messagesLoading } = useMessages(selectedConversation?.id || null);
+  const sendMessage = useSendMessage();
 
-  const selectedUser = selectedConversation
-    ? mockConversations.find(c => c.id === selectedConversation)?.user
-    : null;
+  // Scroll to bottom on new messages
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
-  const handleSendMessage = () => {
-    if (!newMessage.trim()) return;
+  if (authLoading) {
+    return (
+      <MainLayout>
+        <div className="h-[calc(100vh-80px)] flex items-center justify-center">
+          <Skeleton className="w-12 h-12 rounded-full" />
+        </div>
+      </MainLayout>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  const handleSendMessage = async () => {
+    if (!newMessage.trim() || !selectedConversation) return;
     
-    const message: Message = {
-      id: Date.now().toString(),
-      senderId: 'current',
-      text: newMessage,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    };
+    await sendMessage.mutateAsync({
+      receiverId: selectedConversation.id,
+      content: newMessage,
+    });
     
-    setMessages([...messages, message]);
     setNewMessage('');
   };
 
@@ -60,41 +68,61 @@ const Messages = () => {
 
           {/* Conversation List */}
           <div className="flex-1 overflow-y-auto">
-            {mockConversations.map((conversation) => (
-              <button
-                key={conversation.id}
-                onClick={() => setSelectedConversation(conversation.id)}
-                className={cn(
-                  'w-full flex items-center gap-3 p-4 hover:bg-secondary transition-colors',
-                  selectedConversation === conversation.id && 'bg-secondary'
-                )}
-              >
-                <div className="relative">
-                  <Avatar className="w-12 h-12">
-                    <AvatarImage src={conversation.user.profilePhoto} alt={conversation.user.username} />
-                    <AvatarFallback>{conversation.user.username[0].toUpperCase()}</AvatarFallback>
-                  </Avatar>
-                  {conversation.unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-primary-foreground text-xs font-bold rounded-full flex items-center justify-center">
-                      {conversation.unreadCount}
-                    </span>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0 text-left">
-                  <div className="flex items-center justify-between">
-                    <p className="font-semibold text-sm">{conversation.user.username}</p>
-                    <span className="text-xs text-muted-foreground">{conversation.lastMessage.timestamp}</span>
+            {conversationsLoading ? (
+              <div className="space-y-2 p-4">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="flex items-center gap-3 p-3">
+                    <Skeleton className="w-12 h-12 rounded-full" />
+                    <div className="space-y-2">
+                      <Skeleton className="w-24 h-4" />
+                      <Skeleton className="w-32 h-3" />
+                    </div>
                   </div>
-                  <p className={cn(
-                    'text-sm truncate',
-                    conversation.unreadCount > 0 ? 'text-foreground font-medium' : 'text-muted-foreground'
-                  )}>
-                    {conversation.lastMessage.senderId === 'current' && 'You: '}
-                    {conversation.lastMessage.text}
-                  </p>
-                </div>
-              </button>
-            ))}
+                ))}
+              </div>
+            ) : conversations && conversations.length > 0 ? (
+              conversations.map((conversation) => (
+                <button
+                  key={conversation.id}
+                  onClick={() => setSelectedConversation(conversation)}
+                  className={cn(
+                    'w-full flex items-center gap-3 p-4 hover:bg-secondary transition-colors',
+                    selectedConversation?.id === conversation.id && 'bg-secondary'
+                  )}
+                >
+                  <div className="relative">
+                    <Avatar className="w-12 h-12">
+                      <AvatarImage src={conversation.avatar_url || ''} alt={conversation.username} />
+                      <AvatarFallback>{conversation.username[0].toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    {conversation.unreadCount > 0 && (
+                      <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-primary-foreground text-xs font-bold rounded-full flex items-center justify-center">
+                        {conversation.unreadCount}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0 text-left">
+                    <div className="flex items-center justify-between">
+                      <p className="font-semibold text-sm">{conversation.username}</p>
+                      <span className="text-xs text-muted-foreground">
+                        {formatDistanceToNow(new Date(conversation.lastMessageTime), { addSuffix: false })}
+                      </span>
+                    </div>
+                    <p className={cn(
+                      'text-sm truncate',
+                      conversation.unreadCount > 0 ? 'text-foreground font-medium' : 'text-muted-foreground'
+                    )}>
+                      {conversation.lastMessage}
+                    </p>
+                  </div>
+                </button>
+              ))
+            ) : (
+              <div className="p-8 text-center text-muted-foreground">
+                <p>No conversations yet</p>
+                <p className="text-sm mt-1">Start messaging someone!</p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -105,7 +133,7 @@ const Messages = () => {
             !selectedConversation && 'hidden md:flex'
           )}
         >
-          {selectedConversation && selectedUser ? (
+          {selectedConversation ? (
             <>
               {/* Chat Header */}
               <div className="flex items-center justify-between p-4 border-b border-border bg-card/50">
@@ -117,55 +145,58 @@ const Messages = () => {
                     <ArrowLeft className="w-5 h-5" />
                   </button>
                   <Avatar className="w-10 h-10">
-                    <AvatarImage src={selectedUser.profilePhoto} alt={selectedUser.username} />
-                    <AvatarFallback>{selectedUser.username[0].toUpperCase()}</AvatarFallback>
+                    <AvatarImage src={selectedConversation.avatar_url || ''} alt={selectedConversation.username} />
+                    <AvatarFallback>{selectedConversation.username[0].toUpperCase()}</AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="font-semibold text-sm">{selectedUser.username}</p>
+                    <p className="font-semibold text-sm">{selectedConversation.username}</p>
                     <p className="text-xs text-muted-foreground">Active now</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Button variant="ghost" size="icon">
-                    <Phone className="w-5 h-5" />
-                  </Button>
-                  <Button variant="ghost" size="icon">
-                    <Video className="w-5 h-5" />
-                  </Button>
-                  <Button variant="ghost" size="icon">
-                    <MoreVertical className="w-5 h-5" />
-                  </Button>
-                </div>
+                <Button variant="ghost" size="icon">
+                  <MoreVertical className="w-5 h-5" />
+                </Button>
               </div>
 
               {/* Messages */}
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                {messages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={cn(
-                      'flex',
-                      message.senderId === 'current' ? 'justify-end' : 'justify-start'
-                    )}
-                  >
+                {messagesLoading ? (
+                  <div className="space-y-4">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className={cn('flex', i % 2 === 0 ? 'justify-end' : 'justify-start')}>
+                        <Skeleton className="w-48 h-12 rounded-2xl" />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  messages?.map((message) => (
                     <div
+                      key={message.id}
                       className={cn(
-                        'max-w-[70%] px-4 py-2 rounded-2xl animate-fade-in',
-                        message.senderId === 'current'
-                          ? 'bg-primary text-primary-foreground rounded-br-sm'
-                          : 'bg-secondary text-secondary-foreground rounded-bl-sm'
+                        'flex',
+                        message.sender_id === user.id ? 'justify-end' : 'justify-start'
                       )}
                     >
-                      <p className="text-sm">{message.text}</p>
-                      <p className={cn(
-                        'text-xs mt-1',
-                        message.senderId === 'current' ? 'text-primary-foreground/70' : 'text-muted-foreground'
-                      )}>
-                        {message.timestamp}
-                      </p>
+                      <div
+                        className={cn(
+                          'max-w-[70%] px-4 py-2 rounded-2xl animate-fade-in',
+                          message.sender_id === user.id
+                            ? 'bg-primary text-primary-foreground rounded-br-sm'
+                            : 'bg-secondary text-secondary-foreground rounded-bl-sm'
+                        )}
+                      >
+                        <p className="text-sm">{message.content}</p>
+                        <p className={cn(
+                          'text-xs mt-1',
+                          message.sender_id === user.id ? 'text-primary-foreground/70' : 'text-muted-foreground'
+                        )}>
+                          {new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                )}
+                <div ref={messagesEndRef} />
               </div>
 
               {/* Message Input */}
@@ -180,7 +211,7 @@ const Messages = () => {
                   />
                   <Button
                     onClick={handleSendMessage}
-                    disabled={!newMessage.trim()}
+                    disabled={!newMessage.trim() || sendMessage.isPending}
                     className="bg-primary hover:bg-primary/90"
                   >
                     <Send className="w-5 h-5" />

@@ -1,140 +1,124 @@
-import { useState, useEffect } from 'react';
-import { X, ChevronLeft, ChevronRight, Eye, Send } from 'lucide-react';
-import { Story } from '@/lib/mockData';
+import { useEffect, useState } from 'react';
+import { X, ChevronLeft, ChevronRight, Eye } from 'lucide-react';
+import { StoryWithUser, useRecordStoryView } from '@/hooks/useStories';
+import { useAuth } from '@/hooks/useAuth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { formatDistanceToNow } from 'date-fns';
 
 interface StoryViewerProps {
-  story: Story;
+  story: StoryWithUser;
   onClose: () => void;
 }
 
 const StoryViewer = ({ story, onClose }: StoryViewerProps) => {
   const [progress, setProgress] = useState(0);
-  const [showViewers, setShowViewers] = useState(false);
-  const isOwn = story.userId === 'current';
+  const { user } = useAuth();
+  const recordView = useRecordStoryView();
 
   useEffect(() => {
+    // Record story view
+    if (user && story.user_id !== user.id) {
+      recordView.mutate(story.id);
+    }
+
+    // Progress bar and auto-advance
+    const duration = 5000;
+    const interval = 50;
+    const increment = (interval / duration) * 100;
+
     const timer = setInterval(() => {
       setProgress((prev) => {
         if (prev >= 100) {
+          clearInterval(timer);
           onClose();
-          return 100;
+          return prev;
         }
-        return prev + 2;
+        return prev + increment;
       });
-    }, 100);
+    }, interval);
 
     return () => clearInterval(timer);
-  }, [onClose]);
+  }, [story.id, onClose, user, recordView]);
+
+  const timeAgo = formatDistanceToNow(new Date(story.created_at), { addSuffix: true });
+  const isOwnStory = user?.id === story.user_id;
 
   return (
-    <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex items-center justify-center">
-      {/* Close Button */}
-      <button
-        onClick={onClose}
-        className="absolute top-4 right-4 z-50 p-2 rounded-full bg-card/80 text-foreground hover:bg-card transition-colors"
-      >
-        <X className="w-6 h-6" />
-      </button>
-
-      {/* Navigation Arrows (Desktop) */}
-      <button className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-card/80 text-foreground hover:bg-card transition-colors">
-        <ChevronLeft className="w-6 h-6" />
-      </button>
-      <button className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-card/80 text-foreground hover:bg-card transition-colors">
-        <ChevronRight className="w-6 h-6" />
-      </button>
-
-      {/* Story Container */}
-      <div className="relative w-full max-w-md h-[85vh] max-h-[800px] mx-4 rounded-2xl overflow-hidden bg-card animate-scale-in">
-        {/* Progress Bar */}
-        <div className="absolute top-0 left-0 right-0 z-20 p-2">
-          <div className="h-1 bg-muted/50 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-foreground rounded-full transition-all duration-100"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-        </div>
-
-        {/* User Info */}
-        <div className="absolute top-6 left-0 right-0 z-20 px-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Avatar className="w-10 h-10 border-2 border-foreground/20">
-              <AvatarImage src={story.user.profilePhoto} alt={story.user.username} />
-              <AvatarFallback>{story.user.username[0].toUpperCase()}</AvatarFallback>
-            </Avatar>
-            <div>
-              <p className="font-semibold text-sm text-foreground">{story.user.username}</p>
-              <p className="text-xs text-muted-foreground">
-                {new Date(story.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </p>
+    <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm">
+      <div className="h-full flex items-center justify-center">
+        {/* Story Container */}
+        <div className="relative w-full max-w-md h-[85vh] max-h-[700px] bg-background rounded-lg overflow-hidden shadow-2xl">
+          {/* Progress Bar */}
+          <div className="absolute top-0 left-0 right-0 z-10 p-2">
+            <div className="h-1 bg-secondary rounded-full overflow-hidden">
+              <div
+                className="h-full bg-primary transition-all duration-50 ease-linear"
+                style={{ width: `${progress}%` }}
+              />
             </div>
           </div>
-        </div>
 
-        {/* Story Image */}
-        <img
-          src={story.imageUrl}
-          alt="Story"
-          className="w-full h-full object-cover"
-        />
-
-        {/* Gradient Overlays */}
-        <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-background/80 to-transparent" />
-        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-background/80 to-transparent" />
-
-        {/* Bottom Actions */}
-        <div className="absolute bottom-0 left-0 right-0 z-20 p-4">
-          {isOwn ? (
-            <button
-              onClick={() => setShowViewers(!showViewers)}
-              className="flex items-center gap-2 text-foreground/80 hover:text-foreground transition-colors"
+          {/* Header */}
+          <div className="absolute top-4 left-0 right-0 z-10 flex items-center justify-between px-4">
+            <div className="flex items-center gap-3">
+              <Avatar className="w-10 h-10 border-2 border-primary">
+                <AvatarImage src={story.profiles.avatar_url || ''} alt={story.profiles.username} />
+                <AvatarFallback>{story.profiles.username[0].toUpperCase()}</AvatarFallback>
+              </Avatar>
+              <div>
+                <p className="font-semibold text-sm text-white drop-shadow-lg">{story.profiles.username}</p>
+                <p className="text-xs text-white/80 drop-shadow-lg">{timeAgo}</p>
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="text-white hover:text-white hover:bg-white/20"
             >
-              <Eye className="w-5 h-5" />
-              <span className="text-sm font-medium">{story.views.length} viewers</span>
-            </button>
-          ) : (
-            <div className="flex items-center gap-2">
-              <Input
-                placeholder="Send a message..."
-                className="flex-1 bg-foreground/10 border-foreground/20 text-foreground placeholder:text-foreground/50"
-              />
-              <Button size="icon" variant="ghost" className="text-foreground">
-                <Send className="w-5 h-5" />
-              </Button>
+              <X className="w-6 h-6" />
+            </Button>
+          </div>
+
+          {/* Story Image */}
+          <img
+            src={story.image_url}
+            alt="Story"
+            className="w-full h-full object-cover"
+          />
+
+          {/* Navigation Areas */}
+          <button
+            className="absolute left-0 top-0 bottom-0 w-1/3 flex items-center justify-start pl-4 opacity-0 hover:opacity-100 transition-opacity"
+            onClick={onClose}
+          >
+            <ChevronLeft className="w-8 h-8 text-white drop-shadow-lg" />
+          </button>
+          <button
+            className="absolute right-0 top-0 bottom-0 w-1/3 flex items-center justify-end pr-4 opacity-0 hover:opacity-100 transition-opacity"
+            onClick={onClose}
+          >
+            <ChevronRight className="w-8 h-8 text-white drop-shadow-lg" />
+          </button>
+
+          {/* Story Views (for own stories) */}
+          {isOwnStory && (
+            <div className="absolute bottom-4 left-0 right-0 z-10 px-4">
+              <button className="flex items-center gap-2 text-white/90 text-sm">
+                <Eye className="w-5 h-5" />
+                <span>Views</span>
+              </button>
             </div>
           )}
         </div>
-
-        {/* Viewers List (for own stories) */}
-        {isOwn && showViewers && (
-          <div className="absolute bottom-20 left-0 right-0 z-30 mx-4 p-4 bg-card rounded-xl border border-border max-h-60 overflow-y-auto animate-fade-in">
-            <h4 className="font-semibold mb-3">Story Views</h4>
-            {story.views.length > 0 ? (
-              <ul className="space-y-3">
-                {story.views.map((view) => (
-                  <li key={view.userId} className="flex items-center gap-3">
-                    <Avatar className="w-8 h-8">
-                      <AvatarImage src={view.user.profilePhoto} alt={view.user.username} />
-                      <AvatarFallback>{view.user.username[0].toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">{view.user.username}</p>
-                      <p className="text-xs text-muted-foreground">{view.viewedAt}</p>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-sm text-muted-foreground">No viewers yet</p>
-            )}
-          </div>
-        )}
       </div>
+
+      {/* Click outside to close */}
+      <button
+        className="absolute inset-0 -z-10"
+        onClick={onClose}
+      />
     </div>
   );
 };
