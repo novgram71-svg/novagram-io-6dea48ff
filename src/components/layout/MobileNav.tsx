@@ -1,12 +1,14 @@
-import { Home, Search, PlusSquare, MessageCircle, User } from 'lucide-react';
+import { Home, Search, PlusSquare, MessageCircle, User, Shield } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
+import { useIsAdmin } from '@/hooks/useAdmin';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const MobileNav = () => {
   const location = useLocation();
   const { user, profile } = useAuth();
+  const { data: isAdmin } = useIsAdmin();
 
   const navItems = [
     { icon: Home, path: '/', label: 'Home' },
@@ -65,6 +67,28 @@ const MobileNav = () => {
           )}
           <span className="text-xs font-medium">{user ? 'Profile' : 'Login'}</span>
         </Link>
+
+        {/* Admin link for admin users */}
+        {isAdmin && (
+          <Link
+            to="/admin"
+            className={cn(
+              'flex flex-col items-center gap-1 p-2 rounded-lg transition-all duration-200',
+              location.pathname === '/admin'
+                ? 'text-primary' 
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            <Shield 
+              className={cn(
+                'w-6 h-6 transition-all duration-200',
+                location.pathname === '/admin' && 'scale-110'
+              )} 
+              fill={location.pathname === '/admin' ? 'currentColor' : 'none'}
+            />
+            <span className="text-xs font-medium">Admin</span>
+          </Link>
+        )}
       </div>
     </nav>
   );
