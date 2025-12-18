@@ -120,6 +120,21 @@ export const useToggleFollow = () => {
   });
 };
 
+export const useAllProfiles = () => {
+  return useQuery({
+    queryKey: ['profiles'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+  });
+};
+
 export const useSearchProfiles = (query: string) => {
   return useQuery({
     queryKey: ['searchProfiles', query],
