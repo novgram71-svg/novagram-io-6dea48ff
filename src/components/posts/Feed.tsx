@@ -4,10 +4,19 @@ import PostCard from './PostCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import PullToRefresh from './PullToRefresh';
+import { useQueryClient } from '@tanstack/react-query';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const Feed = () => {
   const { data: posts, isLoading, error } = usePosts();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
+
+  const handleRefresh = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['posts'] });
+  };
 
   if (isLoading) {
     return (
@@ -54,8 +63,8 @@ const Feed = () => {
     );
   }
 
-  return (
-    <div className="max-w-lg mx-auto space-y-6 px-4 md:px-0">
+  const feedContent = (
+    <div className="max-w-lg mx-auto space-y-6 px-4 md:px-0 pb-20">
       {posts.map((post, index) => (
         <div 
           key={post.id} 
@@ -66,6 +75,16 @@ const Feed = () => {
       ))}
     </div>
   );
+
+  if (isMobile) {
+    return (
+      <PullToRefresh onRefresh={handleRefresh}>
+        {feedContent}
+      </PullToRefresh>
+    );
+  }
+
+  return feedContent;
 };
 
 export default Feed;

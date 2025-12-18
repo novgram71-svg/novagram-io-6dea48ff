@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -57,11 +57,42 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const handleBanAndSignOut = useCallback(async () => {
+    setIsBanned(true);
+    await supabase.auth.signOut();
+  }, []);
+
   const refreshProfile = async () => {
     if (user) {
       await fetchProfile(user.id);
     }
   };
+
+  // Realtime subscription for immediate ban enforcement
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('ban-check')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'banned_users',
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => {
+          // User was banned, sign them out immediately
+          handleBanAndSignOut();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, handleBanAndSignOut]);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -76,7 +107,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           }, 0);
         } else {
           setProfile(null);
-          setIsBanned(false);
+          // Don't reset isBanned here if user was banned - keep them banned
         }
         setLoading(false);
       }
