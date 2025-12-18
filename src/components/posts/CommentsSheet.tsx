@@ -12,11 +12,12 @@ import { Link } from 'react-router-dom';
 
 interface CommentsSheetProps {
   postId: string;
+  postOwnerId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-const CommentsSheet = ({ postId, open, onOpenChange }: CommentsSheetProps) => {
+const CommentsSheet = ({ postId, postOwnerId, open, onOpenChange }: CommentsSheetProps) => {
   const { user } = useAuth();
   const { data: comments, isLoading } = useComments(postId);
   const addComment = useAddComment();
@@ -27,7 +28,7 @@ const CommentsSheet = ({ postId, open, onOpenChange }: CommentsSheetProps) => {
     if (!newComment.trim()) return;
 
     addComment.mutate(
-      { postId, content: newComment },
+      { postId, content: newComment, postOwnerId },
       {
         onSuccess: () => setNewComment(''),
       }
@@ -51,7 +52,7 @@ const CommentsSheet = ({ postId, open, onOpenChange }: CommentsSheetProps) => {
               comments.map((comment) => (
                 <div key={comment.id} className="flex gap-3 animate-fade-in">
                   <Link to={`/profile/${comment.profiles.username}`}>
-                    <Avatar className="w-8 h-8">
+                    <Avatar className="w-8 h-8 transition-transform hover:scale-105">
                       <AvatarImage src={comment.profiles.avatar_url || ''} />
                       <AvatarFallback>{comment.profiles.username[0].toUpperCase()}</AvatarFallback>
                     </Avatar>

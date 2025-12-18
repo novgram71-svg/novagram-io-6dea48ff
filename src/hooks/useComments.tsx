@@ -39,7 +39,7 @@ export const useAddComment = () => {
   const { user } = useAuth();
 
   return useMutation({
-    mutationFn: async ({ postId, content }: { postId: string; content: string }) => {
+    mutationFn: async ({ postId, content, postOwnerId }: { postId: string; content: string; postOwnerId?: string }) => {
       if (!user) throw new Error('Not authenticated');
 
       const { error } = await supabase
@@ -51,6 +51,16 @@ export const useAddComment = () => {
         });
 
       if (error) throw error;
+
+      // Create notification for post owner
+      if (postOwnerId && postOwnerId !== user.id) {
+        await supabase.from('notifications').insert({
+          user_id: postOwnerId,
+          actor_id: user.id,
+          type: 'comment',
+          post_id: postId,
+        });
+      }
     },
     onSuccess: (_, { postId }) => {
       queryClient.invalidateQueries({ queryKey: ['comments', postId] });

@@ -1,25 +1,53 @@
 import { useState, useEffect, useRef } from 'react';
 import { Send, ArrowLeft, MoreVertical } from 'lucide-react';
+import { useLocation, Navigate } from 'react-router-dom';
 import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { useConversations, useMessages, useSendMessage, Conversation } from '@/hooks/useMessages';
+import { useProfileById } from '@/hooks/useProfiles';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
-import { Navigate } from 'react-router-dom';
 
 const Messages = () => {
+  const location = useLocation();
   const { user, loading: authLoading } = useAuth();
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [newMessage, setNewMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
+  // Get user ID from navigation state (when coming from profile)
+  const stateUserId = location.state?.selectedUserId;
+  const stateUsername = location.state?.selectedUsername;
+  
   const { data: conversations, isLoading: conversationsLoading } = useConversations();
   const { data: messages, isLoading: messagesLoading } = useMessages(selectedConversation?.id || null);
+  const { data: profileFromState } = useProfileById(stateUserId);
   const sendMessage = useSendMessage();
+
+  // Handle navigation from profile page
+  useEffect(() => {
+    if (stateUserId && profileFromState && !selectedConversation) {
+      // Check if conversation already exists
+      const existingConversation = conversations?.find(c => c.id === stateUserId);
+      if (existingConversation) {
+        setSelectedConversation(existingConversation);
+      } else {
+        // Create a new conversation object for UI
+        setSelectedConversation({
+          id: stateUserId,
+          username: profileFromState.username,
+          avatar_url: profileFromState.avatar_url,
+          lastMessage: '',
+          lastMessageTime: new Date().toISOString(),
+          unreadCount: 0,
+        });
+      }
+    }
+  }, [stateUserId, profileFromState, conversations, selectedConversation]);
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -86,17 +114,17 @@ const Messages = () => {
                   key={conversation.id}
                   onClick={() => setSelectedConversation(conversation)}
                   className={cn(
-                    'w-full flex items-center gap-3 p-4 hover:bg-secondary transition-colors',
+                    'w-full flex items-center gap-3 p-4 hover:bg-secondary transition-all duration-200 animate-fade-in',
                     selectedConversation?.id === conversation.id && 'bg-secondary'
                   )}
                 >
                   <div className="relative">
-                    <Avatar className="w-12 h-12">
+                    <Avatar className="w-12 h-12 transition-transform hover:scale-105">
                       <AvatarImage src={conversation.avatar_url || ''} alt={conversation.username} />
                       <AvatarFallback>{conversation.username[0].toUpperCase()}</AvatarFallback>
                     </Avatar>
                     {conversation.unreadCount > 0 && (
-                      <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-primary-foreground text-xs font-bold rounded-full flex items-center justify-center">
+                      <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-primary-foreground text-xs font-bold rounded-full flex items-center justify-center animate-scale-in">
                         {conversation.unreadCount}
                       </span>
                     )}
@@ -118,7 +146,7 @@ const Messages = () => {
                 </button>
               ))
             ) : (
-              <div className="p-8 text-center text-muted-foreground">
+              <div className="p-8 text-center text-muted-foreground animate-fade-in">
                 <p>No conversations yet</p>
                 <p className="text-sm mt-1">Start messaging someone!</p>
               </div>
@@ -140,11 +168,11 @@ const Messages = () => {
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => setSelectedConversation(null)}
-                    className="md:hidden p-2 -ml-2 text-muted-foreground hover:text-foreground"
+                    className="md:hidden p-2 -ml-2 text-muted-foreground hover:text-foreground transition-colors"
                   >
                     <ArrowLeft className="w-5 h-5" />
                   </button>
-                  <Avatar className="w-10 h-10">
+                  <Avatar className="w-10 h-10 transition-transform hover:scale-105">
                     <AvatarImage src={selectedConversation.avatar_url || ''} alt={selectedConversation.username} />
                     <AvatarFallback>{selectedConversation.username[0].toUpperCase()}</AvatarFallback>
                   </Avatar>
@@ -168,8 +196,8 @@ const Messages = () => {
                       </div>
                     ))}
                   </div>
-                ) : (
-                  messages?.map((message) => (
+                ) : messages && messages.length > 0 ? (
+                  messages.map((message) => (
                     <div
                       key={message.id}
                       className={cn(
@@ -195,6 +223,10 @@ const Messages = () => {
                       </div>
                     </div>
                   ))
+                ) : (
+                  <div className="flex-1 flex items-center justify-center text-muted-foreground py-12 animate-fade-in">
+                    <p className="text-center">No messages yet. Say hello!</p>
+                  </div>
                 )}
                 <div ref={messagesEndRef} />
               </div>
@@ -212,7 +244,7 @@ const Messages = () => {
                   <Button
                     onClick={handleSendMessage}
                     disabled={!newMessage.trim() || sendMessage.isPending}
-                    className="bg-primary hover:bg-primary/90"
+                    className="bg-primary hover:bg-primary/90 transition-all duration-200 hover:scale-105"
                   >
                     <Send className="w-5 h-5" />
                   </Button>
@@ -220,7 +252,7 @@ const Messages = () => {
               </div>
             </>
           ) : (
-            <div className="flex-1 flex items-center justify-center text-muted-foreground">
+            <div className="flex-1 flex items-center justify-center text-muted-foreground animate-fade-in">
               <div className="text-center">
                 <div className="w-20 h-20 mx-auto mb-4 rounded-full border-2 border-muted flex items-center justify-center">
                   <Send className="w-8 h-8" />
