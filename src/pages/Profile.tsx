@@ -1,22 +1,31 @@
 import { useState } from 'react';
 import { useParams, Navigate, Link, useNavigate } from 'react-router-dom';
-import { Grid3X3, Bookmark, LogOut, UserPlus, UserCheck, MessageCircle } from 'lucide-react';
+import { Grid3X3, Bookmark, LogOut, UserPlus, UserCheck, MessageCircle, Flag, Ban, MoreHorizontal } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile, useProfileStats, useIsFollowing, useToggleFollow } from '@/hooks/useProfiles';
 import { useUserPosts } from '@/hooks/usePosts';
+import { useIsBlocked, useToggleBlock } from '@/hooks/useUserModeration';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import EditProfileDialog from '@/components/profile/EditProfileDialog';
+import ReportUserDialog from '@/components/profile/ReportUserDialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 const Profile = () => {
   const { username } = useParams();
   const navigate = useNavigate();
   const { user, profile: currentUserProfile, signOut, loading: authLoading } = useAuth();
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [reportDialogOpen, setReportDialogOpen] = useState(false);
   
   // If no username in URL, show current user's profile
   const targetUsername = username || currentUserProfile?.username;
@@ -25,7 +34,9 @@ const Profile = () => {
   const { data: stats, isLoading: statsLoading } = useProfileStats(profile?.id);
   const { data: posts, isLoading: postsLoading } = useUserPosts(profile?.id);
   const { data: isFollowing } = useIsFollowing(profile?.id);
+  const { data: isBlocked } = useIsBlocked(profile?.id);
   const toggleFollow = useToggleFollow();
+  const toggleBlock = useToggleBlock();
 
   const isOwnProfile = user?.id === profile?.id;
 
@@ -38,6 +49,11 @@ const Profile = () => {
   const handleToggleFollow = () => {
     if (!profile) return;
     toggleFollow.mutate({ targetUserId: profile.id, isFollowing: isFollowing || false });
+  };
+
+  const handleToggleBlock = () => {
+    if (!profile) return;
+    toggleBlock.mutate({ targetUserId: profile.id, isBlocked: isBlocked || false });
   };
 
   const handleMessage = () => {
@@ -95,11 +111,32 @@ const Profile = () => {
         <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-lg border-b border-border md:hidden">
           <div className="flex items-center justify-between px-4 py-3">
             <h1 className="text-lg font-bold">{profile.username}</h1>
-            {isOwnProfile && (
-              <Button variant="ghost" size="icon" onClick={handleSignOut}>
-                <LogOut className="w-5 h-5" />
-              </Button>
-            )}
+            <div className="flex items-center gap-2">
+              {!isOwnProfile && user && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                      <MoreHorizontal className="w-5 h-5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => setReportDialogOpen(true)} className="text-destructive">
+                      <Flag className="w-4 h-4 mr-2" />
+                      Report
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleToggleBlock}>
+                      <Ban className="w-4 h-4 mr-2" />
+                      {isBlocked ? 'Unblock' : 'Block'}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+              {isOwnProfile && (
+                <Button variant="ghost" size="icon" onClick={handleSignOut}>
+                  <LogOut className="w-5 h-5" />
+                </Button>
+              )}
+            </div>
           </div>
         </header>
 
@@ -167,6 +204,25 @@ const Profile = () => {
                       <MessageCircle className="w-4 h-4 mr-2" />
                       Message
                     </Button>
+                    
+                    {/* Desktop dropdown for report/block */}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="hidden md:flex">
+                          <MoreHorizontal className="w-5 h-5" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => setReportDialogOpen(true)} className="text-destructive">
+                          <Flag className="w-4 h-4 mr-2" />
+                          Report
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleToggleBlock}>
+                          <Ban className="w-4 h-4 mr-2" />
+                          {isBlocked ? 'Unblock' : 'Block'}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 ) : (
                   <Link to="/auth">
@@ -285,6 +341,16 @@ const Profile = () => {
             open={editDialogOpen}
             onOpenChange={setEditDialogOpen}
             profile={profile}
+          />
+        )}
+
+        {/* Report User Dialog */}
+        {!isOwnProfile && profile && (
+          <ReportUserDialog
+            open={reportDialogOpen}
+            onOpenChange={setReportDialogOpen}
+            userId={profile.id}
+            username={profile.username}
           />
         )}
       </div>
