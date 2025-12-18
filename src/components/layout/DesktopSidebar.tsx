@@ -1,7 +1,7 @@
-import { Home, Search, PlusSquare, MessageCircle, User, Heart, Settings, LogOut } from 'lucide-react';
+import { Home, Search, PlusSquare, MessageCircle, User, Heart, LogOut } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { currentUser } from '@/lib/mockData';
+import { useAuth } from '@/hooks/useAuth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const navItems = [
@@ -15,6 +15,11 @@ const navItems = [
 
 const DesktopSidebar = () => {
   const location = useLocation();
+  const { user, profile, signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
 
   return (
     <aside className="hidden md:flex flex-col fixed left-0 top-0 h-screen w-64 bg-sidebar border-r border-sidebar-border p-4">
@@ -56,28 +61,41 @@ const DesktopSidebar = () => {
 
       {/* User Profile */}
       <div className="mt-auto border-t border-sidebar-border pt-4">
-        <Link 
-          to="/profile" 
-          className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-sidebar-accent transition-colors"
-        >
-          <Avatar className="w-10 h-10">
-            <AvatarImage src={currentUser.profilePhoto} alt={currentUser.username} />
-            <AvatarFallback>{currentUser.username[0].toUpperCase()}</AvatarFallback>
-          </Avatar>
-          <div className="flex-1 min-w-0">
-            <p className="font-semibold text-sm truncate">{currentUser.username}</p>
-            <p className="text-xs text-muted-foreground truncate">{currentUser.email}</p>
-          </div>
-        </Link>
-        
-        <div className="flex items-center gap-2 mt-2 px-2">
-          <button className="nova-nav-item flex-1 justify-center">
-            <Settings className="w-5 h-5" />
-          </button>
-          <button className="nova-nav-item flex-1 justify-center text-destructive hover:text-destructive">
-            <LogOut className="w-5 h-5" />
-          </button>
-        </div>
+        {user && profile ? (
+          <>
+            <Link 
+              to="/profile" 
+              className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-sidebar-accent transition-colors"
+            >
+              <Avatar className="w-10 h-10">
+                <AvatarImage src={profile.avatar_url || ''} alt={profile.username} />
+                <AvatarFallback>{profile.username[0].toUpperCase()}</AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-sm truncate">{profile.username}</p>
+                <p className="text-xs text-muted-foreground truncate">{profile.email}</p>
+              </div>
+            </Link>
+            
+            <div className="flex items-center gap-2 mt-2 px-2">
+              <button 
+                onClick={handleSignOut}
+                className="nova-nav-item flex-1 justify-center text-destructive hover:text-destructive"
+              >
+                <LogOut className="w-5 h-5" />
+                <span className="text-sm">Sign Out</span>
+              </button>
+            </div>
+          </>
+        ) : (
+          <Link 
+            to="/auth" 
+            className="flex items-center gap-3 px-4 py-3 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+          >
+            <User className="w-5 h-5" />
+            <span className="font-medium">Sign In</span>
+          </Link>
+        )}
       </div>
     </aside>
   );
