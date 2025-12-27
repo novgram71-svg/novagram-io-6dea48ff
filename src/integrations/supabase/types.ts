@@ -206,6 +206,7 @@ export type Database = {
           created_at: string
           id: string
           read: boolean
+          read_at: string | null
           receiver_id: string
           sender_id: string
         }
@@ -214,6 +215,7 @@ export type Database = {
           created_at?: string
           id?: string
           read?: boolean
+          read_at?: string | null
           receiver_id: string
           sender_id: string
         }
@@ -222,6 +224,7 @@ export type Database = {
           created_at?: string
           id?: string
           read?: boolean
+          read_at?: string | null
           receiver_id?: string
           sender_id?: string
         }
@@ -423,6 +426,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_presence: {
+        Row: {
+          id: string
+          is_online: boolean
+          last_seen: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          is_online?: boolean
+          last_seen?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          is_online?: boolean
+          last_seen?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       user_reports: {
         Row: {

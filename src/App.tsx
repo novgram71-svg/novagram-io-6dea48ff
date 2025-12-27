@@ -13,6 +13,7 @@ import Notifications from "./pages/Notifications";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
 import Banned from "./pages/Banned";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,6 +43,7 @@ const AppRoutes = () => {
       <Route path="/create" element={<BanCheck><Create /></BanCheck>} />
       <Route path="/notifications" element={<BanCheck><Notifications /></BanCheck>} />
       <Route path="/admin" element={<BanCheck><Admin /></BanCheck>} />
+      <Route path="/settings" element={<BanCheck><Settings /></BanCheck>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

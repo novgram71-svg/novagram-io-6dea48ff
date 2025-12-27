@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams, Navigate, Link, useNavigate } from 'react-router-dom';
-import { Grid3X3, Bookmark, LogOut, UserPlus, UserCheck, MessageCircle, Flag, Ban, MoreHorizontal } from 'lucide-react';
+import { Grid3X3, Bookmark, LogOut, UserPlus, UserCheck, MessageCircle, Flag, Ban, MoreHorizontal, Settings } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile, useProfileStats, useIsFollowing, useToggleFollow } from '@/hooks/useProfiles';
@@ -132,9 +132,14 @@ const Profile = () => {
                 </DropdownMenu>
               )}
               {isOwnProfile && (
-                <Button variant="ghost" size="icon" onClick={handleSignOut}>
-                  <LogOut className="w-5 h-5" />
-                </Button>
+                <>
+                  <Button variant="ghost" size="icon" onClick={() => navigate('/settings')}>
+                    <Settings className="w-5 h-5" />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={handleSignOut}>
+                    <LogOut className="w-5 h-5" />
+                  </Button>
+                </>
               )}
             </div>
           </div>
@@ -165,6 +170,13 @@ const Profile = () => {
                       className="transition-all duration-200 hover:scale-105"
                     >
                       Edit Profile
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      onClick={() => navigate('/settings')}
+                    >
+                      <Settings className="w-5 h-5" />
                     </Button>
                     <Button variant="ghost" size="icon" onClick={handleSignOut}>
                       <LogOut className="w-5 h-5" />

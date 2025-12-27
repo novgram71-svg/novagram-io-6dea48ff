@@ -9,6 +9,7 @@ export interface MessageWithProfile {
   receiver_id: string;
   content: string;
   read: boolean;
+  read_at: string | null;
   created_at: string;
   sender: {
     id: string;
@@ -128,10 +129,10 @@ export const useMessages = (partnerId: string | null) => {
 
       if (error) throw error;
 
-      // Mark messages as read
+      // Mark messages as read with timestamp
       await supabase
         .from('messages')
-        .update({ read: true })
+        .update({ read: true, read_at: new Date().toISOString() })
         .eq('sender_id', partnerId)
         .eq('receiver_id', user.id)
         .eq('read', false);
