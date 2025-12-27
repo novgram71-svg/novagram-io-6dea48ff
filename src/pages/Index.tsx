@@ -2,6 +2,7 @@ import MainLayout from '@/components/layout/MainLayout';
 import MobileHeader from '@/components/layout/MobileHeader';
 import StoriesBar from '@/components/stories/StoriesBar';
 import Feed from '@/components/posts/Feed';
+import HelpCenter from '@/components/HelpCenter';
 
 const Index = () => {
   return (
@@ -19,6 +20,9 @@ const Index = () => {
           <Feed />
         </section>
       </div>
+      
+      {/* Floating Help Button */}
+      <HelpCenter />
     </MainLayout>
   );
 };
