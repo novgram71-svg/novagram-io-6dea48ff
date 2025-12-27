@@ -6,13 +6,69 @@ import { useAuth } from '@/hooks/useAuth';
 import { useConversations, useMessages, useSendMessage, Conversation } from '@/hooks/useMessages';
 import { useProfileById } from '@/hooks/useProfiles';
 import { useTypingIndicator } from '@/hooks/useTypingIndicator';
+import { useUserPresence, useUpdatePresence } from '@/hooks/usePresence';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import TypingIndicator from '@/components/chat/TypingIndicator';
+import ActiveStatus from '@/components/chat/ActiveStatus';
+import ReadReceipt from '@/components/chat/ReadReceipt';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
+
+interface ConversationItemProps {
+  conversation: Conversation;
+  isSelected: boolean;
+  onClick: () => void;
+}
+
+const ConversationItem = ({ conversation, isSelected, onClick }: ConversationItemProps) => {
+  const { isOnline, lastSeen } = useUserPresence(conversation.id);
+
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        'w-full flex items-center gap-3 p-4 hover:bg-secondary transition-all duration-200 animate-fade-in',
+        isSelected && 'bg-secondary'
+      )}
+    >
+      <div className="relative">
+        <Avatar className="w-12 h-12 transition-transform hover:scale-105">
+          <AvatarImage src={conversation.avatar_url || ''} alt={conversation.username} />
+          <AvatarFallback>{conversation.username[0].toUpperCase()}</AvatarFallback>
+        </Avatar>
+        {/* Online indicator dot */}
+        <ActiveStatus 
+          isOnline={isOnline} 
+          lastSeen={lastSeen} 
+          showDot 
+          className="absolute bottom-0 right-0"
+        />
+        {conversation.unreadCount > 0 && (
+          <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-primary-foreground text-xs font-bold rounded-full flex items-center justify-center animate-scale-in">
+            {conversation.unreadCount}
+          </span>
+        )}
+      </div>
+      <div className="flex-1 min-w-0 text-left">
+        <div className="flex items-center justify-between">
+          <p className="font-semibold text-sm">{conversation.username}</p>
+          <span className="text-xs text-muted-foreground">
+            {formatDistanceToNow(new Date(conversation.lastMessageTime), { addSuffix: false })}
+          </span>
+        </div>
+        <p className={cn(
+          'text-sm truncate',
+          conversation.unreadCount > 0 ? 'text-foreground font-medium' : 'text-muted-foreground'
+        )}>
+          {conversation.lastMessage}
+        </p>
+      </div>
+    </button>
+  );
+};
 
 const Messages = () => {
   const location = useLocation();
@@ -30,6 +86,10 @@ const Messages = () => {
   const { data: profileFromState } = useProfileById(stateUserId);
   const sendMessage = useSendMessage();
   const { isPartnerTyping, setTyping } = useTypingIndicator(selectedConversation?.id || null);
+  const { isOnline, lastSeen } = useUserPresence(selectedConversation?.id || null);
+  
+  // Update own presence
+  useUpdatePresence();
 
   // Handle navigation from profile page
   useEffect(() => {
@@ -123,40 +183,12 @@ const Messages = () => {
               </div>
             ) : conversations && conversations.length > 0 ? (
               conversations.map((conversation) => (
-                <button
+                <ConversationItem 
                   key={conversation.id}
+                  conversation={conversation}
+                  isSelected={selectedConversation?.id === conversation.id}
                   onClick={() => setSelectedConversation(conversation)}
-                  className={cn(
-                    'w-full flex items-center gap-3 p-4 hover:bg-secondary transition-all duration-200 animate-fade-in',
-                    selectedConversation?.id === conversation.id && 'bg-secondary'
-                  )}
-                >
-                  <div className="relative">
-                    <Avatar className="w-12 h-12 transition-transform hover:scale-105">
-                      <AvatarImage src={conversation.avatar_url || ''} alt={conversation.username} />
-                      <AvatarFallback>{conversation.username[0].toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                    {conversation.unreadCount > 0 && (
-                      <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-primary-foreground text-xs font-bold rounded-full flex items-center justify-center animate-scale-in">
-                        {conversation.unreadCount}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0 text-left">
-                    <div className="flex items-center justify-between">
-                      <p className="font-semibold text-sm">{conversation.username}</p>
-                      <span className="text-xs text-muted-foreground">
-                        {formatDistanceToNow(new Date(conversation.lastMessageTime), { addSuffix: false })}
-                      </span>
-                    </div>
-                    <p className={cn(
-                      'text-sm truncate',
-                      conversation.unreadCount > 0 ? 'text-foreground font-medium' : 'text-muted-foreground'
-                    )}>
-                      {conversation.lastMessage}
-                    </p>
-                  </div>
-                </button>
+                />
               ))
             ) : (
               <div className="p-8 text-center text-muted-foreground animate-fade-in">
@@ -185,15 +217,25 @@ const Messages = () => {
                   >
                     <ArrowLeft className="w-5 h-5" />
                   </button>
-                  <Avatar className="w-10 h-10 transition-transform hover:scale-105">
-                    <AvatarImage src={selectedConversation.avatar_url || ''} alt={selectedConversation.username} />
-                    <AvatarFallback>{selectedConversation.username[0].toUpperCase()}</AvatarFallback>
-                  </Avatar>
+                  <div className="relative">
+                    <Avatar className="w-10 h-10 transition-transform hover:scale-105">
+                      <AvatarImage src={selectedConversation.avatar_url || ''} alt={selectedConversation.username} />
+                      <AvatarFallback>{selectedConversation.username[0].toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <ActiveStatus 
+                      isOnline={isOnline} 
+                      lastSeen={lastSeen} 
+                      showDot 
+                      className="absolute bottom-0 right-0"
+                    />
+                  </div>
                   <div>
                     <p className="font-semibold text-sm">{selectedConversation.username}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {isPartnerTyping ? 'typing...' : 'Active now'}
-                    </p>
+                    {isPartnerTyping ? (
+                      <p className="text-xs text-primary">typing...</p>
+                    ) : (
+                      <ActiveStatus isOnline={isOnline} lastSeen={lastSeen} />
+                    )}
                   </div>
                 </div>
                 <Button variant="ghost" size="icon">
@@ -212,32 +254,49 @@ const Messages = () => {
                     ))}
                   </div>
                 ) : messages && messages.length > 0 ? (
-                  messages.map((message) => (
-                    <div
-                      key={message.id}
-                      className={cn(
-                        'flex',
-                        message.sender_id === user.id ? 'justify-end' : 'justify-start'
-                      )}
-                    >
+                  messages.map((message, index) => {
+                    const isOwn = message.sender_id === user.id;
+                    const isLastOwnMessage = isOwn && 
+                      messages.slice(index + 1).every(m => m.sender_id !== user.id);
+                    
+                    return (
                       <div
+                        key={message.id}
                         className={cn(
-                          'max-w-[70%] px-4 py-2 rounded-2xl animate-fade-in',
-                          message.sender_id === user.id
-                            ? 'bg-primary text-primary-foreground rounded-br-sm'
-                            : 'bg-secondary text-secondary-foreground rounded-bl-sm'
+                          'flex',
+                          isOwn ? 'justify-end' : 'justify-start'
                         )}
                       >
-                        <p className="text-sm">{message.content}</p>
-                        <p className={cn(
-                          'text-xs mt-1',
-                          message.sender_id === user.id ? 'text-primary-foreground/70' : 'text-muted-foreground'
-                        )}>
-                          {new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </p>
+                        <div className="flex flex-col items-end">
+                          <div
+                            className={cn(
+                              'max-w-[70%] px-4 py-2 rounded-2xl animate-fade-in',
+                              isOwn
+                                ? 'bg-primary text-primary-foreground rounded-br-sm'
+                                : 'bg-secondary text-secondary-foreground rounded-bl-sm'
+                            )}
+                          >
+                            <p className="text-sm">{message.content}</p>
+                          </div>
+                          <div className="flex items-center gap-1 mt-1">
+                            <span className={cn(
+                              'text-xs',
+                              isOwn ? 'text-muted-foreground' : 'text-muted-foreground'
+                            )}>
+                              {new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                            {isOwn && (
+                              <ReadReceipt 
+                                sent={true} 
+                                read={message.read} 
+                                readAt={(message as any).read_at}
+                              />
+                            )}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  ))
+                    );
+                  })
                 ) : (
                   <div className="flex-1 flex items-center justify-center text-muted-foreground py-12 animate-fade-in">
                     <p className="text-center">No messages yet. Say hello!</p>
