@@ -11,7 +11,7 @@ export const useIsPrivateAccount = (userId: string | undefined) => {
         .from('user_settings')
         .select('private_account')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
       
       if (error) return false;
       return data?.private_account || false;
@@ -24,7 +24,7 @@ export const useCanViewProfile = (profileUserId: string | undefined, currentUser
   const { data: isPrivate } = useIsPrivateAccount(profileUserId);
   
   return useQuery({
-    queryKey: ['can-view-profile', profileUserId, currentUserId],
+    queryKey: ['can-view-profile', profileUserId, currentUserId, isPrivate],
     queryFn: async () => {
       // If not private, anyone can view
       if (!isPrivate) return true;
@@ -41,7 +41,7 @@ export const useCanViewProfile = (profileUserId: string | undefined, currentUser
         .select('id')
         .eq('follower_id', currentUserId)
         .eq('following_id', profileUserId)
-        .single();
+        .maybeSingle();
       
       return !!data;
     },

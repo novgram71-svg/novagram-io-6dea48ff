@@ -6,19 +6,61 @@ import StoryAvatar from './StoryAvatar';
 import StoryViewer from './StoryViewer';
 import CreateStoryDialog from './CreateStoryDialog';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 const StoriesBar = () => {
   const { data: stories, isLoading } = useStories();
   const { user, profile } = useAuth();
   const [selectedStory, setSelectedStory] = useState<StoryWithUser | null>(null);
 
-  // Group stories by user
+  // Get list of users that the current user follows
+  const { data: following } = useQuery({
+    queryKey: ['following-list', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data } = await supabase
+        .from('follows')
+        .select('following_id')
+        .eq('follower_id', user.id);
+      return data?.map(f => f.following_id) || [];
+    },
+    enabled: !!user,
+  });
+
+  // Get list of private accounts
+  const { data: privateAccounts } = useQuery({
+    queryKey: ['private-accounts'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('user_settings')
+        .select('user_id')
+        .eq('private_account', true);
+      return data?.map(s => s.user_id) || [];
+    },
+  });
+
+  // Filter and group stories by user (excluding private accounts not followed)
   const groupedStories = useMemo(() => {
     if (!stories) return [];
     
+    // Filter out private accounts' stories if not following
+    const filteredStories = stories.filter((story) => {
+      // Always show own stories
+      if (user && story.user_id === user.id) return true;
+      
+      // If account is private
+      if (privateAccounts?.includes(story.user_id)) {
+        // Only show if following
+        return following?.includes(story.user_id);
+      }
+      
+      return true;
+    });
+    
     const userStoriesMap = new Map<string, StoryWithUser[]>();
     
-    stories.forEach(story => {
+    filteredStories.forEach(story => {
       const existing = userStoriesMap.get(story.user_id) || [];
       userStoriesMap.set(story.user_id, [...existing, story]);
     });
@@ -29,7 +71,7 @@ const StoriesBar = () => {
       avatar: userStories[0].profiles.avatar_url,
       stories: userStories,
     }));
-  }, [stories]);
+  }, [stories, user, following, privateAccounts]);
 
   const handleStoryClick = (story: StoryWithUser) => {
     setSelectedStory(story);

@@ -1,12 +1,13 @@
-import { usePosts } from '@/hooks/usePosts';
+import { usePosts, PostWithUser } from '@/hooks/usePosts';
 import { useAuth } from '@/hooks/useAuth';
 import PostCard from './PostCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import PullToRefresh from './PullToRefresh';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { supabase } from '@/integrations/supabase/client';
 
 const Feed = () => {
   const { data: posts, isLoading, error } = usePosts();
@@ -14,9 +15,49 @@ const Feed = () => {
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
 
+  // Get list of users that the current user follows
+  const { data: following } = useQuery({
+    queryKey: ['following-list', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data } = await supabase
+        .from('follows')
+        .select('following_id')
+        .eq('follower_id', user.id);
+      return data?.map(f => f.following_id) || [];
+    },
+    enabled: !!user,
+  });
+
+  // Get list of private accounts
+  const { data: privateAccounts } = useQuery({
+    queryKey: ['private-accounts'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('user_settings')
+        .select('user_id')
+        .eq('private_account', true);
+      return data?.map(s => s.user_id) || [];
+    },
+  });
+
   const handleRefresh = async () => {
     await queryClient.invalidateQueries({ queryKey: ['posts'] });
   };
+
+  // Filter posts: hide private account posts if not following them
+  const filteredPosts = posts?.filter((post: PostWithUser) => {
+    // Always show own posts
+    if (user && post.user_id === user.id) return true;
+    
+    // If account is private
+    if (privateAccounts?.includes(post.user_id)) {
+      // Only show if following
+      return following?.includes(post.user_id);
+    }
+    
+    return true;
+  });
 
   if (isLoading) {
     return (
@@ -41,7 +82,7 @@ const Feed = () => {
     );
   }
 
-  if (!posts || posts.length === 0) {
+  if (!filteredPosts || filteredPosts.length === 0) {
     return (
       <div className="max-w-lg mx-auto px-4 md:px-0">
         <div className="nova-card p-8 text-center">
@@ -65,7 +106,7 @@ const Feed = () => {
 
   const feedContent = (
     <div className="max-w-lg mx-auto space-y-6 px-4 md:px-0 pb-20">
-      {posts.map((post, index) => (
+      {filteredPosts.map((post, index) => (
         <div 
           key={post.id} 
           style={{ animationDelay: `${index * 100}ms` }}

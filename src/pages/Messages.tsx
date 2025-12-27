@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Send, ArrowLeft, MoreVertical } from 'lucide-react';
+import { Send, ArrowLeft, MoreVertical, Search } from 'lucide-react';
 import { useLocation, Navigate } from 'react-router-dom';
 import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
@@ -16,6 +16,7 @@ import ActiveStatus from '@/components/chat/ActiveStatus';
 import MessageBubble from '@/components/chat/MessageBubble';
 import ChatAttachment from '@/components/chat/ChatAttachment';
 import AttachmentPreview from '@/components/chat/AttachmentPreview';
+import MessageSearchSheet from '@/components/chat/MessageSearchSheet';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
@@ -79,6 +80,7 @@ const Messages = () => {
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [newMessage, setNewMessage] = useState('');
   const [attachment, setAttachment] = useState<{ url: string; name: string; type: 'image' | 'file' } | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [reactions, setReactions] = useState<Record<string, { emoji: string; count: number; hasUserReacted: boolean }[]>>({});
   
@@ -176,8 +178,16 @@ const Messages = () => {
           )}
         >
           {/* Header */}
-          <div className="p-4 border-b border-border">
+          <div className="p-4 border-b border-border flex items-center justify-between">
             <h1 className="text-xl font-bold">Messages</h1>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => setSearchOpen(true)}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <Search className="w-5 h-5" />
+            </Button>
           </div>
 
           {/* Conversation List */}
@@ -323,6 +333,18 @@ const Messages = () => {
           )}
         </div>
       </div>
+
+      {/* Message Search Sheet */}
+      <MessageSearchSheet
+        open={searchOpen}
+        onOpenChange={setSearchOpen}
+        onSelectMessage={(partnerId) => {
+          const conv = conversations?.find(c => c.id === partnerId);
+          if (conv) {
+            setSelectedConversation(conv);
+          }
+        }}
+      />
     </MainLayout>
   );
 };

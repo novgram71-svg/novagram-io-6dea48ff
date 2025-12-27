@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams, Navigate, Link, useNavigate } from 'react-router-dom';
-import { Grid3X3, Bookmark, LogOut, UserPlus, UserCheck, MessageCircle, Flag, Ban, MoreHorizontal, Settings } from 'lucide-react';
+import { Grid3X3, Bookmark, LogOut, UserPlus, UserCheck, MessageCircle, Flag, Ban, MoreHorizontal, Settings, Lock } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile, useProfileStats, useIsFollowing, useToggleFollow } from '@/hooks/useProfiles';
@@ -14,6 +14,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import EditProfileDialog from '@/components/profile/EditProfileDialog';
 import ReportUserDialog from '@/components/profile/ReportUserDialog';
+import FollowListSheet from '@/components/profile/FollowListSheet';
+import PrivateAccountNotice from '@/components/profile/PrivateAccountNotice';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,6 +29,8 @@ const Profile = () => {
   const { user, profile: currentUserProfile, signOut, loading: authLoading } = useAuth();
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
+  const [followersOpen, setFollowersOpen] = useState(false);
+  const [followingOpen, setFollowingOpen] = useState(false);
   
   // If no username in URL, show current user's profile
   const targetUsername = username || currentUserProfile?.username;
@@ -254,11 +258,17 @@ const Profile = () => {
                   <span className="font-bold block">{stats?.postCount || 0}</span>
                   <span className="text-sm text-muted-foreground">posts</span>
                 </div>
-                <button className="text-center hover:opacity-80 transition-all duration-200 hover:scale-110">
+                <button 
+                  onClick={() => setFollowersOpen(true)}
+                  className="text-center hover:opacity-80 transition-all duration-200 hover:scale-110"
+                >
                   <span className="font-bold block">{formatCount(stats?.followersCount || 0)}</span>
                   <span className="text-sm text-muted-foreground">followers</span>
                 </button>
-                <button className="text-center hover:opacity-80 transition-all duration-200 hover:scale-110">
+                <button 
+                  onClick={() => setFollowingOpen(true)}
+                  className="text-center hover:opacity-80 transition-all duration-200 hover:scale-110"
+                >
                   <span className="font-bold block">{formatCount(stats?.followingCount || 0)}</span>
                   <span className="text-sm text-muted-foreground">following</span>
                 </button>
@@ -272,83 +282,110 @@ const Profile = () => {
           </div>
         </div>
 
-        {/* Posts Grid */}
-        <Tabs defaultValue="posts" className="w-full">
-          <TabsList className="w-full justify-center border-t border-border bg-transparent h-12">
-            <TabsTrigger 
-              value="posts" 
-              className="flex items-center gap-2 data-[state=active]:border-t-2 data-[state=active]:border-foreground rounded-none transition-all duration-200"
-            >
-              <Grid3X3 className="w-4 h-4" />
-              <span className="hidden sm:inline">POSTS</span>
-            </TabsTrigger>
-            {isOwnProfile && (
+        {/* Posts Grid - Only show if can view profile or is own profile */}
+        {(canViewProfile || isOwnProfile) ? (
+          <Tabs defaultValue="posts" className="w-full">
+            <TabsList className="w-full justify-center border-t border-border bg-transparent h-12">
               <TabsTrigger 
-                value="saved" 
+                value="posts" 
                 className="flex items-center gap-2 data-[state=active]:border-t-2 data-[state=active]:border-foreground rounded-none transition-all duration-200"
               >
-                <Bookmark className="w-4 h-4" />
-                <span className="hidden sm:inline">SAVED</span>
+                <Grid3X3 className="w-4 h-4" />
+                <span className="hidden sm:inline">POSTS</span>
               </TabsTrigger>
-            )}
-          </TabsList>
+              {isOwnProfile && (
+                <TabsTrigger 
+                  value="saved" 
+                  className="flex items-center gap-2 data-[state=active]:border-t-2 data-[state=active]:border-foreground rounded-none transition-all duration-200"
+                >
+                  <Bookmark className="w-4 h-4" />
+                  <span className="hidden sm:inline">SAVED</span>
+                </TabsTrigger>
+              )}
+            </TabsList>
 
-          <TabsContent value="posts" className="mt-0">
-            {postsLoading ? (
-              <div className="grid grid-cols-3 gap-1 md:gap-2">
-                {[1, 2, 3, 4, 5, 6].map((i) => (
-                  <Skeleton key={i} className="aspect-square" />
-                ))}
-              </div>
-            ) : posts && posts.length > 0 ? (
-              <div className="grid grid-cols-3 gap-1 md:gap-2">
-                {posts.map((post, index) => (
-                  <button
-                    key={post.id}
-                    className="aspect-square relative group overflow-hidden animate-fade-in"
-                    style={{ animationDelay: `${index * 50}ms` }}
-                  >
-                    <img
-                      src={post.image_url}
-                      alt=""
-                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                    />
-                    <div className="absolute inset-0 bg-background/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
-                      <span className="flex items-center gap-1 text-foreground font-semibold">
-                        ❤️ {post.likes.length}
-                      </span>
-                      <span className="flex items-center gap-1 text-foreground font-semibold">
-                        💬 {post.comments.length}
-                      </span>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-16 text-muted-foreground animate-fade-in">
-                <Grid3X3 className="w-12 h-12 mb-4" />
-                <h3 className="font-semibold text-lg mb-1">No Posts Yet</h3>
-                {isOwnProfile && (
-                  <Link to="/create">
-                    <Button className="mt-4 bg-primary hover:bg-primary/90 transition-all duration-200 hover:scale-105">Create Post</Button>
-                  </Link>
-                )}
-              </div>
-            )}
-          </TabsContent>
-
-          {isOwnProfile && (
-            <TabsContent value="saved" className="mt-0">
-              <div className="flex flex-col items-center justify-center py-16 text-muted-foreground animate-fade-in">
-                <Bookmark className="w-12 h-12 mb-4" />
-                <h3 className="font-semibold text-lg mb-1">Save</h3>
-                <p className="text-sm text-center max-w-sm">
-                  Save photos and videos that you want to see again. No one is notified, and only you can see what you've saved.
-                </p>
-              </div>
+            <TabsContent value="posts" className="mt-0">
+              {postsLoading ? (
+                <div className="grid grid-cols-3 gap-1 md:gap-2">
+                  {[1, 2, 3, 4, 5, 6].map((i) => (
+                    <Skeleton key={i} className="aspect-square" />
+                  ))}
+                </div>
+              ) : posts && posts.length > 0 ? (
+                <div className="grid grid-cols-3 gap-1 md:gap-2">
+                  {posts.map((post, index) => (
+                    <button
+                      key={post.id}
+                      className="aspect-square relative group overflow-hidden animate-fade-in"
+                      style={{ animationDelay: `${index * 50}ms` }}
+                    >
+                      <img
+                        src={post.image_url}
+                        alt=""
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                      />
+                      <div className="absolute inset-0 bg-background/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
+                        <span className="flex items-center gap-1 text-foreground font-semibold">
+                          ❤️ {post.likes.length}
+                        </span>
+                        <span className="flex items-center gap-1 text-foreground font-semibold">
+                          💬 {post.comments.length}
+                        </span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-16 text-muted-foreground animate-fade-in">
+                  <Grid3X3 className="w-12 h-12 mb-4" />
+                  <h3 className="font-semibold text-lg mb-1">No Posts Yet</h3>
+                  {isOwnProfile && (
+                    <Link to="/create">
+                      <Button className="mt-4 bg-primary hover:bg-primary/90 transition-all duration-200 hover:scale-105">Create Post</Button>
+                    </Link>
+                  )}
+                </div>
+              )}
             </TabsContent>
-          )}
-        </Tabs>
+
+            {isOwnProfile && (
+              <TabsContent value="saved" className="mt-0">
+                <div className="flex flex-col items-center justify-center py-16 text-muted-foreground animate-fade-in">
+                  <Bookmark className="w-12 h-12 mb-4" />
+                  <h3 className="font-semibold text-lg mb-1">Save</h3>
+                  <p className="text-sm text-center max-w-sm">
+                    Save photos and videos that you want to see again. No one is notified, and only you can see what you've saved.
+                  </p>
+                </div>
+              </TabsContent>
+            )}
+          </Tabs>
+        ) : (
+          /* Private Account Notice */
+          <PrivateAccountNotice username={profile.username} userId={profile.id} />
+        )}
+
+        {/* Followers List Sheet */}
+        {profile && (
+          <FollowListSheet
+            open={followersOpen}
+            onOpenChange={setFollowersOpen}
+            userId={profile.id}
+            type="followers"
+            username={profile.username}
+          />
+        )}
+
+        {/* Following List Sheet */}
+        {profile && (
+          <FollowListSheet
+            open={followingOpen}
+            onOpenChange={setFollowingOpen}
+            userId={profile.id}
+            type="following"
+            username={profile.username}
+          />
+        )}
 
         {/* Edit Profile Dialog */}
         {isOwnProfile && profile && (
