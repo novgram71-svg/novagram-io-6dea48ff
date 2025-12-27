@@ -5,6 +5,7 @@ import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile, useProfileStats, useIsFollowing, useToggleFollow } from '@/hooks/useProfiles';
 import { useUserPosts } from '@/hooks/usePosts';
+import { useIsPrivateAccount, useCanViewProfile } from '@/hooks/usePrivateAccount';
 import { useIsBlocked, useToggleBlock } from '@/hooks/useUserModeration';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -35,6 +36,8 @@ const Profile = () => {
   const { data: posts, isLoading: postsLoading } = useUserPosts(profile?.id);
   const { data: isFollowing } = useIsFollowing(profile?.id);
   const { data: isBlocked } = useIsBlocked(profile?.id);
+  const { data: isPrivate } = useIsPrivateAccount(profile?.id);
+  const { data: canViewProfile } = useCanViewProfile(profile?.id, user?.id);
   const toggleFollow = useToggleFollow();
   const toggleBlock = useToggleBlock();
 

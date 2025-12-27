@@ -124,3 +124,32 @@ export const useCreatePost = () => {
     },
   });
 };
+
+export const useDeletePost = () => {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async (postId: string) => {
+      if (!user) throw new Error('Not authenticated');
+
+      // Delete associated likes first
+      await supabase.from('likes').delete().eq('post_id', postId);
+      
+      // Delete associated comments
+      await supabase.from('comments').delete().eq('post_id', postId);
+      
+      // Delete the post
+      const { error } = await supabase
+        .from('posts')
+        .delete()
+        .eq('id', postId)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
+    },
+  });
+};

@@ -3,7 +3,7 @@ import { Send, ArrowLeft, MoreVertical } from 'lucide-react';
 import { useLocation, Navigate } from 'react-router-dom';
 import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
-import { useConversations, useMessages, useSendMessage, Conversation } from '@/hooks/useMessages';
+import { useConversations, useMessages, useSendMessage, Conversation, MessageWithProfile } from '@/hooks/useMessages';
 import { useProfileById } from '@/hooks/useProfiles';
 import { useTypingIndicator } from '@/hooks/useTypingIndicator';
 import { useUserPresence, useUpdatePresence } from '@/hooks/usePresence';
@@ -13,9 +13,12 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import TypingIndicator from '@/components/chat/TypingIndicator';
 import ActiveStatus from '@/components/chat/ActiveStatus';
-import ReadReceipt from '@/components/chat/ReadReceipt';
+import MessageBubble from '@/components/chat/MessageBubble';
+import ChatAttachment from '@/components/chat/ChatAttachment';
+import AttachmentPreview from '@/components/chat/AttachmentPreview';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ConversationItemProps {
   conversation: Conversation;
@@ -75,7 +78,9 @@ const Messages = () => {
   const { user, loading: authLoading } = useAuth();
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [newMessage, setNewMessage] = useState('');
+  const [attachment, setAttachment] = useState<{ url: string; name: string; type: 'image' | 'file' } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [reactions, setReactions] = useState<Record<string, { emoji: string; count: number; hasUserReacted: boolean }[]>>({});
   
   // Get user ID from navigation state (when coming from profile)
   const stateUserId = location.state?.selectedUserId;
@@ -132,15 +137,23 @@ const Messages = () => {
   }
 
   const handleSendMessage = async () => {
-    if (!newMessage.trim() || !selectedConversation) return;
+    if ((!newMessage.trim() && !attachment) || !selectedConversation) return;
     
     setTyping(false);
     await sendMessage.mutateAsync({
       receiverId: selectedConversation.id,
       content: newMessage,
+      imageUrl: attachment?.type === 'image' ? attachment.url : undefined,
+      fileUrl: attachment?.type === 'file' ? attachment.url : undefined,
+      fileName: attachment?.name,
     });
     
     setNewMessage('');
+    setAttachment(null);
+  };
+
+  const handleFileSelect = (file: { url: string; name: string; type: 'image' | 'file' }) => {
+    setAttachment(file);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -254,50 +267,13 @@ const Messages = () => {
                     ))}
                   </div>
                 ) : messages && messages.length > 0 ? (
-                  messages.map((message) => {
-                    const isOwn = message.sender_id === user.id;
-                    
-                    return (
-                      <div
-                        key={message.id}
-                        className={cn(
-                          'flex',
-                          isOwn ? 'justify-end' : 'justify-start'
-                        )}
-                      >
-                        <div className={cn(
-                          "flex flex-col max-w-[70%]",
-                          isOwn ? "items-end" : "items-start"
-                        )}>
-                          <div
-                            className={cn(
-                              'px-4 py-2 rounded-2xl animate-fade-in',
-                              isOwn
-                                ? 'bg-primary text-primary-foreground rounded-br-sm'
-                                : 'bg-secondary text-secondary-foreground rounded-bl-sm'
-                            )}
-                          >
-                            <p className="text-sm break-words">{message.content}</p>
-                          </div>
-                          <div className={cn(
-                            "flex items-center gap-1 mt-1",
-                            isOwn ? "flex-row" : "flex-row-reverse"
-                          )}>
-                            <span className="text-xs text-muted-foreground">
-                              {new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            </span>
-                            {isOwn && (
-                              <ReadReceipt 
-                                sent={true} 
-                                read={message.read} 
-                                readAt={(message as any).read_at}
-                              />
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })
+                  messages.map((message) => (
+                    <MessageBubble 
+                      key={message.id} 
+                      message={message}
+                      reactions={reactions[message.id] || []}
+                    />
+                  ))
                 ) : (
                   <div className="flex-1 flex items-center justify-center text-muted-foreground py-12 animate-fade-in">
                     <p className="text-center">No messages yet. Say hello!</p>
@@ -309,7 +285,14 @@ const Messages = () => {
 
               {/* Message Input */}
               <div className="p-4 border-t border-border bg-card/50">
-                <div className="flex items-center gap-3">
+                {/* Attachment Preview */}
+                {attachment && (
+                  <div className="mb-2">
+                    <AttachmentPreview file={attachment} onRemove={() => setAttachment(null)} />
+                  </div>
+                )}
+                <div className="flex items-center gap-2">
+                  <ChatAttachment onFileSelect={handleFileSelect} />
                   <Input
                     value={newMessage}
                     onChange={handleInputChange}
@@ -319,7 +302,7 @@ const Messages = () => {
                   />
                   <Button
                     onClick={handleSendMessage}
-                    disabled={!newMessage.trim() || sendMessage.isPending}
+                    disabled={(!newMessage.trim() && !attachment) || sendMessage.isPending}
                     className="bg-primary hover:bg-primary/90 transition-all duration-200 hover:scale-105"
                   >
                     <Send className="w-5 h-5" />

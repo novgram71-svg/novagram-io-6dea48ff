@@ -1,13 +1,30 @@
 import { useState } from 'react';
-import { Heart, MessageCircle, Send, Bookmark, MoreHorizontal } from 'lucide-react';
-import { PostWithUser, useLikePost } from '@/hooks/usePosts';
+import { Heart, MessageCircle, Send, Bookmark, MoreHorizontal, Trash2 } from 'lucide-react';
+import { PostWithUser, useLikePost, useDeletePost } from '@/hooks/usePosts';
 import { useAuth } from '@/hooks/useAuth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
 import { Link, useNavigate } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 import CommentsSheet from './CommentsSheet';
+import { toast } from 'sonner';
 
 interface PostCardProps {
   post: PostWithUser;
@@ -17,9 +34,12 @@ const PostCard = ({ post }: PostCardProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const likeMutation = useLikePost();
+  const deletePost = useDeletePost();
   const [commentsOpen, setCommentsOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   
   const isLiked = user ? post.likes.some(like => like.user_id === user.id) : false;
+  const isOwnPost = user?.id === post.user_id;
   const likeCount = post.likes.length;
   const commentCount = post.comments.length;
   
@@ -41,6 +61,15 @@ const PostCard = ({ post }: PostCardProps) => {
 
   const timeAgo = formatDistanceToNow(new Date(post.created_at), { addSuffix: true });
 
+  const handleDeletePost = async () => {
+    try {
+      await deletePost.mutateAsync(post.id);
+      toast.success('Post deleted successfully');
+    } catch (error) {
+      toast.error('Failed to delete post');
+    }
+  };
+
   return (
     <article className="nova-card overflow-hidden animate-fade-in">
       {/* Header */}
@@ -59,9 +88,24 @@ const PostCard = ({ post }: PostCardProps) => {
             <p className="text-xs text-muted-foreground">{timeAgo}</p>
           </div>
         </Link>
-        <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
-          <MoreHorizontal className="w-5 h-5" />
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
+              <MoreHorizontal className="w-5 h-5" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {isOwnPost && (
+              <DropdownMenuItem 
+                onClick={() => setDeleteDialogOpen(true)}
+                className="text-destructive"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete Post
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Image */}
@@ -140,6 +184,24 @@ const PostCard = ({ post }: PostCardProps) => {
         open={commentsOpen}
         onOpenChange={setCommentsOpen}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Post?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete your post and all associated likes and comments.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeletePost} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </article>
   );
 };

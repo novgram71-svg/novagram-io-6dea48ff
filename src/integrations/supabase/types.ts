@@ -221,11 +221,47 @@ export type Database = {
           },
         ]
       }
+      message_reactions: {
+        Row: {
+          created_at: string
+          emoji: string
+          id: string
+          message_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          emoji: string
+          id?: string
+          message_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          emoji?: string
+          id?: string
+          message_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_reactions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           content: string
           created_at: string
+          edited_at: string | null
+          file_name: string | null
+          file_url: string | null
           id: string
+          image_url: string | null
           read: boolean
           read_at: string | null
           receiver_id: string
@@ -234,7 +270,11 @@ export type Database = {
         Insert: {
           content: string
           created_at?: string
+          edited_at?: string | null
+          file_name?: string | null
+          file_url?: string | null
           id?: string
+          image_url?: string | null
           read?: boolean
           read_at?: string | null
           receiver_id: string
@@ -243,7 +283,11 @@ export type Database = {
         Update: {
           content?: string
           created_at?: string
+          edited_at?: string | null
+          file_name?: string | null
+          file_url?: string | null
           id?: string
+          image_url?: string | null
           read?: boolean
           read_at?: string | null
           receiver_id?: string

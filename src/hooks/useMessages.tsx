@@ -3,6 +3,14 @@ import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 
+export interface MessageReaction {
+  id: string;
+  message_id: string;
+  user_id: string;
+  emoji: string;
+  created_at: string;
+}
+
 export interface MessageWithProfile {
   id: string;
   sender_id: string;
@@ -11,6 +19,10 @@ export interface MessageWithProfile {
   read: boolean;
   read_at: string | null;
   created_at: string;
+  edited_at: string | null;
+  image_url: string | null;
+  file_url: string | null;
+  file_name: string | null;
   sender: {
     id: string;
     username: string;
@@ -21,6 +33,7 @@ export interface MessageWithProfile {
     username: string;
     avatar_url: string | null;
   };
+  reactions?: MessageReaction[];
 }
 
 export interface Conversation {
@@ -148,7 +161,19 @@ export const useSendMessage = () => {
   const { user } = useAuth();
 
   return useMutation({
-    mutationFn: async ({ receiverId, content }: { receiverId: string; content: string }) => {
+    mutationFn: async ({ 
+      receiverId, 
+      content, 
+      imageUrl, 
+      fileUrl, 
+      fileName 
+    }: { 
+      receiverId: string; 
+      content: string; 
+      imageUrl?: string;
+      fileUrl?: string;
+      fileName?: string;
+    }) => {
       if (!user) throw new Error('Not authenticated');
 
       const { error } = await supabase
@@ -157,6 +182,9 @@ export const useSendMessage = () => {
           sender_id: user.id,
           receiver_id: receiverId,
           content,
+          image_url: imageUrl || null,
+          file_url: fileUrl || null,
+          file_name: fileName || null,
         });
 
       if (error) throw error;
@@ -164,6 +192,103 @@ export const useSendMessage = () => {
     onSuccess: (_, { receiverId }) => {
       queryClient.invalidateQueries({ queryKey: ['messages', receiverId] });
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
+    },
+  });
+};
+
+export const useDeleteMessage = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (messageId: string) => {
+      const { error } = await supabase
+        .from('messages')
+        .delete()
+        .eq('id', messageId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['messages'] });
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+    },
+  });
+};
+
+export const useEditMessage = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ messageId, content }: { messageId: string; content: string }) => {
+      const { error } = await supabase
+        .from('messages')
+        .update({ content, edited_at: new Date().toISOString() })
+        .eq('id', messageId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['messages'] });
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+    },
+  });
+};
+
+export const useMessageReactions = (messageId: string) => {
+  return useQuery({
+    queryKey: ['message-reactions', messageId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('message_reactions')
+        .select('*')
+        .eq('message_id', messageId);
+
+      if (error) throw error;
+      return data as MessageReaction[];
+    },
+    enabled: !!messageId,
+  });
+};
+
+export const useToggleReaction = () => {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async ({ messageId, emoji }: { messageId: string; emoji: string }) => {
+      if (!user) throw new Error('Not authenticated');
+
+      // Check if reaction already exists
+      const { data: existing } = await supabase
+        .from('message_reactions')
+        .select('id')
+        .eq('message_id', messageId)
+        .eq('user_id', user.id)
+        .eq('emoji', emoji)
+        .single();
+
+      if (existing) {
+        // Remove reaction
+        const { error } = await supabase
+          .from('message_reactions')
+          .delete()
+          .eq('id', existing.id);
+        if (error) throw error;
+      } else {
+        // Add reaction
+        const { error } = await supabase
+          .from('message_reactions')
+          .insert({
+            message_id: messageId,
+            user_id: user.id,
+            emoji,
+          });
+        if (error) throw error;
+      }
+    },
+    onSuccess: (_, { messageId }) => {
+      queryClient.invalidateQueries({ queryKey: ['message-reactions', messageId] });
+      queryClient.invalidateQueries({ queryKey: ['messages'] });
     },
   });
 };
