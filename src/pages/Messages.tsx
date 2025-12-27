@@ -254,10 +254,8 @@ const Messages = () => {
                     ))}
                   </div>
                 ) : messages && messages.length > 0 ? (
-                  messages.map((message, index) => {
+                  messages.map((message) => {
                     const isOwn = message.sender_id === user.id;
-                    const isLastOwnMessage = isOwn && 
-                      messages.slice(index + 1).every(m => m.sender_id !== user.id);
                     
                     return (
                       <div
@@ -267,22 +265,25 @@ const Messages = () => {
                           isOwn ? 'justify-end' : 'justify-start'
                         )}
                       >
-                        <div className="flex flex-col items-end">
+                        <div className={cn(
+                          "flex flex-col max-w-[70%]",
+                          isOwn ? "items-end" : "items-start"
+                        )}>
                           <div
                             className={cn(
-                              'max-w-[70%] px-4 py-2 rounded-2xl animate-fade-in',
+                              'px-4 py-2 rounded-2xl animate-fade-in',
                               isOwn
                                 ? 'bg-primary text-primary-foreground rounded-br-sm'
                                 : 'bg-secondary text-secondary-foreground rounded-bl-sm'
                             )}
                           >
-                            <p className="text-sm">{message.content}</p>
+                            <p className="text-sm break-words">{message.content}</p>
                           </div>
-                          <div className="flex items-center gap-1 mt-1">
-                            <span className={cn(
-                              'text-xs',
-                              isOwn ? 'text-muted-foreground' : 'text-muted-foreground'
-                            )}>
+                          <div className={cn(
+                            "flex items-center gap-1 mt-1",
+                            isOwn ? "flex-row" : "flex-row-reverse"
+                          )}>
+                            <span className="text-xs text-muted-foreground">
                               {new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </span>
                             {isOwn && (
