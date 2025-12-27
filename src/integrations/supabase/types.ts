@@ -89,6 +89,27 @@ export type Database = {
           },
         ]
       }
+      close_friends: {
+        Row: {
+          created_at: string
+          friend_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          friend_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          friend_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       comments: {
         Row: {
           content: string
@@ -516,6 +537,57 @@ export type Database = {
         Update: {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_settings: {
+        Row: {
+          activity_status: boolean
+          comment_notifications: boolean
+          created_at: string
+          dark_mode: boolean
+          follow_notifications: boolean
+          id: string
+          language: string
+          like_notifications: boolean
+          message_notifications: boolean
+          private_account: boolean
+          push_notifications: boolean
+          read_receipts: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          activity_status?: boolean
+          comment_notifications?: boolean
+          created_at?: string
+          dark_mode?: boolean
+          follow_notifications?: boolean
+          id?: string
+          language?: string
+          like_notifications?: boolean
+          message_notifications?: boolean
+          private_account?: boolean
+          push_notifications?: boolean
+          read_receipts?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          activity_status?: boolean
+          comment_notifications?: boolean
+          created_at?: string
+          dark_mode?: boolean
+          follow_notifications?: boolean
+          id?: string
+          language?: string
+          like_notifications?: boolean
+          message_notifications?: boolean
+          private_account?: boolean
+          push_notifications?: boolean
+          read_receipts?: boolean
+          updated_at?: string
           user_id?: string
         }
         Relationships: []

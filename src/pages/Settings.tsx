@@ -19,15 +19,21 @@ import {
   Clock,
   Ban,
   Globe,
-  Smartphone
+  Smartphone,
+  Loader2
 } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
-import { Button } from '@/components/ui/button';
+import { useUserSettings, UserSettings } from '@/hooks/useUserSettings';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
+import { BlockedUsersSheet } from '@/components/settings/BlockedUsersSheet';
+import { CloseFriendsSheet } from '@/components/settings/CloseFriendsSheet';
+import { LanguageSheet, getLanguageName } from '@/components/settings/LanguageSheet';
+import { NotificationSettingsSheet } from '@/components/settings/NotificationSettingsSheet';
+import { toast } from 'sonner';
 
 interface SettingItemProps {
   icon: React.ReactNode;
@@ -36,14 +42,17 @@ interface SettingItemProps {
   onClick?: () => void;
   rightElement?: React.ReactNode;
   danger?: boolean;
+  disabled?: boolean;
 }
 
-const SettingItem = ({ icon, label, description, onClick, rightElement, danger }: SettingItemProps) => (
+const SettingItem = ({ icon, label, description, onClick, rightElement, danger, disabled }: SettingItemProps) => (
   <button
     onClick={onClick}
+    disabled={disabled}
     className={cn(
       "w-full flex items-center justify-between p-4 hover:bg-secondary/50 transition-colors",
-      danger && "text-destructive"
+      danger && "text-destructive",
+      disabled && "opacity-50 cursor-not-allowed"
     )}
   >
     <div className="flex items-center gap-4">
@@ -55,7 +64,7 @@ const SettingItem = ({ icon, label, description, onClick, rightElement, danger }
         {description && <p className="text-xs text-muted-foreground">{description}</p>}
       </div>
     </div>
-    {rightElement || <ChevronRight className="w-5 h-5 text-muted-foreground" />}
+    {rightElement !== undefined ? rightElement : <ChevronRight className="w-5 h-5 text-muted-foreground" />}
   </button>
 );
 
@@ -73,17 +82,19 @@ const SettingSection = ({ title, children }: { title: string; children: React.Re
 const Settings = () => {
   const navigate = useNavigate();
   const { user, profile, signOut, loading } = useAuth();
-  const [darkMode, setDarkMode] = useState(document.documentElement.classList.contains('dark'));
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [privateAccount, setPrivateAccount] = useState(false);
-  const [activityStatus, setActivityStatus] = useState(true);
-  const [readReceipts, setReadReceipts] = useState(true);
+  const { settings, isLoading: settingsLoading, updateSetting, isUpdating } = useUserSettings();
+  
+  // Sheet states
+  const [blockedUsersOpen, setBlockedUsersOpen] = useState(false);
+  const [closeFriendsOpen, setCloseFriendsOpen] = useState(false);
+  const [languageOpen, setLanguageOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
 
-  const handleDarkModeToggle = () => {
-    const newMode = !darkMode;
-    setDarkMode(newMode);
-    document.documentElement.classList.toggle('dark', newMode);
-    localStorage.setItem('theme', newMode ? 'dark' : 'light');
+  const handleSettingToggle = async <K extends keyof UserSettings>(
+    key: K,
+    value: UserSettings[K]
+  ) => {
+    await updateSetting(key, value);
   };
 
   const handleSignOut = async () => {
@@ -91,11 +102,11 @@ const Settings = () => {
     navigate('/auth');
   };
 
-  if (loading) {
+  if (loading || settingsLoading) {
     return (
       <MainLayout>
         <div className="h-screen flex items-center justify-center">
-          <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
       </MainLayout>
     );
@@ -118,6 +129,7 @@ const Settings = () => {
               <ArrowLeft className="w-5 h-5" />
             </button>
             <h1 className="text-lg font-bold">Settings</h1>
+            {isUpdating && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
           </div>
         </header>
 
@@ -151,12 +163,14 @@ const Settings = () => {
               icon={<Lock className="w-5 h-5" />}
               label="Password and Security"
               description="Manage your password"
+              onClick={() => toast.info('Password reset email will be sent')}
             />
             <Separator />
             <SettingItem
               icon={<Smartphone className="w-5 h-5" />}
               label="Devices"
               description="Manage logged in devices"
+              onClick={() => toast.info('Coming soon')}
             />
           </SettingSection>
 
@@ -168,8 +182,8 @@ const Settings = () => {
               description="Only followers can see your posts"
               rightElement={
                 <Switch 
-                  checked={privateAccount} 
-                  onCheckedChange={setPrivateAccount}
+                  checked={settings?.private_account ?? false} 
+                  onCheckedChange={(checked) => handleSettingToggle('private_account', checked)}
                 />
               }
             />
@@ -180,8 +194,8 @@ const Settings = () => {
               description="Show when you're online"
               rightElement={
                 <Switch 
-                  checked={activityStatus} 
-                  onCheckedChange={setActivityStatus}
+                  checked={settings?.activity_status ?? true} 
+                  onCheckedChange={(checked) => handleSettingToggle('activity_status', checked)}
                 />
               }
             />
@@ -192,8 +206,8 @@ const Settings = () => {
               description="Let others know when you've read messages"
               rightElement={
                 <Switch 
-                  checked={readReceipts} 
-                  onCheckedChange={setReadReceipts}
+                  checked={settings?.read_receipts ?? true} 
+                  onCheckedChange={(checked) => handleSettingToggle('read_receipts', checked)}
                 />
               }
             />
@@ -202,12 +216,14 @@ const Settings = () => {
               icon={<Ban className="w-5 h-5" />}
               label="Blocked Accounts"
               description="Manage blocked users"
+              onClick={() => setBlockedUsersOpen(true)}
             />
             <Separator />
             <SettingItem
               icon={<Users className="w-5 h-5" />}
               label="Close Friends"
               description="Manage your close friends list"
+              onClick={() => setCloseFriendsOpen(true)}
             />
           </SettingSection>
 
@@ -219,8 +235,8 @@ const Settings = () => {
               description="Get notified about activity"
               rightElement={
                 <Switch 
-                  checked={notificationsEnabled} 
-                  onCheckedChange={setNotificationsEnabled}
+                  checked={settings?.push_notifications ?? true} 
+                  onCheckedChange={(checked) => handleSettingToggle('push_notifications', checked)}
                 />
               }
             />
@@ -228,13 +244,15 @@ const Settings = () => {
             <SettingItem
               icon={<Heart className="w-5 h-5" />}
               label="Likes"
-              description="Get notified when someone likes your post"
+              description={settings?.like_notifications ? 'On' : 'Off'}
+              onClick={() => setNotificationsOpen(true)}
             />
             <Separator />
             <SettingItem
               icon={<MessageCircle className="w-5 h-5" />}
               label="Comments"
-              description="Get notified about new comments"
+              description={settings?.comment_notifications ? 'On' : 'Off'}
+              onClick={() => setNotificationsOpen(true)}
             />
           </SettingSection>
 
@@ -244,18 +262,21 @@ const Settings = () => {
               icon={<Bookmark className="w-5 h-5" />}
               label="Saved"
               description="View your saved posts"
+              onClick={() => toast.info('Coming soon')}
             />
             <Separator />
             <SettingItem
               icon={<Clock className="w-5 h-5" />}
               label="Your Activity"
               description="Manage your time on the app"
+              onClick={() => toast.info('Coming soon')}
             />
             <Separator />
             <SettingItem
               icon={<Globe className="w-5 h-5" />}
               label="Language"
-              description="English"
+              description={getLanguageName(settings?.language ?? 'en')}
+              onClick={() => setLanguageOpen(true)}
             />
           </SettingSection>
 
@@ -267,8 +288,8 @@ const Settings = () => {
               description="Toggle dark theme"
               rightElement={
                 <Switch 
-                  checked={darkMode} 
-                  onCheckedChange={handleDarkModeToggle}
+                  checked={settings?.dark_mode ?? false} 
+                  onCheckedChange={(checked) => handleSettingToggle('dark_mode', checked)}
                 />
               }
             />
@@ -280,12 +301,14 @@ const Settings = () => {
               icon={<Shield className="w-5 h-5" />}
               label="Two-Factor Authentication"
               description="Add extra security to your account"
+              onClick={() => toast.info('Coming soon')}
             />
             <Separator />
             <SettingItem
               icon={<Lock className="w-5 h-5" />}
               label="Login Activity"
               description="See where you're logged in"
+              onClick={() => toast.info('Coming soon')}
             />
           </SettingSection>
 
@@ -295,12 +318,14 @@ const Settings = () => {
               icon={<HelpCircle className="w-5 h-5" />}
               label="Help Center"
               description="Get help with your account"
+              onClick={() => toast.info('Coming soon')}
             />
             <Separator />
             <SettingItem
               icon={<Info className="w-5 h-5" />}
               label="About"
               description="Learn more about the app"
+              onClick={() => toast.info('Version 1.0.0')}
             />
           </SettingSection>
 
@@ -317,6 +342,22 @@ const Settings = () => {
           </SettingSection>
         </div>
       </div>
+
+      {/* Sheets */}
+      <BlockedUsersSheet open={blockedUsersOpen} onOpenChange={setBlockedUsersOpen} />
+      <CloseFriendsSheet open={closeFriendsOpen} onOpenChange={setCloseFriendsOpen} />
+      <LanguageSheet 
+        open={languageOpen} 
+        onOpenChange={setLanguageOpen}
+        currentLanguage={settings?.language ?? 'en'}
+        onLanguageChange={(code) => handleSettingToggle('language', code)}
+      />
+      <NotificationSettingsSheet
+        open={notificationsOpen}
+        onOpenChange={setNotificationsOpen}
+        settings={settings}
+        onSettingChange={handleSettingToggle}
+      />
     </MainLayout>
   );
 };
