@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_abuse_reports: {
+        Row: {
+          created_at: string
+          detected_issues: string[] | null
+          id: string
+          message_content: string
+          reviewed: boolean | null
+          severity: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          detected_issues?: string[] | null
+          id?: string
+          message_content: string
+          reviewed?: boolean | null
+          severity?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          detected_issues?: string[] | null
+          id?: string
+          message_content?: string
+          reviewed?: boolean | null
+          severity?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       banned_users: {
         Row: {
           banned_by: string
@@ -221,6 +251,36 @@ export type Database = {
           },
         ]
       }
+      login_activity: {
+        Row: {
+          device_info: string | null
+          id: string
+          ip_address: string | null
+          is_current: boolean | null
+          location: string | null
+          logged_in_at: string
+          user_id: string
+        }
+        Insert: {
+          device_info?: string | null
+          id?: string
+          ip_address?: string | null
+          is_current?: boolean | null
+          location?: string | null
+          logged_in_at?: string
+          user_id: string
+        }
+        Update: {
+          device_info?: string | null
+          id?: string
+          ip_address?: string | null
+          is_current?: boolean | null
+          location?: string | null
+          logged_in_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       message_reactions: {
         Row: {
           created_at: string
@@ -423,6 +483,35 @@ export type Database = {
           username?: string
         }
         Relationships: []
+      }
+      saved_posts: {
+        Row: {
+          created_at: string
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_posts_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       stories: {
         Row: {
