@@ -7,6 +7,7 @@ import { useProfile, useProfileStats, useIsFollowing, useToggleFollow } from '@/
 import { useUserPosts } from '@/hooks/usePosts';
 import { useIsPrivateAccount, useCanViewProfile } from '@/hooks/usePrivateAccount';
 import { useIsBlocked, useToggleBlock } from '@/hooks/useUserModeration';
+import { useSavedPosts } from '@/hooks/useSavedPosts';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -44,6 +45,7 @@ const Profile = () => {
   const { data: canViewProfile } = useCanViewProfile(profile?.id, user?.id);
   const toggleFollow = useToggleFollow();
   const toggleBlock = useToggleBlock();
+  const { savedPosts, isLoading: savedLoading } = useSavedPosts();
 
   const isOwnProfile = user?.id === profile?.id;
 
@@ -153,10 +155,10 @@ const Profile = () => {
         </header>
 
         {/* Profile Info */}
-        <div className="p-6 animate-fade-in">
+        <div className="p-6 animate-slide-up">
           <div className="flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-12">
             {/* Avatar */}
-            <div className="story-ring p-1 transition-transform duration-300 hover:scale-105">
+            <div className="story-ring p-1 transition-all duration-500 hover:scale-110 hover:rotate-3 cursor-pointer animate-float">
               <Avatar className="w-24 h-24 md:w-36 md:h-36 border-4 border-background">
                 <AvatarImage src={profile.avatar_url || ''} alt={profile.username} />
                 <AvatarFallback className="text-2xl">{profile.username[0].toUpperCase()}</AvatarFallback>
@@ -164,9 +166,9 @@ const Profile = () => {
             </div>
 
             {/* Info */}
-            <div className="flex-1 text-center md:text-left">
+            <div className="flex-1 text-center md:text-left animate-slide-up stagger-1">
               <div className="flex flex-col md:flex-row items-center gap-4 mb-4">
-                <h2 className="text-xl font-semibold">{profile.username}</h2>
+                <h2 className="text-xl font-semibold gradient-text">{profile.username}</h2>
                 
                 {isOwnProfile ? (
                   <div className="flex gap-2">
@@ -253,30 +255,30 @@ const Profile = () => {
               </div>
 
               {/* Stats */}
-              <div className="flex justify-center md:justify-start gap-8 mb-4">
-                <div className="text-center transition-transform duration-200 hover:scale-110">
-                  <span className="font-bold block">{stats?.postCount || 0}</span>
+              <div className="flex justify-center md:justify-start gap-8 mb-4 animate-slide-up stagger-2">
+                <div className="text-center transition-all duration-300 hover:scale-125 cursor-default">
+                  <span className="font-bold block text-lg">{stats?.postCount || 0}</span>
                   <span className="text-sm text-muted-foreground">posts</span>
                 </div>
                 <button 
                   onClick={() => setFollowersOpen(true)}
-                  className="text-center hover:opacity-80 transition-all duration-200 hover:scale-110"
+                  className="text-center hover:opacity-80 transition-all duration-300 hover:scale-125"
                 >
-                  <span className="font-bold block">{formatCount(stats?.followersCount || 0)}</span>
+                  <span className="font-bold block text-lg">{formatCount(stats?.followersCount || 0)}</span>
                   <span className="text-sm text-muted-foreground">followers</span>
                 </button>
                 <button 
                   onClick={() => setFollowingOpen(true)}
-                  className="text-center hover:opacity-80 transition-all duration-200 hover:scale-110"
+                  className="text-center hover:opacity-80 transition-all duration-300 hover:scale-125"
                 >
-                  <span className="font-bold block">{formatCount(stats?.followingCount || 0)}</span>
+                  <span className="font-bold block text-lg">{formatCount(stats?.followingCount || 0)}</span>
                   <span className="text-sm text-muted-foreground">following</span>
                 </button>
               </div>
 
               {/* Bio */}
               {profile.bio && (
-                <p className="text-sm whitespace-pre-line">{profile.bio}</p>
+                <p className="text-sm whitespace-pre-line animate-slide-up stagger-3">{profile.bio}</p>
               )}
             </div>
           </div>
@@ -350,13 +352,41 @@ const Profile = () => {
 
             {isOwnProfile && (
               <TabsContent value="saved" className="mt-0">
-                <div className="flex flex-col items-center justify-center py-16 text-muted-foreground animate-fade-in">
-                  <Bookmark className="w-12 h-12 mb-4" />
-                  <h3 className="font-semibold text-lg mb-1">Save</h3>
-                  <p className="text-sm text-center max-w-sm">
-                    Save photos and videos that you want to see again. No one is notified, and only you can see what you've saved.
-                  </p>
-                </div>
+                {savedLoading ? (
+                  <div className="grid grid-cols-3 gap-1 md:gap-2">
+                    {[1, 2, 3, 4, 5, 6].map((i) => (
+                      <Skeleton key={i} className="aspect-square" />
+                    ))}
+                  </div>
+                ) : savedPosts && savedPosts.length > 0 ? (
+                  <div className="grid grid-cols-3 gap-1 md:gap-2">
+                    {savedPosts.map((saved: any, index: number) => (
+                      <Link
+                        key={saved.id}
+                        to={`/post/${saved.post_id}`}
+                        className="aspect-square relative group overflow-hidden animate-fade-in"
+                        style={{ animationDelay: `${index * 50}ms` }}
+                      >
+                        <img
+                          src={saved.posts?.image_url}
+                          alt=""
+                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                        />
+                        <div className="absolute inset-0 bg-background/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <Bookmark className="w-8 h-8 text-primary fill-primary" />
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-16 text-muted-foreground animate-fade-in">
+                    <Bookmark className="w-12 h-12 mb-4 animate-bounce-gentle" />
+                    <h3 className="font-semibold text-lg mb-1">Save</h3>
+                    <p className="text-sm text-center max-w-sm">
+                      Save photos and videos that you want to see again. No one is notified, and only you can see what you've saved.
+                    </p>
+                  </div>
+                )}
               </TabsContent>
             )}
           </Tabs>

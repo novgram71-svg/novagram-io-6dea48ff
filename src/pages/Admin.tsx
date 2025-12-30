@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { Users, Image, MessageSquare, Download, ChevronRight, AlertTriangle, Ban, CheckCircle, XCircle } from 'lucide-react';
+import { Users, Image, MessageSquare, Download, ChevronRight, AlertTriangle, Ban, CheckCircle, XCircle, Bot, Eye } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin, useAllUsers, useAllPosts, useConversationPartners, useConversation } from '@/hooks/useAdmin';
-import { useAllReports, useUpdateReportStatus, useAllBannedUsers, useBanUser, useUnbanUser, useIsBanned } from '@/hooks/useUserModeration';
+import { useAllReports, useUpdateReportStatus, useAllBannedUsers, useBanUser, useUnbanUser } from '@/hooks/useUserModeration';
+import { useAIAbuseReports } from '@/hooks/useAIAbuseReports';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -32,6 +33,7 @@ const Admin = () => {
   const { data: posts, isLoading: postsLoading } = useAllPosts();
   const { data: reports, isLoading: reportsLoading } = useAllReports();
   const { data: bannedUsers, isLoading: bannedLoading } = useAllBannedUsers();
+  const { reports: aiReports, isLoading: aiReportsLoading, markReviewed } = useAIAbuseReports();
   
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const [selectedChatPartner, setSelectedChatPartner] = useState<string | null>(null);
@@ -105,6 +107,7 @@ const Admin = () => {
   };
 
   const pendingReportsCount = reports?.filter((r: any) => r.status === 'pending').length || 0;
+  const unreviewedAIReportsCount = aiReports?.filter(r => !r.reviewed).length || 0;
 
   return (
     <MainLayout>
@@ -138,6 +141,15 @@ const Admin = () => {
             <TabsTrigger value="chats" className="gap-2">
               <MessageSquare className="w-4 h-4" />
               Chats
+            </TabsTrigger>
+            <TabsTrigger value="ai-reports" className="gap-2 relative">
+              <Bot className="w-4 h-4" />
+              AI Reports
+              {unreviewedAIReportsCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  {unreviewedAIReportsCount}
+                </span>
+              )}
             </TabsTrigger>
           </TabsList>
 
@@ -542,6 +554,130 @@ const Admin = () => {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          {/* AI Abuse Reports Tab */}
+          <TabsContent value="ai-reports" className="animate-fade-in">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Bot className="w-5 h-5" />
+                  AI Content Reports ({aiReports?.length || 0})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-[60vh]">
+                  <div className="space-y-4">
+                    {aiReportsLoading ? (
+                      Array.from({ length: 3 }).map((_, i) => (
+                        <Skeleton key={i} className="h-32 w-full" />
+                      ))
+                    ) : aiReports && aiReports.length > 0 ? (
+                      aiReports.map((report) => (
+                        <div
+                          key={report.id}
+                          className={`p-4 rounded-xl border animate-fade-in ${
+                            report.reviewed 
+                              ? 'bg-muted/30 border-muted' 
+                              : 'bg-destructive/5 border-destructive/20'
+                          }`}
+                        >
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                              <Badge 
+                                variant={report.severity === 'high' ? 'destructive' : 'outline'}
+                                className={
+                                  report.severity === 'high' 
+                                    ? '' 
+                                    : report.severity === 'medium'
+                                      ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20'
+                                      : 'bg-muted text-muted-foreground'
+                                }
+                              >
+                                {report.severity} severity
+                              </Badge>
+                              {report.reviewed && (
+                                <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20">
+                                  Reviewed
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              {formatDistanceToNow(new Date(report.created_at))} ago
+                            </p>
+                          </div>
+
+                          <div className="mb-3">
+                            <p className="text-sm font-medium mb-1">Detected Issues:</p>
+                            <div className="flex flex-wrap gap-1">
+                              {report.detected_issues?.map((issue, i) => (
+                                <Badge key={i} variant="secondary" className="text-xs">
+                                  {issue}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="mb-3 p-3 bg-secondary/50 rounded-lg">
+                            <p className="text-sm font-medium mb-1">Message Content:</p>
+                            <p className="text-sm text-muted-foreground break-words">
+                              {report.message_content}
+                            </p>
+                          </div>
+
+                          <div className="flex gap-2">
+                            {!report.reviewed && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => markReviewed(report.id)}
+                              >
+                                <Eye className="w-4 h-4 mr-1" />
+                                Mark Reviewed
+                              </Button>
+                            )}
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="destructive" size="sm">
+                                  <Ban className="w-4 h-4 mr-1" />
+                                  Ban User
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Ban this user?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    This will prevent this user from accessing the platform.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction 
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                    onClick={() => {
+                                      banUser.mutate({ userId: report.user_id, reason: 'AI detected abusive language' });
+                                      markReviewed(report.id);
+                                    }}
+                                  >
+                                    Ban User
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-12 text-muted-foreground animate-fade-in">
+                        <Bot className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                        <p>No AI abuse reports yet</p>
+                        <p className="text-sm mt-2">Reports from Nova AI will appear here</p>
+                      </div>
+                    )}
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>
