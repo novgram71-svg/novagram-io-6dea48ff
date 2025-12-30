@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search as SearchIcon, X } from 'lucide-react';
+import { Search as SearchIcon, X, Sparkles, Bot } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
@@ -8,10 +8,12 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useAllProfiles, useIsFollowing, useToggleFollow } from '@/hooks/useProfiles';
 import { Skeleton } from '@/components/ui/skeleton';
+import { AIChat } from '@/components/search/AIChat';
 
 const Search = () => {
   const { user } = useAuth();
   const [query, setQuery] = useState('');
+  const [showAI, setShowAI] = useState(false);
   const { data: profiles, isLoading } = useAllProfiles();
   const toggleFollow = useToggleFollow();
 
@@ -28,8 +30,44 @@ const Search = () => {
         {/* Mobile Header */}
         <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-lg border-b border-border md:hidden">
           <div className="px-4 py-3">
-            <h1 className="text-lg font-bold mb-3">Search</h1>
-            <div className="relative">
+            <div className="flex items-center justify-between mb-3">
+              <h1 className="text-lg font-bold">Search</h1>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAI(!showAI)}
+                className={`gap-2 transition-all duration-300 ${showAI ? 'bg-primary text-primary-foreground' : ''}`}
+              >
+                <Sparkles className="w-4 h-4" />
+                Ask AI
+              </Button>
+            </div>
+            {!showAI && (
+              <div className="relative animate-fade-in">
+                <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search users..."
+                  className="pl-10 nova-input"
+                />
+                {query && (
+                  <button
+                    onClick={() => setQuery('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        </header>
+
+        {/* Desktop Search */}
+        <div className="hidden md:block p-6">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="relative flex-1 max-w-md">
               <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <Input
                 value={query}
@@ -46,33 +84,22 @@ const Search = () => {
                 </button>
               )}
             </div>
-          </div>
-        </header>
-
-        {/* Desktop Search */}
-        <div className="hidden md:block p-6">
-          <div className="relative max-w-md">
-            <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-            <Input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search users..."
-              className="pl-10 nova-input"
-            />
-            {query && (
-              <button
-                onClick={() => setQuery('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            )}
+            <Button
+              variant={showAI ? 'default' : 'outline'}
+              onClick={() => setShowAI(!showAI)}
+              className="gap-2 transition-all duration-300"
+            >
+              <Sparkles className="w-4 h-4" />
+              Ask Nova AI
+            </Button>
           </div>
         </div>
 
-        {/* Search Results */}
+        {/* AI Chat or Search Results */}
         <div className="p-4">
-          {query ? (
+          {showAI ? (
+            <AIChat onClose={() => setShowAI(false)} />
+          ) : query ? (
             <>
               <h2 className="text-sm font-semibold text-muted-foreground mb-4">
                 {filteredUsers.length} result{filteredUsers.length !== 1 ? 's' : ''}
@@ -106,9 +133,31 @@ const Search = () => {
               </div>
             </>
           ) : (
-            <div className="text-center py-12 text-muted-foreground">
-              <SearchIcon className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p>Search for Novagram users</p>
+            <div className="text-center py-12 text-muted-foreground animate-fade-in">
+              <div className="relative inline-block mb-6">
+                <SearchIcon className="w-16 h-16 mx-auto opacity-50" />
+                <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                  <Sparkles className="w-4 h-4 text-primary" />
+                </div>
+              </div>
+              <p className="text-lg mb-2">Search for Novagram users</p>
+              <p className="text-sm">Or click "Ask AI" to chat with Nova!</p>
+              
+              {/* AI suggestion card */}
+              <button
+                onClick={() => setShowAI(true)}
+                className="mt-6 p-4 bg-gradient-to-r from-primary/10 to-accent/10 rounded-xl border border-primary/20 hover:border-primary/40 transition-all duration-300 hover:scale-[1.02] w-full max-w-xs mx-auto"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                    <Bot className="w-5 h-5 text-primary" />
+                  </div>
+                  <div className="text-left">
+                    <p className="font-medium text-sm">Chat with Nova AI</p>
+                    <p className="text-xs text-muted-foreground">Get help or just chat!</p>
+                  </div>
+                </div>
+              </button>
             </div>
           )}
         </div>
@@ -143,7 +192,7 @@ const UserSearchItem = ({ profile, currentUserId }: UserSearchItemProps) => {
       to={`/profile/${profile.username}`}
       className="flex items-center gap-3 p-3 rounded-xl hover:bg-secondary transition-all duration-200 animate-fade-in hover:scale-[1.01]"
     >
-      <Avatar className="w-12 h-12">
+      <Avatar className="w-12 h-12 transition-transform duration-200 hover:scale-110">
         <AvatarImage src={profile.avatar_url || ''} alt={profile.username} />
         <AvatarFallback>{profile.username[0].toUpperCase()}</AvatarFallback>
       </Avatar>

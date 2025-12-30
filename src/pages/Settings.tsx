@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, 
@@ -7,6 +7,7 @@ import {
   Lock, 
   Eye, 
   Moon, 
+  Sun,
   HelpCircle, 
   Info, 
   LogOut,
@@ -20,7 +21,8 @@ import {
   Ban,
   Globe,
   Smartphone,
-  Loader2
+  Loader2,
+  Key
 } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
@@ -33,6 +35,9 @@ import { BlockedUsersSheet } from '@/components/settings/BlockedUsersSheet';
 import { CloseFriendsSheet } from '@/components/settings/CloseFriendsSheet';
 import { LanguageSheet, getLanguageName } from '@/components/settings/LanguageSheet';
 import { NotificationSettingsSheet } from '@/components/settings/NotificationSettingsSheet';
+import { SavedPostsSheet } from '@/components/settings/SavedPostsSheet';
+import { LoginActivitySheet } from '@/components/settings/LoginActivitySheet';
+import { ChangePasswordSheet } from '@/components/settings/ChangePasswordSheet';
 import { toast } from 'sonner';
 
 interface SettingItemProps {
@@ -50,13 +55,13 @@ const SettingItem = ({ icon, label, description, onClick, rightElement, danger, 
     onClick={onClick}
     disabled={disabled}
     className={cn(
-      "w-full flex items-center justify-between p-4 hover:bg-secondary/50 transition-colors",
+      "w-full flex items-center justify-between p-4 hover:bg-secondary/50 transition-all duration-200 hover:scale-[1.01]",
       danger && "text-destructive",
       disabled && "opacity-50 cursor-not-allowed"
     )}
   >
     <div className="flex items-center gap-4">
-      <div className={cn("w-8 h-8 flex items-center justify-center", danger && "text-destructive")}>
+      <div className={cn("w-8 h-8 flex items-center justify-center transition-transform duration-200", danger && "text-destructive")}>
         {icon}
       </div>
       <div className="text-left">
@@ -69,11 +74,11 @@ const SettingItem = ({ icon, label, description, onClick, rightElement, danger, 
 );
 
 const SettingSection = ({ title, children }: { title: string; children: React.ReactNode }) => (
-  <div className="mb-6">
+  <div className="mb-6 animate-fade-in">
     <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-4 mb-2">
       {title}
     </h3>
-    <div className="bg-card rounded-xl overflow-hidden border border-border">
+    <div className="bg-card rounded-xl overflow-hidden border border-border transition-all duration-300 hover:border-primary/20">
       {children}
     </div>
   </div>
@@ -89,6 +94,23 @@ const Settings = () => {
   const [closeFriendsOpen, setCloseFriendsOpen] = useState(false);
   const [languageOpen, setLanguageOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [savedPostsOpen, setSavedPostsOpen] = useState(false);
+  const [loginActivityOpen, setLoginActivityOpen] = useState(false);
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+
+  // Apply dark mode on mount and when settings change
+  useEffect(() => {
+    if (settings?.dark_mode !== undefined) {
+      if (settings.dark_mode) {
+        document.documentElement.classList.remove('light');
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+        document.documentElement.classList.add('light');
+      }
+      localStorage.setItem('theme', settings.dark_mode ? 'dark' : 'light');
+    }
+  }, [settings?.dark_mode]);
 
   const handleSettingToggle = async <K extends keyof UserSettings>(
     key: K,
@@ -116,6 +138,8 @@ const Settings = () => {
     return <Navigate to="/auth" replace />;
   }
 
+  const isDarkMode = settings?.dark_mode ?? false;
+
   return (
     <MainLayout>
       <div className="max-w-2xl mx-auto pb-24">
@@ -124,7 +148,7 @@ const Settings = () => {
           <div className="flex items-center gap-4 px-4 py-3">
             <button 
               onClick={() => navigate(-1)}
-              className="p-2 -ml-2 hover:bg-secondary rounded-full transition-colors"
+              className="p-2 -ml-2 hover:bg-secondary rounded-full transition-all duration-200 hover:scale-110"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
@@ -137,9 +161,9 @@ const Settings = () => {
           {/* Profile Preview */}
           <button 
             onClick={() => navigate('/profile')}
-            className="w-full flex items-center gap-4 p-4 bg-card rounded-xl border border-border mb-6 hover:bg-secondary/50 transition-colors"
+            className="w-full flex items-center gap-4 p-4 bg-card rounded-xl border border-border mb-6 hover:bg-secondary/50 transition-all duration-300 hover:scale-[1.01] hover:border-primary/20 animate-fade-in"
           >
-            <Avatar className="w-14 h-14">
+            <Avatar className="w-14 h-14 transition-transform duration-200 hover:scale-110">
               <AvatarImage src={profile?.avatar_url || ''} alt={profile?.username} />
               <AvatarFallback>{profile?.username?.[0]?.toUpperCase()}</AvatarFallback>
             </Avatar>
@@ -160,17 +184,17 @@ const Settings = () => {
             />
             <Separator />
             <SettingItem
-              icon={<Lock className="w-5 h-5" />}
-              label="Password and Security"
-              description="Manage your password"
-              onClick={() => toast.info('Password reset email will be sent')}
+              icon={<Key className="w-5 h-5" />}
+              label="Change Password"
+              description="Update your password"
+              onClick={() => setChangePasswordOpen(true)}
             />
             <Separator />
             <SettingItem
               icon={<Smartphone className="w-5 h-5" />}
-              label="Devices"
-              description="Manage logged in devices"
-              onClick={() => toast.info('Coming soon')}
+              label="Login Activity"
+              description="See where you're logged in"
+              onClick={() => setLoginActivityOpen(true)}
             />
           </SettingSection>
 
@@ -262,14 +286,7 @@ const Settings = () => {
               icon={<Bookmark className="w-5 h-5" />}
               label="Saved"
               description="View your saved posts"
-              onClick={() => toast.info('Coming soon')}
-            />
-            <Separator />
-            <SettingItem
-              icon={<Clock className="w-5 h-5" />}
-              label="Your Activity"
-              description="Manage your time on the app"
-              onClick={() => toast.info('Coming soon')}
+              onClick={() => setSavedPostsOpen(true)}
             />
             <Separator />
             <SettingItem
@@ -283,12 +300,12 @@ const Settings = () => {
           {/* Appearance */}
           <SettingSection title="Appearance">
             <SettingItem
-              icon={<Moon className="w-5 h-5" />}
-              label="Dark Mode"
-              description="Toggle dark theme"
+              icon={isDarkMode ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+              label={isDarkMode ? 'Dark Mode' : 'Light Mode'}
+              description={isDarkMode ? 'Switch to light theme' : 'Switch to dark theme'}
               rightElement={
                 <Switch 
-                  checked={settings?.dark_mode ?? false} 
+                  checked={isDarkMode} 
                   onCheckedChange={(checked) => handleSettingToggle('dark_mode', checked)}
                 />
               }
@@ -301,13 +318,6 @@ const Settings = () => {
               icon={<Shield className="w-5 h-5" />}
               label="Two-Factor Authentication"
               description="Add extra security to your account"
-              onClick={() => toast.info('Coming soon')}
-            />
-            <Separator />
-            <SettingItem
-              icon={<Lock className="w-5 h-5" />}
-              label="Login Activity"
-              description="See where you're logged in"
               onClick={() => toast.info('Coming soon')}
             />
           </SettingSection>
@@ -325,7 +335,7 @@ const Settings = () => {
               icon={<Info className="w-5 h-5" />}
               label="About"
               description="Learn more about the app"
-              onClick={() => toast.info('Version 1.0.0')}
+              onClick={() => toast.info('Novagram v1.0.0')}
             />
           </SettingSection>
 
@@ -357,6 +367,18 @@ const Settings = () => {
         onOpenChange={setNotificationsOpen}
         settings={settings}
         onSettingChange={handleSettingToggle}
+      />
+      <SavedPostsSheet
+        open={savedPostsOpen}
+        onOpenChange={setSavedPostsOpen}
+      />
+      <LoginActivitySheet
+        open={loginActivityOpen}
+        onOpenChange={setLoginActivityOpen}
+      />
+      <ChangePasswordSheet
+        open={changePasswordOpen}
+        onOpenChange={setChangePasswordOpen}
       />
     </MainLayout>
   );
