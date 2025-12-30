@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { Heart, MessageCircle, Send, Bookmark, MoreHorizontal, Trash2 } from 'lucide-react';
 import { PostWithUser, useLikePost, useDeletePost } from '@/hooks/usePosts';
+import { useSavedPosts, useIsSaved } from '@/hooks/useSavedPosts';
 import { useAuth } from '@/hooks/useAuth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -38,18 +39,19 @@ const PostCard = ({ post }: PostCardProps) => {
   const navigate = useNavigate();
   const likeMutation = useLikePost();
   const deletePost = useDeletePost();
+  const { toggleSave, isToggling } = useSavedPosts();
+  const { data: isSaved } = useIsSaved(post.id);
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [showHeartAnimation, setShowHeartAnimation] = useState(false);
+  const [showSaveAnimation, setShowSaveAnimation] = useState(false);
   const lastTapRef = useRef<number>(0);
   
   const isLiked = user ? post.likes.some(like => like.user_id === user.id) : false;
   const isOwnPost = user?.id === post.user_id;
   const likeCount = post.likes.length;
   const commentCount = post.comments.length;
-  
-  const [isSaved, setIsSaved] = useState(false);
 
   // Check if post owner has public account
   const { data: isPublicPost } = useQuery({
@@ -105,12 +107,24 @@ const PostCard = ({ post }: PostCardProps) => {
     }
   };
 
+  const handleSave = () => {
+    if (!user) {
+      navigate('/auth');
+      return;
+    }
+    toggleSave({ postId: post.id, isSaved: isSaved || false });
+    if (!isSaved) {
+      setShowSaveAnimation(true);
+      setTimeout(() => setShowSaveAnimation(false), 500);
+    }
+  };
+
   return (
-    <article className="nova-card overflow-hidden animate-fade-in">
+    <article className="nova-card overflow-hidden animate-fade-in transition-all duration-300 hover:shadow-lg hover:border-primary/20">
       {/* Header */}
       <div className="flex items-center justify-between p-4">
         <Link to={`/profile/${post.profiles.username}`} className="flex items-center gap-3 group">
-          <div className="story-ring">
+          <div className="story-ring transition-transform duration-300 hover:scale-110">
             <Avatar className="w-10 h-10 border-2 border-background">
               <AvatarImage src={post.profiles.avatar_url || ''} alt={post.profiles.username} />
               <AvatarFallback>{post.profiles.username[0].toUpperCase()}</AvatarFallback>
@@ -145,13 +159,13 @@ const PostCard = ({ post }: PostCardProps) => {
 
       {/* Image with double-tap to like */}
       <div 
-        className="relative aspect-square bg-secondary cursor-pointer select-none"
+        className="relative aspect-square bg-secondary cursor-pointer select-none overflow-hidden"
         onClick={handleDoubleTap}
       >
         <img
           src={post.image_url}
           alt={post.caption || ''}
-          className="w-full h-full object-cover transition-transform duration-300"
+          className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
           loading="lazy"
           draggable={false}
         />
@@ -165,6 +179,16 @@ const PostCard = ({ post }: PostCardProps) => {
             />
           </div>
         )}
+
+        {/* Save animation */}
+        {showSaveAnimation && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <Bookmark 
+              className="w-20 h-20 text-primary drop-shadow-lg animate-[scale-in_0.3s_ease-out]"
+              fill="currentColor"
+            />
+          </div>
+        )}
       </div>
 
       {/* Actions */}
@@ -175,38 +199,39 @@ const PostCard = ({ post }: PostCardProps) => {
               onClick={handleLike}
               disabled={likeMutation.isPending}
               className={cn(
-                'transition-all duration-200 hover:scale-110 disabled:opacity-50',
+                'transition-all duration-200 hover:scale-125 active:scale-95 disabled:opacity-50',
                 isLiked ? 'text-red-500' : 'text-foreground hover:text-red-500'
               )}
             >
-              <Heart className="w-6 h-6" fill={isLiked ? 'currentColor' : 'none'} />
+              <Heart className={cn("w-6 h-6 transition-transform", isLiked && "animate-bounce-gentle")} fill={isLiked ? 'currentColor' : 'none'} />
             </button>
             <button 
               onClick={() => setCommentsOpen(true)}
-              className="text-foreground hover:text-primary transition-colors hover:scale-110"
+              className="text-foreground hover:text-primary transition-all duration-200 hover:scale-125 active:scale-95"
             >
               <MessageCircle className="w-6 h-6" />
             </button>
             <button 
               onClick={() => setShareOpen(true)}
-              className="text-foreground hover:text-primary transition-colors hover:scale-110"
+              className="text-foreground hover:text-primary transition-all duration-200 hover:scale-125 active:scale-95"
             >
               <Send className="w-6 h-6" />
             </button>
           </div>
           <button
-            onClick={() => setIsSaved(!isSaved)}
+            onClick={handleSave}
+            disabled={isToggling}
             className={cn(
-              'transition-all duration-200 hover:scale-110',
+              'transition-all duration-200 hover:scale-125 active:scale-95',
               isSaved ? 'text-primary' : 'text-foreground hover:text-primary'
             )}
           >
-            <Bookmark className="w-6 h-6" fill={isSaved ? 'currentColor' : 'none'} />
+            <Bookmark className={cn("w-6 h-6 transition-transform", isSaved && "animate-bounce-gentle")} fill={isSaved ? 'currentColor' : 'none'} />
           </button>
         </div>
 
         {/* Like Count */}
-        <p className="font-semibold text-sm mb-2">{formatCount(likeCount)} likes</p>
+        <p className="font-semibold text-sm mb-2 transition-all duration-200">{formatCount(likeCount)} likes</p>
 
         {/* Caption */}
         {post.caption && (
@@ -222,7 +247,7 @@ const PostCard = ({ post }: PostCardProps) => {
         {commentCount > 0 && (
           <button 
             onClick={() => setCommentsOpen(true)}
-            className="text-muted-foreground text-sm mt-2 hover:text-foreground transition-colors"
+            className="text-muted-foreground text-sm mt-2 hover:text-foreground transition-all duration-200 hover:translate-x-1"
           >
             View all {commentCount} comments
           </button>

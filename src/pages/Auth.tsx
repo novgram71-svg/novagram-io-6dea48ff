@@ -7,7 +7,6 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff, Loader2, Sparkles, Camera, Heart, MessageCircle, Users } from 'lucide-react';
 import { z } from 'zod';
-import { recordLoginActivity } from '@/hooks/useLoginActivity';
 
 const emailSchema = z.string().email('Please enter a valid email');
 const passwordSchema = z.string().min(6, 'Password must be at least 6 characters');
@@ -68,7 +67,7 @@ const Auth = () => {
     
     try {
       if (isLogin) {
-        const { error, data } = await signIn(email, password);
+        const { error } = await signIn(email, password);
         if (error) {
           if (error.message.includes('Invalid login credentials')) {
             toast({
@@ -84,10 +83,6 @@ const Auth = () => {
             });
           }
         } else {
-          // Record login activity
-          if (data?.user?.id) {
-            await recordLoginActivity(data.user.id);
-          }
           toast({
             title: 'Welcome back!',
             description: 'You have successfully logged in.',
@@ -95,7 +90,7 @@ const Auth = () => {
           navigate('/');
         }
       } else {
-        const { error, data } = await signUp(email, password, username);
+        const { error } = await signUp(email, password, username);
         if (error) {
           if (error.message.includes('User already registered')) {
             toast({
@@ -111,10 +106,6 @@ const Auth = () => {
             });
           }
         } else {
-          // Record login activity
-          if (data?.user?.id) {
-            await recordLoginActivity(data.user.id);
-          }
           toast({
             title: 'Account created!',
             description: 'Welcome to Novagram! You can now start sharing.',
