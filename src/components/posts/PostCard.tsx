@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Heart, MessageCircle, Send, Bookmark, MoreHorizontal, Trash2 } from 'lucide-react';
 import { PostWithUser, useLikePost, useDeletePost } from '@/hooks/usePosts';
 import { useAuth } from '@/hooks/useAuth';
@@ -24,7 +24,10 @@ import { cn } from '@/lib/utils';
 import { Link, useNavigate } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 import CommentsSheet from './CommentsSheet';
+import SharePostSheet from './SharePostSheet';
 import { toast } from 'sonner';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 interface PostCardProps {
   post: PostWithUser;
@@ -36,7 +39,10 @@ const PostCard = ({ post }: PostCardProps) => {
   const likeMutation = useLikePost();
   const deletePost = useDeletePost();
   const [commentsOpen, setCommentsOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [showHeartAnimation, setShowHeartAnimation] = useState(false);
+  const lastTapRef = useRef<number>(0);
   
   const isLiked = user ? post.likes.some(like => like.user_id === user.id) : false;
   const isOwnPost = user?.id === post.user_id;
@@ -45,12 +51,41 @@ const PostCard = ({ post }: PostCardProps) => {
   
   const [isSaved, setIsSaved] = useState(false);
 
+  // Check if post owner has public account
+  const { data: isPublicPost } = useQuery({
+    queryKey: ['post-public', post.user_id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('user_settings')
+        .select('private_account')
+        .eq('user_id', post.user_id)
+        .maybeSingle();
+      
+      return !(data?.private_account ?? false);
+    },
+  });
+
   const handleLike = () => {
     if (!user) {
       navigate('/auth');
       return;
     }
     likeMutation.mutate({ postId: post.id, isLiked, postOwnerId: post.user_id });
+  };
+
+  const handleDoubleTap = () => {
+    const now = Date.now();
+    const DOUBLE_TAP_DELAY = 300;
+    
+    if (now - lastTapRef.current < DOUBLE_TAP_DELAY) {
+      // Double tap detected - like if not already liked
+      if (!isLiked) {
+        handleLike();
+      }
+      setShowHeartAnimation(true);
+      setTimeout(() => setShowHeartAnimation(false), 1000);
+    }
+    lastTapRef.current = now;
   };
 
   const formatCount = (count: number) => {
@@ -108,14 +143,28 @@ const PostCard = ({ post }: PostCardProps) => {
         </DropdownMenu>
       </div>
 
-      {/* Image */}
-      <div className="relative aspect-square bg-secondary">
+      {/* Image with double-tap to like */}
+      <div 
+        className="relative aspect-square bg-secondary cursor-pointer select-none"
+        onClick={handleDoubleTap}
+      >
         <img
           src={post.image_url}
           alt={post.caption || ''}
           className="w-full h-full object-cover transition-transform duration-300"
           loading="lazy"
+          draggable={false}
         />
+        
+        {/* Heart animation on double tap */}
+        {showHeartAnimation && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <Heart 
+              className="w-24 h-24 text-white drop-shadow-lg animate-[scale-in_0.3s_ease-out,fade-out_0.5s_0.5s_ease-out_forwards]"
+              fill="white"
+            />
+          </div>
+        )}
       </div>
 
       {/* Actions */}
@@ -138,7 +187,10 @@ const PostCard = ({ post }: PostCardProps) => {
             >
               <MessageCircle className="w-6 h-6" />
             </button>
-            <button className="text-foreground hover:text-primary transition-colors hover:scale-110">
+            <button 
+              onClick={() => setShareOpen(true)}
+              className="text-foreground hover:text-primary transition-colors hover:scale-110"
+            >
               <Send className="w-6 h-6" />
             </button>
           </div>
@@ -183,6 +235,14 @@ const PostCard = ({ post }: PostCardProps) => {
         postOwnerId={post.user_id}
         open={commentsOpen}
         onOpenChange={setCommentsOpen}
+      />
+
+      {/* Share Sheet */}
+      <SharePostSheet
+        postId={post.id}
+        isPublic={isPublicPost ?? true}
+        open={shareOpen}
+        onOpenChange={setShareOpen}
       />
 
       {/* Delete Confirmation Dialog */}

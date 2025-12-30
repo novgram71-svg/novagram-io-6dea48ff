@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import Profile from "./pages/Profile";
@@ -14,6 +15,7 @@ import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
 import Banned from "./pages/Banned";
 import Settings from "./pages/Settings";
+import Post from "./pages/Post";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -44,23 +46,26 @@ const AppRoutes = () => {
       <Route path="/notifications" element={<BanCheck><Notifications /></BanCheck>} />
       <Route path="/admin" element={<BanCheck><Admin /></BanCheck>} />
       <Route path="/settings" element={<BanCheck><Settings /></BanCheck>} />
+      <Route path="/post/:postId" element={<BanCheck><Post /></BanCheck>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
 };
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
-  </QueryClientProvider>
+  <HelmetProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <AppRoutes />
+          </BrowserRouter>
+        </TooltipProvider>
+      </AuthProvider>
+    </QueryClientProvider>
+  </HelmetProvider>
 );
 
 export default App;
