@@ -5,39 +5,74 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Eye, EyeOff, Loader2, Sparkles, Camera, Heart, MessageCircle, Users } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Sparkles, Camera, Heart, MessageCircle, Users, Phone, Mail, User } from 'lucide-react';
 import { z } from 'zod';
+import { supabase } from '@/integrations/supabase/client';
+import { useSecurityQuestion } from '@/hooks/useSecurityQuestion';
+import { SecurityQuestionDialog } from '@/components/auth/SecurityQuestionDialog';
+import { ForgotPasswordSheet } from '@/components/auth/ForgotPasswordSheet';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const emailSchema = z.string().email('Please enter a valid email');
 const passwordSchema = z.string().min(6, 'Password must be at least 6 characters');
 const usernameSchema = z.string().min(3, 'Username must be at least 3 characters').regex(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores');
+const phoneSchema = z.string().min(10, 'Please enter a valid phone number').regex(/^[0-9+\-\s()]+$/, 'Invalid phone number format');
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [loginMethod, setLoginMethod] = useState<'email' | 'phone' | 'username'>('email');
+  const [loginIdentifier, setLoginIdentifier] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string; username?: string }>({});
+  const [showSecurityDialog, setShowSecurityDialog] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [errors, setErrors] = useState<{ email?: string; password?: string; username?: string; phone?: string }>({});
   
   const { signIn, signUp, user } = useAuth();
+  const { hasSecurityQuestion, isLoading: loadingSecurityQuestion } = useSecurityQuestion();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    if (user) {
-      navigate('/');
+    if (user && !loadingSecurityQuestion) {
+      if (!hasSecurityQuestion) {
+        setShowSecurityDialog(true);
+      } else {
+        navigate('/');
+      }
     }
-  }, [user, navigate]);
+  }, [user, hasSecurityQuestion, loadingSecurityQuestion, navigate]);
+
+  const handleSecurityQuestionComplete = () => {
+    setShowSecurityDialog(false);
+    navigate('/');
+  };
 
   const validate = () => {
     const newErrors: typeof errors = {};
     
-    try {
-      emailSchema.parse(email);
-    } catch (e: any) {
-      newErrors.email = e.errors[0].message;
+    if (!isLogin) {
+      try {
+        emailSchema.parse(email);
+      } catch (e: any) {
+        newErrors.email = e.errors[0].message;
+      }
+      
+      try {
+        usernameSchema.parse(username);
+      } catch (e: any) {
+        newErrors.username = e.errors[0].message;
+      }
+
+      try {
+        phoneSchema.parse(phoneNumber);
+      } catch (e: any) {
+        newErrors.phone = e.errors[0].message;
+      }
     }
     
     try {
@@ -46,16 +81,39 @@ const Auth = () => {
       newErrors.password = e.errors[0].message;
     }
     
-    if (!isLogin) {
-      try {
-        usernameSchema.parse(username);
-      } catch (e: any) {
-        newErrors.username = e.errors[0].message;
-      }
-    }
-    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const findUserByIdentifier = async (identifier: string): Promise<string | null> => {
+    // Try email first
+    let { data } = await supabase
+      .from('profiles')
+      .select('email')
+      .eq('email', identifier)
+      .maybeSingle();
+    
+    if (data?.email) return data.email;
+
+    // Try username
+    ({ data } = await supabase
+      .from('profiles')
+      .select('email')
+      .eq('username', identifier)
+      .maybeSingle());
+    
+    if (data?.email) return data.email;
+
+    // Try phone
+    ({ data } = await supabase
+      .from('profiles')
+      .select('email')
+      .eq('phone_number', identifier)
+      .maybeSingle());
+    
+    if (data?.email) return data.email;
+
+    return null;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -67,12 +125,25 @@ const Auth = () => {
     
     try {
       if (isLogin) {
-        const { error } = await signIn(email, password);
+        // Find user email by identifier
+        const userEmail = await findUserByIdentifier(loginIdentifier);
+        
+        if (!userEmail) {
+          toast({
+            title: 'Login failed',
+            description: 'No account found with this email, username, or phone number.',
+            variant: 'destructive',
+          });
+          setIsLoading(false);
+          return;
+        }
+
+        const { error } = await signIn(userEmail, password);
         if (error) {
           if (error.message.includes('Invalid login credentials')) {
             toast({
               title: 'Login failed',
-              description: 'Invalid email or password. Please try again.',
+              description: 'Invalid credentials. Please try again.',
               variant: 'destructive',
             });
           } else {
@@ -87,7 +158,6 @@ const Auth = () => {
             title: 'Welcome back!',
             description: 'You have successfully logged in.',
           });
-          navigate('/');
         }
       } else {
         const { error } = await signUp(email, password, username);
@@ -108,9 +178,8 @@ const Auth = () => {
         } else {
           toast({
             title: 'Account created!',
-            description: 'Welcome to Novagram! You can now start sharing.',
+            description: 'Please set up your security question.',
           });
-          navigate('/');
         }
       }
     } finally {
@@ -152,37 +221,96 @@ const Auth = () => {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
-            {!isLogin && (
-              <div className="space-y-2 animate-slide-up stagger-2">
-                <Label htmlFor="username">Username</Label>
-                <Input
-                  id="username"
-                  type="text"
-                  placeholder="johndoe"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="nova-input transition-all duration-300 focus:scale-[1.02] focus:shadow-lg"
-                />
-                {errors.username && (
-                  <p className="text-destructive text-sm animate-fade-in">{errors.username}</p>
-                )}
-              </div>
-            )}
+            {isLogin ? (
+              /* Login Form */
+              <>
+                <div className="space-y-2 animate-slide-up stagger-2">
+                  <Label>Login with</Label>
+                  <Tabs value={loginMethod} onValueChange={(v) => setLoginMethod(v as any)} className="w-full">
+                    <TabsList className="w-full grid grid-cols-3">
+                      <TabsTrigger value="email" className="gap-1">
+                        <Mail className="w-3 h-3" />
+                        Email
+                      </TabsTrigger>
+                      <TabsTrigger value="phone" className="gap-1">
+                        <Phone className="w-3 h-3" />
+                        Phone
+                      </TabsTrigger>
+                      <TabsTrigger value="username" className="gap-1">
+                        <User className="w-3 h-3" />
+                        Username
+                      </TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                </div>
 
-            <div className="space-y-2 animate-slide-up stagger-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="nova-input transition-all duration-300 focus:scale-[1.02] focus:shadow-lg"
-              />
-              {errors.email && (
-                <p className="text-destructive text-sm animate-fade-in">{errors.email}</p>
-              )}
-            </div>
+                <div className="space-y-2 animate-slide-up stagger-2">
+                  <Label htmlFor="loginIdentifier">
+                    {loginMethod === 'email' ? 'Email' : loginMethod === 'phone' ? 'Phone Number' : 'Username'}
+                  </Label>
+                  <Input
+                    id="loginIdentifier"
+                    type={loginMethod === 'email' ? 'email' : 'text'}
+                    placeholder={
+                      loginMethod === 'email' ? 'you@example.com' : 
+                      loginMethod === 'phone' ? '+1 234 567 8900' : 
+                      'johndoe'
+                    }
+                    value={loginIdentifier}
+                    onChange={(e) => setLoginIdentifier(e.target.value)}
+                    className="nova-input transition-all duration-300 focus:scale-[1.02] focus:shadow-lg"
+                  />
+                </div>
+              </>
+            ) : (
+              /* Signup Form */
+              <>
+                <div className="space-y-2 animate-slide-up stagger-2">
+                  <Label htmlFor="username">Username</Label>
+                  <Input
+                    id="username"
+                    type="text"
+                    placeholder="johndoe"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="nova-input transition-all duration-300 focus:scale-[1.02] focus:shadow-lg"
+                  />
+                  {errors.username && (
+                    <p className="text-destructive text-sm animate-fade-in">{errors.username}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2 animate-slide-up stagger-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="nova-input transition-all duration-300 focus:scale-[1.02] focus:shadow-lg"
+                  />
+                  {errors.email && (
+                    <p className="text-destructive text-sm animate-fade-in">{errors.email}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2 animate-slide-up stagger-2">
+                  <Label htmlFor="phone">Phone Number</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    placeholder="+1 234 567 8900"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    className="nova-input transition-all duration-300 focus:scale-[1.02] focus:shadow-lg"
+                  />
+                  {errors.phone && (
+                    <p className="text-destructive text-sm animate-fade-in">{errors.phone}</p>
+                  )}
+                </div>
+              </>
+            )}
 
             <div className="space-y-2 animate-slide-up stagger-3">
               <Label htmlFor="password">Password</Label>
@@ -207,6 +335,16 @@ const Auth = () => {
                 <p className="text-destructive text-sm animate-fade-in">{errors.password}</p>
               )}
             </div>
+
+            {isLogin && (
+              <button
+                type="button"
+                onClick={() => setShowForgotPassword(true)}
+                className="text-sm text-primary hover:underline animate-slide-up stagger-3"
+              >
+                Forgot password?
+              </button>
+            )}
 
             <Button
               type="submit"
@@ -250,6 +388,18 @@ const Auth = () => {
           By continuing, you agree to our Terms of Service and Privacy Policy
         </p>
       </div>
+
+      {/* Security Question Dialog */}
+      <SecurityQuestionDialog 
+        open={showSecurityDialog} 
+        onComplete={handleSecurityQuestionComplete} 
+      />
+
+      {/* Forgot Password Sheet */}
+      <ForgotPasswordSheet 
+        open={showForgotPassword} 
+        onOpenChange={setShowForgotPassword} 
+      />
     </div>
   );
 };
