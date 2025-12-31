@@ -160,7 +160,7 @@ const Auth = () => {
           });
         }
       } else {
-        const { error } = await signUp(email, password, username);
+        const { error } = await signUp(email, password, username, phoneNumber);
         if (error) {
           if (error.message.includes('User already registered')) {
             toast({
