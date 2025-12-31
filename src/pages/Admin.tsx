@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { Users, Image, MessageSquare, Download, ChevronRight, AlertTriangle, Ban, CheckCircle, XCircle, Bot, Eye } from 'lucide-react';
+import { Users, Image, MessageSquare, Download, ChevronRight, AlertTriangle, Ban, CheckCircle, XCircle, Bot, Eye, KeyRound, Loader2 } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin, useAllUsers, useAllPosts, useConversationPartners, useConversation } from '@/hooks/useAdmin';
 import { useAllReports, useUpdateReportStatus, useAllBannedUsers, useBanUser, useUnbanUser } from '@/hooks/useUserModeration';
 import { useAIAbuseReports } from '@/hooks/useAIAbuseReports';
+import { usePasswordResetRequests } from '@/hooks/usePasswordReset';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -34,6 +35,7 @@ const Admin = () => {
   const { data: reports, isLoading: reportsLoading } = useAllReports();
   const { data: bannedUsers, isLoading: bannedLoading } = useAllBannedUsers();
   const { reports: aiReports, isLoading: aiReportsLoading, markReviewed } = useAIAbuseReports();
+  const { requests: resetRequests, isLoading: resetLoading, approveRequest, rejectRequest } = usePasswordResetRequests();
   
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const [selectedChatPartner, setSelectedChatPartner] = useState<string | null>(null);
@@ -108,6 +110,7 @@ const Admin = () => {
 
   const pendingReportsCount = reports?.filter((r: any) => r.status === 'pending').length || 0;
   const unreviewedAIReportsCount = aiReports?.filter(r => !r.reviewed).length || 0;
+  const pendingResetCount = resetRequests?.length || 0;
 
   return (
     <MainLayout>
