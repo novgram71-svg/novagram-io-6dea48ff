@@ -1,22 +1,26 @@
 import { useState } from 'react';
 import { useParams, Navigate, Link, useNavigate } from 'react-router-dom';
-import { Grid3X3, Bookmark, LogOut, UserPlus, UserCheck, MessageCircle, Flag, Ban, MoreHorizontal, Settings, Lock } from 'lucide-react';
+import { Grid3X3, Bookmark, LogOut, UserPlus, UserCheck, MessageCircle, Flag, Ban, MoreHorizontal, Settings, Lock, Clock, UserX } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
-import { useProfile, useProfileStats, useIsFollowing, useToggleFollow } from '@/hooks/useProfiles';
+import { useProfile, useProfileStats, useIsFollowing, useToggleFollow, useHasPendingRequest } from '@/hooks/useProfiles';
 import { useUserPosts } from '@/hooks/usePosts';
 import { useIsPrivateAccount, useCanViewProfile } from '@/hooks/usePrivateAccount';
 import { useIsBlocked, useToggleBlock } from '@/hooks/useUserModeration';
 import { useSavedPosts } from '@/hooks/useSavedPosts';
+import { useFollowRequests } from '@/hooks/useFollowRequests';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import EditProfileDialog from '@/components/profile/EditProfileDialog';
 import ReportUserDialog from '@/components/profile/ReportUserDialog';
 import FollowListSheet from '@/components/profile/FollowListSheet';
+import { FollowRequestsSheet } from '@/components/profile/FollowRequestsSheet';
 import PrivateAccountNotice from '@/components/profile/PrivateAccountNotice';
+import { useToast } from '@/hooks/use-toast';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,11 +31,13 @@ import {
 const Profile = () => {
   const { username } = useParams();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const { user, profile: currentUserProfile, signOut, loading: authLoading } = useAuth();
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
   const [followersOpen, setFollowersOpen] = useState(false);
   const [followingOpen, setFollowingOpen] = useState(false);
+  const [followRequestsOpen, setFollowRequestsOpen] = useState(false);
   
   // If no username in URL, show current user's profile
   const targetUsername = username || currentUserProfile?.username;
@@ -43,6 +49,8 @@ const Profile = () => {
   const { data: isBlocked } = useIsBlocked(profile?.id);
   const { data: isPrivate } = useIsPrivateAccount(profile?.id);
   const { data: canViewProfile } = useCanViewProfile(profile?.id, user?.id);
+  const { data: hasPendingRequest } = useHasPendingRequest(profile?.id);
+  const { receivedRequests } = useFollowRequests();
   const toggleFollow = useToggleFollow();
   const toggleBlock = useToggleBlock();
   const { savedPosts, isLoading: savedLoading } = useSavedPosts();
@@ -55,9 +63,27 @@ const Profile = () => {
     return count.toString();
   };
 
+  const pendingRequestsCount = receivedRequests?.length || 0;
+
   const handleToggleFollow = () => {
     if (!profile) return;
-    toggleFollow.mutate({ targetUserId: profile.id, isFollowing: isFollowing || false });
+    toggleFollow.mutate(
+      { 
+        targetUserId: profile.id, 
+        isFollowing: isFollowing || false,
+        isPrivate: isPrivate || false,
+        hasPendingRequest: hasPendingRequest || false,
+      },
+      {
+        onSuccess: (result) => {
+          if (result?.action === 'requested') {
+            toast({ title: 'Follow request sent!' });
+          } else if (result?.action === 'cancelled') {
+            toast({ title: 'Follow request cancelled' });
+          }
+        },
+      }
+    );
   };
 
   const handleToggleBlock = () => {
@@ -171,7 +197,7 @@ const Profile = () => {
                 <h2 className="text-xl font-semibold gradient-text">{profile.username}</h2>
                 
                 {isOwnProfile ? (
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap justify-center md:justify-start">
                     <Button 
                       variant="secondary" 
                       size="sm"
@@ -180,6 +206,20 @@ const Profile = () => {
                     >
                       Edit Profile
                     </Button>
+                    {pendingRequestsCount > 0 && (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setFollowRequestsOpen(true)}
+                        className="transition-all duration-200 hover:scale-105 relative"
+                      >
+                        <UserPlus className="w-4 h-4 mr-2" />
+                        Requests
+                        <Badge className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                          {pendingRequestsCount}
+                        </Badge>
+                      </Button>
+                    )}
                     <Button 
                       variant="ghost" 
                       size="icon"
@@ -200,7 +240,9 @@ const Profile = () => {
                         "transition-all duration-200 hover:scale-105",
                         isFollowing 
                           ? 'bg-secondary text-secondary-foreground hover:bg-secondary/80' 
-                          : 'bg-primary text-primary-foreground hover:bg-primary/90'
+                          : hasPendingRequest
+                            ? 'bg-muted text-muted-foreground hover:bg-muted/80'
+                            : 'bg-primary text-primary-foreground hover:bg-primary/90'
                       )}
                       size="sm"
                     >
@@ -208,6 +250,16 @@ const Profile = () => {
                         <>
                           <UserCheck className="w-4 h-4 mr-2" />
                           Following
+                        </>
+                      ) : hasPendingRequest ? (
+                        <>
+                          <Clock className="w-4 h-4 mr-2" />
+                          Requested
+                        </>
+                      ) : isPrivate ? (
+                        <>
+                          <Lock className="w-4 h-4 mr-2" />
+                          Request to Follow
                         </>
                       ) : (
                         <>
@@ -414,6 +466,14 @@ const Profile = () => {
             userId={profile.id}
             type="following"
             username={profile.username}
+          />
+        )}
+
+        {/* Follow Requests Sheet */}
+        {isOwnProfile && (
+          <FollowRequestsSheet
+            open={followRequestsOpen}
+            onOpenChange={setFollowRequestsOpen}
           />
         )}
 

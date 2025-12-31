@@ -96,27 +96,81 @@ export const useToggleFollow = () => {
   const { user } = useAuth();
 
   return useMutation({
-    mutationFn: async ({ targetUserId, isFollowing }: { targetUserId: string; isFollowing: boolean }) => {
+    mutationFn: async ({ 
+      targetUserId, 
+      isFollowing, 
+      isPrivate = false,
+      hasPendingRequest = false 
+    }: { 
+      targetUserId: string; 
+      isFollowing: boolean; 
+      isPrivate?: boolean;
+      hasPendingRequest?: boolean;
+    }) => {
       if (!user) throw new Error('Not authenticated');
 
       if (isFollowing) {
+        // Unfollow
         const { error } = await supabase
           .from('follows')
           .delete()
           .eq('follower_id', user.id)
           .eq('following_id', targetUserId);
         if (error) throw error;
+        return { action: 'unfollowed' };
+      } else if (hasPendingRequest) {
+        // Cancel request
+        const { error } = await supabase
+          .from('follow_requests')
+          .delete()
+          .eq('requester_id', user.id)
+          .eq('target_id', targetUserId);
+        if (error) throw error;
+        return { action: 'cancelled' };
+      } else if (isPrivate) {
+        // Send follow request for private account
+        const { error } = await supabase
+          .from('follow_requests')
+          .insert({ requester_id: user.id, target_id: targetUserId });
+        if (error) throw error;
+        return { action: 'requested' };
       } else {
+        // Direct follow for public account
         const { error } = await supabase
           .from('follows')
           .insert({ follower_id: user.id, following_id: targetUserId });
         if (error) throw error;
+        return { action: 'followed' };
       }
     },
     onSuccess: (_, { targetUserId }) => {
       queryClient.invalidateQueries({ queryKey: ['isFollowing'] });
       queryClient.invalidateQueries({ queryKey: ['profileStats', targetUserId] });
+      queryClient.invalidateQueries({ queryKey: ['follow-requests-sent'] });
+      queryClient.invalidateQueries({ queryKey: ['hasPendingRequest'] });
     },
+  });
+};
+
+export const useHasPendingRequest = (targetUserId: string | undefined) => {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ['hasPendingRequest', user?.id, targetUserId],
+    queryFn: async () => {
+      if (!user || !targetUserId) return false;
+
+      const { data } = await supabase
+        .from('follow_requests')
+        .select('id')
+        .eq('requester_id', user.id)
+        .eq('target_id', targetUserId)
+        .eq('status', 'pending')
+        .maybeSingle();
+
+      return !!data;
+    },
+    enabled: !!user && !!targetUserId && user.id !== targetUserId,
   });
 };
 

@@ -154,6 +154,15 @@ const Admin = () => {
                 </span>
               )}
             </TabsTrigger>
+            <TabsTrigger value="password-resets" className="gap-2 relative">
+              <KeyRound className="w-4 h-4" />
+              Password Resets
+              {pendingResetCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  {pendingResetCount}
+                </span>
+              )}
+            </TabsTrigger>
           </TabsList>
 
           {/* Users Tab */}
@@ -675,6 +684,95 @@ const Admin = () => {
                         <Bot className="w-12 h-12 mx-auto mb-4 opacity-50" />
                         <p>No AI abuse reports yet</p>
                         <p className="text-sm mt-2">Reports from Nova AI will appear here</p>
+                      </div>
+                    )}
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Password Reset Requests Tab */}
+          <TabsContent value="password-resets" className="animate-fade-in">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <KeyRound className="w-5 h-5" />
+                  Password Reset Requests ({resetRequests?.length || 0})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-[60vh]">
+                  <div className="space-y-4">
+                    {resetLoading ? (
+                      Array.from({ length: 3 }).map((_, i) => (
+                        <Skeleton key={i} className="h-32 w-full" />
+                      ))
+                    ) : resetRequests && resetRequests.length > 0 ? (
+                      resetRequests.map((request: any) => (
+                        <div
+                          key={request.id}
+                          className="p-4 rounded-xl bg-secondary/50 border border-border animate-fade-in"
+                        >
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex items-center gap-3">
+                              <Avatar className="w-10 h-10">
+                                <AvatarImage src={request.profiles?.avatar_url || ''} />
+                                <AvatarFallback>
+                                  {request.profiles?.username?.[0]?.toUpperCase() || '?'}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="font-semibold">{request.profiles?.username || 'Unknown User'}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {request.profiles?.email || 'No email'}
+                                </p>
+                              </div>
+                            </div>
+                            <Badge variant="outline" className="bg-yellow-500/10 text-yellow-500 border-yellow-500/20">
+                              Pending
+                            </Badge>
+                          </div>
+
+                          <p className="text-sm text-muted-foreground mb-3">
+                            Requested {formatDistanceToNow(new Date(request.created_at))} ago
+                          </p>
+
+                          <div className="flex gap-2">
+                            <Button
+                              variant="default"
+                              size="sm"
+                              onClick={() => approveRequest.mutate(request.id)}
+                              disabled={approveRequest.isPending}
+                            >
+                              {approveRequest.isPending ? (
+                                <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                              ) : (
+                                <CheckCircle className="w-4 h-4 mr-1" />
+                              )}
+                              Approve
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => rejectRequest.mutate(request.id)}
+                              disabled={rejectRequest.isPending}
+                            >
+                              {rejectRequest.isPending ? (
+                                <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                              ) : (
+                                <XCircle className="w-4 h-4 mr-1" />
+                              )}
+                              Reject
+                            </Button>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-12 text-muted-foreground animate-fade-in">
+                        <KeyRound className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                        <p>No pending password reset requests</p>
+                        <p className="text-sm mt-2">User password reset requests will appear here</p>
                       </div>
                     )}
                   </div>

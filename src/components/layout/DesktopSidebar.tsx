@@ -1,4 +1,4 @@
-import { Home, Search, PlusSquare, MessageCircle, User, Heart, LogOut, Shield } from 'lucide-react';
+import { Home, Search, PlusSquare, MessageCircle, User, Heart, LogOut, Shield, Compass } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 const navItems = [
   { icon: Home, path: '/', label: 'Home' },
   { icon: Search, path: '/search', label: 'Search' },
+  { icon: Compass, path: '/explore', label: 'Explore' },
   { icon: PlusSquare, path: '/create', label: 'Create' },
   { icon: MessageCircle, path: '/messages', label: 'Messages' },
   { icon: Heart, path: '/notifications', label: 'Notifications' },
