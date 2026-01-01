@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { formatDistanceToNow } from 'date-fns';
 import StoryViewers from './StoryViewers';
+import StoryReplyInput from './StoryReplyInput';
 
 interface StoryViewerProps {
   story: StoryWithUser;
@@ -112,6 +113,13 @@ const StoryViewer = ({ story, onClose }: StoryViewerProps) => {
               <StoryViewers storyId={story.id} viewCount={viewCount || 0} />
             </div>
           )}
+
+          {/* Reply Input (for others' stories) */}
+          <StoryReplyInput 
+            storyId={story.id} 
+            storyOwnerId={story.user_id} 
+            isOwnStory={isOwnStory}
+          />
         </div>
       </div>
 

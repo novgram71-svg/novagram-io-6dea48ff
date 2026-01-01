@@ -638,6 +638,41 @@ export type Database = {
         }
         Relationships: []
       }
+      push_tokens: {
+        Row: {
+          created_at: string
+          device_type: string | null
+          id: string
+          token: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          device_type?: string | null
+          id?: string
+          token: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          device_type?: string | null
+          id?: string
+          token?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_tokens_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       saved_posts: {
         Row: {
           created_at: string
@@ -725,6 +760,81 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      story_likes: {
+        Row: {
+          created_at: string
+          id: string
+          story_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          story_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          story_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "story_likes_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
+            referencedRelation: "stories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "story_likes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      story_replies: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          sender_id: string
+          story_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          sender_id: string
+          story_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          sender_id?: string
+          story_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "story_replies_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "story_replies_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
+            referencedRelation: "stories"
             referencedColumns: ["id"]
           },
         ]

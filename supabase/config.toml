@@ -1,1 +1,10 @@
 project_id = "hqjsqnomxouudtpjuwhp"
+
+[functions.ai-chat]
+verify_jwt = true
+
+[functions.approve-password-reset]
+verify_jwt = true
+
+[functions.send-push-notification]
+verify_jwt = false

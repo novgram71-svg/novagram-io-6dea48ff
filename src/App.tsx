@@ -8,6 +8,7 @@ import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { MissingInfoDialog } from "@/components/auth/MissingInfoDialog";
+import { useNotificationListener } from "@/hooks/usePushNotifications";
 import Index from "./pages/Index";
 import Profile from "./pages/Profile";
 import Search from "./pages/Search";
@@ -21,6 +22,12 @@ import Banned from "./pages/Banned";
 import Settings from "./pages/Settings";
 import Post from "./pages/Post";
 import NotFound from "./pages/NotFound";
+
+// Component that sets up notification listener
+const NotificationSetup = ({ children }: { children: React.ReactNode }) => {
+  useNotificationListener();
+  return <>{children}</>;
+};
 
 const queryClient = new QueryClient();
 
@@ -142,7 +149,9 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <AppRoutes />
+            <NotificationSetup>
+              <AppRoutes />
+            </NotificationSetup>
           </BrowserRouter>
         </TooltipProvider>
       </AuthProvider>

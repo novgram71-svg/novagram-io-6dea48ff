@@ -22,11 +22,13 @@ import {
   Globe,
   Smartphone,
   Loader2,
-  Key
+  Key,
+  BellRing
 } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserSettings, UserSettings } from '@/hooks/useUserSettings';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -88,6 +90,7 @@ const Settings = () => {
   const navigate = useNavigate();
   const { user, profile, signOut, loading } = useAuth();
   const { settings, isLoading: settingsLoading, updateSetting, isUpdating } = useUserSettings();
+  const { isSupported, permission, requestPermission, pushToken } = usePushNotifications();
   
   // Sheet states
   const [blockedUsersOpen, setBlockedUsersOpen] = useState(false);
@@ -97,6 +100,15 @@ const Settings = () => {
   const [savedPostsOpen, setSavedPostsOpen] = useState(false);
   const [loginActivityOpen, setLoginActivityOpen] = useState(false);
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+
+  const handleEnablePushNotifications = async () => {
+    try {
+      await requestPermission.mutateAsync();
+      toast.success('Push notifications enabled!');
+    } catch (error) {
+      toast.error('Failed to enable push notifications');
+    }
+  };
 
   // Apply dark mode on mount and when settings change
   useEffect(() => {
@@ -264,6 +276,29 @@ const Settings = () => {
                 />
               }
             />
+            {isSupported && permission !== 'granted' && (
+              <>
+                <Separator />
+                <SettingItem
+                  icon={<BellRing className="w-5 h-5 text-primary" />}
+                  label="Enable Browser Notifications"
+                  description="Get real-time alerts in your browser"
+                  onClick={handleEnablePushNotifications}
+                  disabled={requestPermission.isPending}
+                />
+              </>
+            )}
+            {pushToken && (
+              <>
+                <Separator />
+                <SettingItem
+                  icon={<BellRing className="w-5 h-5 text-green-500" />}
+                  label="Browser Notifications Active"
+                  description="You'll receive real-time alerts"
+                  rightElement={<span className="text-xs text-green-500">Enabled</span>}
+                />
+              </>
+            )}
             <Separator />
             <SettingItem
               icon={<Heart className="w-5 h-5" />}
