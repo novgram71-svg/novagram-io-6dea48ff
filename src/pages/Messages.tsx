@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { Send, ArrowLeft, MoreVertical, Search } from 'lucide-react';
+import { Send, ArrowLeft, MoreVertical, Search, Sparkles } from 'lucide-react';
 import { useLocation, Navigate } from 'react-router-dom';
 import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
@@ -17,6 +17,7 @@ import MessageBubble from '@/components/chat/MessageBubble';
 import ChatAttachment from '@/components/chat/ChatAttachment';
 import AttachmentPreview from '@/components/chat/AttachmentPreview';
 import MessageSearchSheet from '@/components/chat/MessageSearchSheet';
+import NotesBubble from '@/components/chat/NotesBubble';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
@@ -35,14 +36,14 @@ const ConversationItem = ({ conversation, isSelected, onClick }: ConversationIte
     <button
       onClick={onClick}
       className={cn(
-        'w-full flex items-center gap-3 p-4 hover:bg-secondary transition-all duration-200 animate-fade-in',
-        isSelected && 'bg-secondary'
+        'w-full flex items-center gap-3 p-4 hover:bg-secondary/80 transition-all duration-300 animate-slide-up group',
+        isSelected && 'bg-gradient-to-r from-primary/10 to-accent/5 border-l-2 border-primary'
       )}
     >
       <div className="relative">
-        <Avatar className="w-12 h-12 transition-transform hover:scale-105">
+        <Avatar className="w-12 h-12 transition-all duration-300 group-hover:scale-105 group-hover:ring-2 group-hover:ring-primary/30">
           <AvatarImage src={conversation.avatar_url || ''} alt={conversation.username} />
-          <AvatarFallback>{conversation.username[0].toUpperCase()}</AvatarFallback>
+          <AvatarFallback className="bg-gradient-to-br from-primary/20 to-accent/20">{conversation.username[0].toUpperCase()}</AvatarFallback>
         </Avatar>
         {/* Online indicator dot */}
         <ActiveStatus 
@@ -52,20 +53,20 @@ const ConversationItem = ({ conversation, isSelected, onClick }: ConversationIte
           className="absolute bottom-0 right-0"
         />
         {conversation.unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-primary-foreground text-xs font-bold rounded-full flex items-center justify-center animate-scale-in">
+          <span className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-r from-primary to-accent text-primary-foreground text-xs font-bold rounded-full flex items-center justify-center animate-scale-in shadow-lg shadow-primary/30">
             {conversation.unreadCount}
           </span>
         )}
       </div>
       <div className="flex-1 min-w-0 text-left">
         <div className="flex items-center justify-between">
-          <p className="font-semibold text-sm">{conversation.username}</p>
+          <p className="font-semibold text-sm group-hover:text-primary transition-colors">{conversation.username}</p>
           <span className="text-xs text-muted-foreground">
             {formatDistanceToNow(new Date(conversation.lastMessageTime), { addSuffix: false })}
           </span>
         </div>
         <p className={cn(
-          'text-sm truncate',
+          'text-sm truncate transition-colors',
           conversation.unreadCount > 0 ? 'text-foreground font-medium' : 'text-muted-foreground'
         )}>
           {conversation.lastMessage}
@@ -225,16 +226,24 @@ const Messages = () => {
           )}
         >
           {/* Header */}
-          <div className="p-4 border-b border-border flex items-center justify-between">
-            <h1 className="text-xl font-bold">Messages</h1>
+          <div className="p-4 border-b border-border flex items-center justify-between bg-gradient-to-r from-background to-card/50">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-primary animate-pulse-soft" />
+              <h1 className="text-xl font-bold gradient-text">Messages</h1>
+            </div>
             <Button 
               variant="ghost" 
               size="icon" 
               onClick={() => setSearchOpen(true)}
-              className="text-muted-foreground hover:text-foreground"
+              className="text-muted-foreground hover:text-foreground hover:bg-primary/10 transition-all duration-200 hover:scale-110"
             >
               <Search className="w-5 h-5" />
             </Button>
+          </div>
+
+          {/* Notes Section */}
+          <div className="border-b border-border">
+            <NotesBubble />
           </div>
 
           {/* Conversation List */}
