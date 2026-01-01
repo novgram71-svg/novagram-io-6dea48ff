@@ -6,9 +6,10 @@ import { useToast } from '@/hooks/use-toast';
 export const usePasswordResetRequests = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const { data: requests, isLoading } = useQuery({
-    queryKey: ['password-reset-requests'],
+    queryKey: ['password-reset-requests', user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('password_reset_requests')
@@ -27,6 +28,7 @@ export const usePasswordResetRequests = () => {
       if (error) throw error;
       return data;
     },
+    enabled: !!user,
   });
 
   const approveRequest = useMutation({
