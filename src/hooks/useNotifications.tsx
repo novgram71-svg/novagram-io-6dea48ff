@@ -3,9 +3,21 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useEffect } from 'react';
 
+export type NotificationType = 
+  | 'like' 
+  | 'comment' 
+  | 'follow' 
+  | 'follow_request' 
+  | 'follow_accepted'
+  | 'password_reset_approved'
+  | 'password_reset_rejected'
+  | 'story_like'
+  | 'story_reply'
+  | 'message';
+
 export interface NotificationWithActor {
   id: string;
-  type: string;
+  type: NotificationType;
   read: boolean;
   created_at: string;
   post_id: string | null;
