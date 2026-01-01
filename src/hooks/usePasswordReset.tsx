@@ -1,9 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
 
 export const usePasswordResetRequests = () => {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const { data: requests, isLoading } = useQuery({
     queryKey: ['password-reset-requests'],
@@ -29,35 +31,61 @@ export const usePasswordResetRequests = () => {
 
   const approveRequest = useMutation({
     mutationFn: async (requestId: string) => {
-      const { error } = await supabase
-        .from('password_reset_requests')
-        .update({
-          status: 'approved',
-          resolved_at: new Date().toISOString(),
-        })
-        .eq('id', requestId);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      const response = await supabase.functions.invoke('approve-password-reset', {
+        body: { requestId, action: 'approve' },
+      });
+
+      if (response.error) throw new Error(response.error.message);
+      if (response.data?.error) throw new Error(response.data.error);
       
-      if (error) throw error;
+      return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['password-reset-requests'] });
+      toast({
+        title: 'Password Reset Approved',
+        description: 'The user can now login with their new password.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
     },
   });
 
   const rejectRequest = useMutation({
     mutationFn: async (requestId: string) => {
-      const { error } = await supabase
-        .from('password_reset_requests')
-        .update({
-          status: 'rejected',
-          resolved_at: new Date().toISOString(),
-        })
-        .eq('id', requestId);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      const response = await supabase.functions.invoke('approve-password-reset', {
+        body: { requestId, action: 'reject' },
+      });
+
+      if (response.error) throw new Error(response.error.message);
+      if (response.data?.error) throw new Error(response.data.error);
       
-      if (error) throw error;
+      return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['password-reset-requests'] });
+      toast({
+        title: 'Password Reset Rejected',
+        description: 'The user has been notified.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
     },
   });
 

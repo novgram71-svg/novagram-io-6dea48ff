@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Heart, MessageCircle, UserPlus } from 'lucide-react';
+import { Heart, MessageCircle, UserPlus, KeyRound, CheckCircle, XCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import MainLayout from '@/components/layout/MainLayout';
 import { useNotifications, useMarkNotificationsRead } from '@/hooks/useNotifications';
@@ -14,18 +14,24 @@ const notificationIcons: Record<string, any> = {
   like: Heart,
   comment: MessageCircle,
   follow: UserPlus,
+  password_reset_approved: CheckCircle,
+  password_reset_rejected: XCircle,
 };
 
 const notificationColors: Record<string, string> = {
   like: 'text-red-500',
   comment: 'text-primary',
   follow: 'text-green-500',
+  password_reset_approved: 'text-green-500',
+  password_reset_rejected: 'text-red-500',
 };
 
 const notificationMessages: Record<string, string> = {
   like: 'liked your post',
   comment: 'commented on your post',
   follow: 'started following you',
+  password_reset_approved: 'Your password reset has been approved. You can now login with your new password.',
+  password_reset_rejected: 'Your password reset request was rejected. Please try again or contact support.',
 };
 
 const Notifications = () => {
