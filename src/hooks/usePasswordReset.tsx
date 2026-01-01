@@ -2,15 +2,18 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { useIsAdmin } from '@/hooks/useAdmin';
 
 export const usePasswordResetRequests = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth();
+  const { data: isAdmin } = useIsAdmin();
 
   const { data: requests, isLoading } = useQuery({
     queryKey: ['password-reset-requests', user?.id],
     queryFn: async () => {
+      console.log('Fetching password reset requests for admin:', user?.id);
       const { data, error } = await supabase
         .from('password_reset_requests')
         .select(`
@@ -25,10 +28,14 @@ export const usePasswordResetRequests = () => {
         .eq('status', 'pending')
         .order('created_at', { ascending: false });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching password reset requests:', error);
+        throw error;
+      }
+      console.log('Password reset requests found:', data?.length);
       return data;
     },
-    enabled: !!user,
+    enabled: !!user && isAdmin === true,
   });
 
   const approveRequest = useMutation({
