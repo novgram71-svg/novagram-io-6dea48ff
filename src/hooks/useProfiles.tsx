@@ -117,7 +117,7 @@ export const useToggleFollow = () => {
           .eq('follower_id', user.id)
           .eq('following_id', targetUserId);
         if (error) throw error;
-        return { action: 'unfollowed' };
+        return { action: 'unfollowed', targetUserId };
       } else if (hasPendingRequest) {
         // Cancel request
         const { error } = await supabase
@@ -126,26 +126,42 @@ export const useToggleFollow = () => {
           .eq('requester_id', user.id)
           .eq('target_id', targetUserId);
         if (error) throw error;
-        return { action: 'cancelled' };
+        return { action: 'cancelled', targetUserId };
       } else if (isPrivate) {
         // Send follow request for private account
         const { error } = await supabase
           .from('follow_requests')
           .insert({ requester_id: user.id, target_id: targetUserId });
         if (error) throw error;
-        return { action: 'requested' };
+        
+        // Create follow_request notification
+        await supabase.from('notifications').insert({
+          user_id: targetUserId,
+          actor_id: user.id,
+          type: 'follow_request',
+        });
+        
+        return { action: 'requested', targetUserId };
       } else {
         // Direct follow for public account
         const { error } = await supabase
           .from('follows')
           .insert({ follower_id: user.id, following_id: targetUserId });
         if (error) throw error;
-        return { action: 'followed' };
+        
+        // Create follow notification
+        await supabase.from('notifications').insert({
+          user_id: targetUserId,
+          actor_id: user.id,
+          type: 'follow',
+        });
+        
+        return { action: 'followed', targetUserId };
       }
     },
-    onSuccess: (_, { targetUserId }) => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['isFollowing'] });
-      queryClient.invalidateQueries({ queryKey: ['profileStats', targetUserId] });
+      queryClient.invalidateQueries({ queryKey: ['profileStats', result?.targetUserId] });
       queryClient.invalidateQueries({ queryKey: ['follow-requests-sent'] });
       queryClient.invalidateQueries({ queryKey: ['hasPendingRequest'] });
     },

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Send, ArrowLeft, MoreVertical, Search } from 'lucide-react';
 import { useLocation, Navigate } from 'react-router-dom';
 import MainLayout from '@/components/layout/MainLayout';
@@ -20,6 +20,7 @@ import MessageSearchSheet from '@/components/chat/MessageSearchSheet';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
 
 interface ConversationItemProps {
   conversation: Conversation;
@@ -82,7 +83,6 @@ const Messages = () => {
   const [attachment, setAttachment] = useState<{ url: string; name: string; type: 'image' | 'file' } | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [reactions, setReactions] = useState<Record<string, { emoji: string; count: number; hasUserReacted: boolean }[]>>({});
   
   // Get user ID from navigation state (when coming from profile)
   const stateUserId = location.state?.selectedUserId;
@@ -94,6 +94,53 @@ const Messages = () => {
   const sendMessage = useSendMessage();
   const { isPartnerTyping, setTyping } = useTypingIndicator(selectedConversation?.id || null);
   const { isOnline, lastSeen } = useUserPresence(selectedConversation?.id || null);
+  
+  // Fetch reactions for all messages in the conversation
+  const messageIds = messages?.map(m => m.id) || [];
+  const { data: allReactions } = useQuery({
+    queryKey: ['all-message-reactions', messageIds.join(',')],
+    queryFn: async () => {
+      if (messageIds.length === 0) return [];
+      
+      const { data, error } = await supabase
+        .from('message_reactions')
+        .select('*')
+        .in('message_id', messageIds);
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: messageIds.length > 0,
+  });
+  
+  // Process reactions into a map by message_id
+  const reactionsMap = useMemo(() => {
+    if (!allReactions || !user) return {};
+    
+    const map: Record<string, { emoji: string; count: number; hasUserReacted: boolean }[]> = {};
+    
+    allReactions.forEach(reaction => {
+      if (!map[reaction.message_id]) {
+        map[reaction.message_id] = [];
+      }
+      
+      const existing = map[reaction.message_id].find(r => r.emoji === reaction.emoji);
+      if (existing) {
+        existing.count++;
+        if (reaction.user_id === user.id) {
+          existing.hasUserReacted = true;
+        }
+      } else {
+        map[reaction.message_id].push({
+          emoji: reaction.emoji,
+          count: 1,
+          hasUserReacted: reaction.user_id === user.id,
+        });
+      }
+    });
+    
+    return map;
+  }, [allReactions, user]);
   
   // Update own presence
   useUpdatePresence();
@@ -281,7 +328,7 @@ const Messages = () => {
                     <MessageBubble 
                       key={message.id} 
                       message={message}
-                      reactions={reactions[message.id] || []}
+                      reactions={reactionsMap[message.id] || []}
                     />
                   ))
                 ) : (

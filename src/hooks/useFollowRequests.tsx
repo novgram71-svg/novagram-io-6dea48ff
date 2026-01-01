@@ -112,6 +112,13 @@ export const useFollowRequests = () => {
         });
       
       if (followError) throw followError;
+      
+      // Send notification to the requester that their request was accepted
+      await supabase.from('notifications').insert({
+        user_id: requesterId,
+        actor_id: user.id,
+        type: 'follow_accepted',
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['follow-requests-received', user?.id] });
