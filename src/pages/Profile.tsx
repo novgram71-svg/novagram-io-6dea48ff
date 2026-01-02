@@ -207,7 +207,12 @@ const Profile = () => {
             {/* Info */}
             <div className="flex-1 text-center md:text-left animate-slide-up stagger-1">
               <div className="flex flex-col md:flex-row items-center gap-4 mb-4">
-                <h2 className="text-xl font-semibold gradient-text">{profile.username}</h2>
+                {isOwnProfile ? (
+                  <div className="hidden md:block">
+                    <AccountSwitcher username={profile.username} avatarUrl={profile.avatar_url} />
+                  </div>
+                ) : null}
+                <h2 className={cn("text-xl font-semibold gradient-text", isOwnProfile && "md:hidden")}>{profile.username}</h2>
                 
                 {isOwnProfile ? (
                   <div className="flex gap-2 flex-wrap justify-center md:justify-start">

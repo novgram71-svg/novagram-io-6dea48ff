@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { MoreVertical, Pencil, Trash2, Smile, Download, FileText } from 'lucide-react';
+import { useState, useRef, useCallback } from 'react';
+import { MoreVertical, Pencil, Trash2, Smile, Download, FileText, Heart } from 'lucide-react';
 import { MessageWithProfile, useDeleteMessage, useEditMessage, useToggleReaction } from '@/hooks/useMessages';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -33,6 +33,8 @@ const MessageBubble = ({ message, reactions = [], theme }: MessageBubbleProps) =
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(message.content);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showHeartAnimation, setShowHeartAnimation] = useState(false);
+  const lastTapRef = useRef<number>(0);
   
   const deleteMessage = useDeleteMessage();
   const editMessage = useEditMessage();
@@ -55,6 +57,20 @@ const MessageBubble = ({ message, reactions = [], theme }: MessageBubbleProps) =
     await toggleReaction.mutateAsync({ messageId: message.id, emoji });
     setShowEmojiPicker(false);
   };
+
+  // Double-tap to like (Instagram style)
+  const handleDoubleTap = useCallback(() => {
+    const now = Date.now();
+    const DOUBLE_TAP_DELAY = 300;
+    
+    if (now - lastTapRef.current < DOUBLE_TAP_DELAY) {
+      // Double tap detected - add heart reaction
+      setShowHeartAnimation(true);
+      toggleReaction.mutate({ messageId: message.id, emoji: '❤️' });
+      setTimeout(() => setShowHeartAnimation(false), 1000);
+    }
+    lastTapRef.current = now;
+  }, [message.id, toggleReaction]);
 
   const isImageUrl = (url: string | null) => {
     if (!url) return false;
@@ -83,10 +99,19 @@ const MessageBubble = ({ message, reactions = [], theme }: MessageBubbleProps) =
         isOwn ? 'justify-end' : 'justify-start'
       )}
     >
-      <div className={cn(
-        "flex flex-col max-w-[70%] relative",
-        isOwn ? "items-end" : "items-start"
-      )}>
+      <div 
+        className={cn(
+          "flex flex-col max-w-[70%] relative",
+          isOwn ? "items-end" : "items-start"
+        )}
+        onClick={handleDoubleTap}
+      >
+        {/* Heart animation on double-tap */}
+        {showHeartAnimation && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+            <Heart className="w-16 h-16 text-red-500 fill-red-500 animate-ping" />
+          </div>
+        )}
         {/* Message Actions */}
         <div className={cn(
           "absolute top-0 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10",
