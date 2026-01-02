@@ -82,7 +82,8 @@ const SharePostSheet = ({ postId, isPublic, open, onOpenChange }: SharePostSheet
       const messages = selectedUsers.map(receiverId => ({
         sender_id: user.id,
         receiver_id: receiverId,
-        content: `Check out this post: ${postUrl}`,
+        content: '',
+        shared_post_id: postId,
       }));
 
       const { error } = await supabase

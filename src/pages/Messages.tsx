@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { Send, ArrowLeft, MoreVertical, Search, Sparkles } from 'lucide-react';
+import { Send, ArrowLeft, MoreVertical, Search, Sparkles, Palette } from 'lucide-react';
 import { useLocation, Navigate } from 'react-router-dom';
 import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
@@ -7,6 +7,7 @@ import { useConversations, useMessages, useSendMessage, Conversation, MessageWit
 import { useProfileById } from '@/hooks/useProfiles';
 import { useTypingIndicator } from '@/hooks/useTypingIndicator';
 import { useUserPresence, useUpdatePresence } from '@/hooks/usePresence';
+import { useChatTheme, CHAT_THEMES } from '@/hooks/useChatThemes';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -17,6 +18,7 @@ import MessageBubble from '@/components/chat/MessageBubble';
 import ChatAttachment from '@/components/chat/ChatAttachment';
 import AttachmentPreview from '@/components/chat/AttachmentPreview';
 import MessageSearchSheet from '@/components/chat/MessageSearchSheet';
+import ChatThemeSheet from '@/components/chat/ChatThemeSheet';
 import NotesBubble from '@/components/chat/NotesBubble';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
@@ -83,7 +85,11 @@ const Messages = () => {
   const [newMessage, setNewMessage] = useState('');
   const [attachment, setAttachment] = useState<{ url: string; name: string; type: 'image' | 'file' } | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [themeSheetOpen, setThemeSheetOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  // Chat theme
+  const { data: chatTheme } = useChatTheme(selectedConversation?.id || null);
   
   // Get user ID from navigation state (when coming from profile)
   const stateUserId = location.state?.selectedUserId;
@@ -317,13 +323,13 @@ const Messages = () => {
                     )}
                   </div>
                 </div>
-                <Button variant="ghost" size="icon">
-                  <MoreVertical className="w-5 h-5" />
+                <Button variant="ghost" size="icon" onClick={() => setThemeSheetOpen(true)}>
+                  <Palette className="w-5 h-5" />
                 </Button>
               </div>
 
               {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              <div className={cn("flex-1 overflow-y-auto p-4 space-y-4", chatTheme?.backgroundGradient)}>
                 {messagesLoading ? (
                   <div className="space-y-4">
                     {[1, 2, 3].map((i) => (
@@ -338,6 +344,7 @@ const Messages = () => {
                       key={message.id} 
                       message={message}
                       reactions={reactionsMap[message.id] || []}
+                      theme={chatTheme}
                     />
                   ))
                 ) : (
@@ -401,6 +408,16 @@ const Messages = () => {
           }
         }}
       />
+
+      {/* Chat Theme Sheet */}
+      {selectedConversation && (
+        <ChatThemeSheet
+          open={themeSheetOpen}
+          onOpenChange={setThemeSheetOpen}
+          partnerId={selectedConversation.id}
+          currentThemeId={chatTheme?.id || 'default'}
+        />
+      )}
     </MainLayout>
   );
 };

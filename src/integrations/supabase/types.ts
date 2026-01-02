@@ -119,6 +119,33 @@ export type Database = {
           },
         ]
       }
+      chat_themes: {
+        Row: {
+          created_at: string
+          id: string
+          partner_id: string
+          theme_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          partner_id: string
+          theme_id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          partner_id?: string
+          theme_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       close_friends: {
         Row: {
           created_at: string
@@ -403,6 +430,7 @@ export type Database = {
           read_at: string | null
           receiver_id: string
           sender_id: string
+          shared_post_id: string | null
         }
         Insert: {
           content: string
@@ -416,6 +444,7 @@ export type Database = {
           read_at?: string | null
           receiver_id: string
           sender_id: string
+          shared_post_id?: string | null
         }
         Update: {
           content?: string
@@ -429,6 +458,7 @@ export type Database = {
           read_at?: string | null
           receiver_id?: string
           sender_id?: string
+          shared_post_id?: string | null
         }
         Relationships: [
           {
@@ -443,6 +473,13 @@ export type Database = {
             columns: ["sender_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_shared_post_id_fkey"
+            columns: ["shared_post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
             referencedColumns: ["id"]
           },
         ]
@@ -796,6 +833,48 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      story_mentions: {
+        Row: {
+          created_at: string
+          id: string
+          mentioned_user_id: string
+          position_x: number
+          position_y: number
+          story_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          mentioned_user_id: string
+          position_x?: number
+          position_y?: number
+          story_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          mentioned_user_id?: string
+          position_x?: number
+          position_y?: number
+          story_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "story_mentions_mentioned_user_id_fkey"
+            columns: ["mentioned_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "story_mentions_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
+            referencedRelation: "stories"
             referencedColumns: ["id"]
           },
         ]
