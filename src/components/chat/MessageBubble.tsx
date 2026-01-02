@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MoreVertical, Pencil, Trash2, Smile, Download, Image as ImageIcon, FileText } from 'lucide-react';
+import { MoreVertical, Pencil, Trash2, Smile, Download, FileText } from 'lucide-react';
 import { MessageWithProfile, useDeleteMessage, useEditMessage, useToggleReaction } from '@/hooks/useMessages';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -16,16 +16,19 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import ReadReceipt from './ReadReceipt';
+import SharedPostCard from './SharedPostCard';
 import { cn } from '@/lib/utils';
+import { ChatTheme } from '@/hooks/useChatThemes';
 
 interface MessageBubbleProps {
   message: MessageWithProfile;
   reactions?: { emoji: string; count: number; hasUserReacted: boolean }[];
+  theme?: ChatTheme;
 }
 
 const EMOJI_OPTIONS = ['❤️', '😂', '😮', '😢', '😡', '👍', '👎', '🔥'];
 
-const MessageBubble = ({ message, reactions = [] }: MessageBubbleProps) => {
+const MessageBubble = ({ message, reactions = [], theme }: MessageBubbleProps) => {
   const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(message.content);
@@ -57,6 +60,21 @@ const MessageBubble = ({ message, reactions = [] }: MessageBubbleProps) => {
     if (!url) return false;
     return /\.(jpg|jpeg|png|gif|webp)$/i.test(url);
   };
+
+  // Get bubble styles based on theme
+  const getBubbleClasses = () => {
+    if (theme) {
+      return isOwn
+        ? cn(theme.sentBubbleGradient, theme.sentTextColor)
+        : cn(theme.receivedBubbleColor, theme.receivedTextColor);
+    }
+    return isOwn
+      ? 'bg-primary text-primary-foreground'
+      : 'bg-secondary text-secondary-foreground';
+  };
+
+  // Check if this message has a shared post
+  const sharedPostId = (message as any).shared_post_id;
 
   return (
     <div
@@ -116,69 +134,77 @@ const MessageBubble = ({ message, reactions = [] }: MessageBubbleProps) => {
           )}
         </div>
         
+        {/* Shared Post Card */}
+        {sharedPostId && (
+          <div className="mb-2">
+            <SharedPostCard postId={sharedPostId} isOwn={isOwn} />
+          </div>
+        )}
+
         {/* Message Content */}
-        <div
-          className={cn(
-            'px-4 py-2 rounded-2xl animate-fade-in',
-            isOwn
-              ? 'bg-primary text-primary-foreground rounded-br-sm'
-              : 'bg-secondary text-secondary-foreground rounded-bl-sm'
-          )}
-        >
-          {/* Image */}
-          {message.image_url && (
-            <div className="mb-2">
-              <img 
-                src={message.image_url} 
-                alt="Shared image" 
-                className="max-w-full rounded-lg max-h-64 object-cover cursor-pointer"
-                onClick={() => window.open(message.image_url!, '_blank')}
-              />
-            </div>
-          )}
-          
-          {/* File */}
-          {message.file_url && !isImageUrl(message.file_url) && (
-            <a 
-              href={message.file_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={cn(
-                "flex items-center gap-2 p-2 rounded-lg mb-2",
-                isOwn ? "bg-primary-foreground/20" : "bg-background/50"
-              )}
-            >
-              <FileText className="w-8 h-8" />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{message.file_name || 'File'}</p>
+        {(message.content || message.image_url || message.file_url) && (
+          <div
+            className={cn(
+              'px-4 py-2 rounded-2xl animate-fade-in',
+              getBubbleClasses(),
+              isOwn ? 'rounded-br-sm' : 'rounded-bl-sm'
+            )}
+          >
+            {/* Image */}
+            {message.image_url && (
+              <div className="mb-2">
+                <img 
+                  src={message.image_url} 
+                  alt="Shared image" 
+                  className="max-w-full rounded-lg max-h-64 object-cover cursor-pointer"
+                  onClick={() => window.open(message.image_url!, '_blank')}
+                />
               </div>
-              <Download className="w-4 h-4" />
-            </a>
-          )}
-          
-          {/* Text Content */}
-          {isEditing ? (
-            <div className="flex gap-2">
-              <Input
-                value={editContent}
-                onChange={(e) => setEditContent(e.target.value)}
-                className="min-w-[150px] bg-background text-foreground"
-                autoFocus
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleEdit();
-                  if (e.key === 'Escape') setIsEditing(false);
-                }}
-              />
-              <Button size="sm" onClick={handleEdit}>Save</Button>
-            </div>
-          ) : (
-            message.content && <p className="text-sm break-words">{message.content}</p>
-          )}
-          
-          {message.edited_at && (
-            <span className="text-xs opacity-70">(edited)</span>
-          )}
-        </div>
+            )}
+            
+            {/* File */}
+            {message.file_url && !isImageUrl(message.file_url) && (
+              <a 
+                href={message.file_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={cn(
+                  "flex items-center gap-2 p-2 rounded-lg mb-2",
+                  isOwn ? "bg-primary-foreground/20" : "bg-background/50"
+                )}
+              >
+                <FileText className="w-8 h-8" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{message.file_name || 'File'}</p>
+                </div>
+                <Download className="w-4 h-4" />
+              </a>
+            )}
+            
+            {/* Text Content */}
+            {isEditing ? (
+              <div className="flex gap-2">
+                <Input
+                  value={editContent}
+                  onChange={(e) => setEditContent(e.target.value)}
+                  className="min-w-[150px] bg-background text-foreground"
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleEdit();
+                    if (e.key === 'Escape') setIsEditing(false);
+                  }}
+                />
+                <Button size="sm" onClick={handleEdit}>Save</Button>
+              </div>
+            ) : (
+              message.content && <p className="text-sm break-words">{message.content}</p>
+            )}
+            
+            {message.edited_at && (
+              <span className="text-xs opacity-70">(edited)</span>
+            )}
+          </div>
+        )}
         
         {/* Reactions */}
         {reactions.length > 0 && (
