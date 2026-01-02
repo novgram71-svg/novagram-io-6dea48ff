@@ -1,7 +1,8 @@
 import { useState, useRef } from 'react';
-import { Mic, Square, Play, Pause, Trash2, Send } from 'lucide-react';
+import { Mic, Square, Play, Pause, Trash2, Send, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useStorage } from '@/hooks/useStorage';
 
 interface VoiceRecorderProps {
   onSend: (voiceUrl: string) => void;
@@ -10,13 +11,16 @@ interface VoiceRecorderProps {
 
 const VoiceRecorder = ({ onSend, disabled }: VoiceRecorderProps) => {
   const [isRecording, setIsRecording] = useState(false);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [duration, setDuration] = useState(0);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const { uploadVoiceMessage } = useStorage();
 
   const startRecording = async () => {
     try {
@@ -30,8 +34,9 @@ const VoiceRecorder = ({ onSend, disabled }: VoiceRecorderProps) => {
       };
 
       mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        const url = URL.createObjectURL(audioBlob);
+        const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        setAudioBlob(blob);
+        const url = URL.createObjectURL(blob);
         setAudioUrl(url);
         stream.getTracks().forEach(track => track.stop());
       };
@@ -59,20 +64,23 @@ const VoiceRecorder = ({ onSend, disabled }: VoiceRecorderProps) => {
   };
 
   const playPause = () => {
-    if (!audioRef.current) {
-      audioRef.current = new Audio(audioUrl!);
+    if (!audioRef.current && audioUrl) {
+      audioRef.current = new Audio(audioUrl);
       audioRef.current.onended = () => setIsPlaying(false);
     }
     
-    if (isPlaying) {
-      audioRef.current.pause();
-    } else {
-      audioRef.current.play();
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause();
+      } else {
+        audioRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
     }
-    setIsPlaying(!isPlaying);
   };
 
   const cancelRecording = () => {
+    setAudioBlob(null);
     setAudioUrl(null);
     setDuration(0);
     if (audioRef.current) {
@@ -82,10 +90,18 @@ const VoiceRecorder = ({ onSend, disabled }: VoiceRecorderProps) => {
     setIsPlaying(false);
   };
 
-  const handleSend = () => {
-    if (audioUrl) {
-      onSend(audioUrl);
+  const handleSend = async () => {
+    if (!audioBlob) return;
+
+    setIsUploading(true);
+    try {
+      const publicUrl = await uploadVoiceMessage(audioBlob);
+      onSend(publicUrl);
       cancelRecording();
+    } catch (error) {
+      console.error('Error uploading voice message:', error);
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -103,6 +119,7 @@ const VoiceRecorder = ({ onSend, disabled }: VoiceRecorderProps) => {
           size="icon"
           className="h-8 w-8 rounded-full"
           onClick={playPause}
+          disabled={isUploading}
         >
           {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
         </Button>
@@ -119,6 +136,7 @@ const VoiceRecorder = ({ onSend, disabled }: VoiceRecorderProps) => {
           size="icon"
           className="h-8 w-8 rounded-full text-destructive hover:text-destructive"
           onClick={cancelRecording}
+          disabled={isUploading}
         >
           <Trash2 className="w-4 h-4" />
         </Button>
@@ -127,8 +145,13 @@ const VoiceRecorder = ({ onSend, disabled }: VoiceRecorderProps) => {
           size="icon"
           className="h-8 w-8 rounded-full bg-primary hover:bg-primary/90"
           onClick={handleSend}
+          disabled={isUploading}
         >
-          <Send className="w-4 h-4" />
+          {isUploading ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Send className="w-4 h-4" />
+          )}
         </Button>
       </div>
     );
