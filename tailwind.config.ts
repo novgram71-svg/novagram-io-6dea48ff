@@ -105,6 +105,16 @@ export default {
           "0%": { transform: "scale(0)", opacity: "0.6" },
           "100%": { transform: "scale(4)", opacity: "0" },
         },
+        "shimmer": {
+          "0%": { transform: "translateX(-100%) rotate(15deg)" },
+          "100%": { transform: "translateX(200%) rotate(15deg)" },
+        },
+        "bubble-rise": {
+          "0%": { transform: "translateY(100%) scale(0.5)", opacity: "0" },
+          "20%": { opacity: "0.8" },
+          "80%": { opacity: "0.6" },
+          "100%": { transform: "translateY(-20%) scale(1)", opacity: "0" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -116,6 +126,8 @@ export default {
         "story-progress": "story-progress 5s linear",
         "float-bubble": "float-bubble 6s ease-in-out infinite",
         "ripple": "ripple 0.6s ease-out forwards",
+        "shimmer": "shimmer 3s ease-in-out infinite",
+        "bubble-rise": "bubble-rise 4s ease-in-out infinite",
       },
     },
   },
