@@ -61,9 +61,30 @@ export const useStorage = () => {
     return publicUrl;
   };
 
+  const uploadVoiceMessage = async (audioBlob: Blob) => {
+    if (!user) throw new Error('Not authenticated');
+
+    const fileName = `${user.id}/${Date.now()}.webm`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('voice_messages')
+      .upload(fileName, audioBlob, {
+        contentType: 'audio/webm',
+      });
+
+    if (uploadError) throw uploadError;
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('voice_messages')
+      .getPublicUrl(fileName);
+
+    return publicUrl;
+  };
+
   return {
     uploadPostImage,
     uploadStoryImage,
     uploadAvatar,
+    uploadVoiceMessage,
   };
 };

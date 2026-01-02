@@ -2,7 +2,6 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Send, ArrowLeft, MoreVertical, Search, Sparkles, Palette } from 'lucide-react';
 import { useLocation, Navigate, useNavigate } from 'react-router-dom';
 import MainLayout from '@/components/layout/MainLayout';
-import PullToRefresh from '@/components/posts/PullToRefresh';
 import { useAuth } from '@/hooks/useAuth';
 import { useConversations, useMessages, useSendMessage, Conversation, MessageWithProfile } from '@/hooks/useMessages';
 import { useProfileById } from '@/hooks/useProfiles';
@@ -108,10 +107,6 @@ const Messages = () => {
   const { isPartnerTyping, setTyping } = useTypingIndicator(selectedConversation?.id || null);
   const { isOnline, lastSeen } = useUserPresence(selectedConversation?.id || null);
 
-  const handleRefresh = useCallback(async () => {
-    await queryClient.invalidateQueries({ queryKey: ['conversations'] });
-    await queryClient.invalidateQueries({ queryKey: ['messages'] });
-  }, [queryClient]);
   
   // Fetch reactions for all messages in the conversation
   const messageIds = messages?.map(m => m.id) || [];
@@ -247,8 +242,7 @@ const Messages = () => {
 
   return (
     <MainLayout>
-      <PullToRefresh onRefresh={handleRefresh}>
-        <div className="h-[calc(100vh-80px)] md:h-screen flex">
+      <div className="h-[calc(100vh-80px)] md:h-screen flex">
           {/* Conversations List */}
           <div
             className={cn(
@@ -450,7 +444,6 @@ const Messages = () => {
           )}
           </div>
         </div>
-      </PullToRefresh>
 
       {/* Message Search Sheet */}
       <MessageSearchSheet
