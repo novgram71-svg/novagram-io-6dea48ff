@@ -371,6 +371,36 @@ export type Database = {
           },
         ]
       }
+      linked_accounts: {
+        Row: {
+          created_at: string | null
+          id: string
+          linked_avatar_url: string | null
+          linked_email: string
+          linked_user_id: string
+          linked_username: string
+          primary_user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          linked_avatar_url?: string | null
+          linked_email: string
+          linked_user_id: string
+          linked_username: string
+          primary_user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          linked_avatar_url?: string | null
+          linked_email?: string
+          linked_user_id?: string
+          linked_username?: string
+          primary_user_id?: string
+        }
+        Relationships: []
+      }
       login_activity: {
         Row: {
           device_info: string | null
@@ -477,8 +507,10 @@ export type Database = {
           read: boolean
           read_at: string | null
           receiver_id: string
+          reply_to_id: string | null
           sender_id: string
           shared_post_id: string | null
+          voice_url: string | null
         }
         Insert: {
           content: string
@@ -491,8 +523,10 @@ export type Database = {
           read?: boolean
           read_at?: string | null
           receiver_id: string
+          reply_to_id?: string | null
           sender_id: string
           shared_post_id?: string | null
+          voice_url?: string | null
         }
         Update: {
           content?: string
@@ -505,8 +539,10 @@ export type Database = {
           read?: boolean
           read_at?: string | null
           receiver_id?: string
+          reply_to_id?: string | null
           sender_id?: string
           shared_post_id?: string | null
+          voice_url?: string | null
         }
         Relationships: [
           {
@@ -514,6 +550,13 @@ export type Database = {
             columns: ["receiver_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_reply_to_id_fkey"
+            columns: ["reply_to_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
             referencedColumns: ["id"]
           },
           {

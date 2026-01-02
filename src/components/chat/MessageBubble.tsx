@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
-import { MoreVertical, Pencil, Trash2, Smile, Download, FileText, Heart } from 'lucide-react';
+import { MoreVertical, Pencil, Trash2, Smile, Download, FileText, Heart, Reply, Mic } from 'lucide-react';
 import { MessageWithProfile, useDeleteMessage, useEditMessage, useToggleReaction } from '@/hooks/useMessages';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/popover';
 import ReadReceipt from './ReadReceipt';
 import SharedPostCard from './SharedPostCard';
+import VoiceMessage from './VoiceMessage';
 import { cn } from '@/lib/utils';
 import { ChatTheme } from '@/hooks/useChatThemes';
 
@@ -24,11 +25,13 @@ interface MessageBubbleProps {
   message: MessageWithProfile;
   reactions?: { emoji: string; count: number; hasUserReacted: boolean }[];
   theme?: ChatTheme;
+  onReply?: (message: MessageWithProfile) => void;
+  replyToMessage?: MessageWithProfile | null;
 }
 
 const EMOJI_OPTIONS = ['❤️', '😂', '😮', '😢', '😡', '👍', '👎', '🔥'];
 
-const MessageBubble = ({ message, reactions = [], theme }: MessageBubbleProps) => {
+const MessageBubble = ({ message, reactions = [], theme, onReply, replyToMessage }: MessageBubbleProps) => {
   const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(message.content);
@@ -91,6 +94,21 @@ const MessageBubble = ({ message, reactions = [], theme }: MessageBubbleProps) =
 
   // Check if this message has a shared post
   const sharedPostId = (message as any).shared_post_id;
+  const voiceUrl = (message as any).voice_url;
+
+  const getReplyPreviewContent = (msg: MessageWithProfile) => {
+    if ((msg as any).voice_url) {
+      return (
+        <span className="flex items-center gap-1">
+          <Mic className="w-3 h-3" />
+          Voice message
+        </span>
+      );
+    }
+    if (msg.image_url) return '📷 Photo';
+    if (msg.file_url) return `📎 ${msg.file_name || 'File'}`;
+    return msg.content.length > 50 ? msg.content.substring(0, 50) + '...' : msg.content;
+  };
 
   return (
     <div
@@ -115,8 +133,23 @@ const MessageBubble = ({ message, reactions = [], theme }: MessageBubbleProps) =
         {/* Message Actions */}
         <div className={cn(
           "absolute top-0 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10",
-          isOwn ? "-left-16" : "-right-16"
+          isOwn ? "-left-20" : "-right-20"
         )}>
+          {/* Reply button */}
+          {onReply && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-7 w-7"
+              onClick={(e) => {
+                e.stopPropagation();
+                onReply(message);
+              }}
+            >
+              <Reply className="w-4 h-4" />
+            </Button>
+          )}
+          
           <Popover open={showEmojiPicker} onOpenChange={setShowEmojiPicker}>
             <PopoverTrigger asChild>
               <Button variant="ghost" size="icon" className="h-7 w-7">
@@ -146,10 +179,12 @@ const MessageBubble = ({ message, reactions = [], theme }: MessageBubbleProps) =
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align={isOwn ? 'end' : 'start'}>
-                <DropdownMenuItem onClick={() => setIsEditing(true)}>
-                  <Pencil className="w-4 h-4 mr-2" />
-                  Edit
-                </DropdownMenuItem>
+                {!voiceUrl && (
+                  <DropdownMenuItem onClick={() => setIsEditing(true)}>
+                    <Pencil className="w-4 h-4 mr-2" />
+                    Edit
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem onClick={handleDelete} className="text-destructive">
                   <Trash2 className="w-4 h-4 mr-2" />
                   Delete
@@ -159,6 +194,23 @@ const MessageBubble = ({ message, reactions = [], theme }: MessageBubbleProps) =
           )}
         </div>
         
+        {/* Reply Quote */}
+        {replyToMessage && (
+          <div 
+            className={cn(
+              "px-3 py-2 rounded-t-xl text-xs border-l-2 border-primary mb-0.5",
+              isOwn ? "bg-primary/20" : "bg-secondary"
+            )}
+          >
+            <p className="font-medium text-primary text-[10px]">
+              {replyToMessage.sender_id === user?.id ? 'You' : replyToMessage.sender.username}
+            </p>
+            <p className="text-muted-foreground truncate">
+              {getReplyPreviewContent(replyToMessage)}
+            </p>
+          </div>
+        )}
+        
         {/* Shared Post Card */}
         {sharedPostId && (
           <div className="mb-2">
@@ -167,14 +219,20 @@ const MessageBubble = ({ message, reactions = [], theme }: MessageBubbleProps) =
         )}
 
         {/* Message Content */}
-        {(message.content || message.image_url || message.file_url) && (
+        {(message.content || message.image_url || message.file_url || voiceUrl) && (
           <div
             className={cn(
               'px-4 py-2 rounded-2xl animate-fade-in',
               getBubbleClasses(),
-              isOwn ? 'rounded-br-sm' : 'rounded-bl-sm'
+              isOwn ? 'rounded-br-sm' : 'rounded-bl-sm',
+              replyToMessage && 'rounded-t-none'
             )}
           >
+            {/* Voice Message */}
+            {voiceUrl && (
+              <VoiceMessage url={voiceUrl} isOwn={isOwn} />
+            )}
+            
             {/* Image */}
             {message.image_url && (
               <div className="mb-2">
@@ -207,22 +265,24 @@ const MessageBubble = ({ message, reactions = [], theme }: MessageBubbleProps) =
             )}
             
             {/* Text Content */}
-            {isEditing ? (
-              <div className="flex gap-2">
-                <Input
-                  value={editContent}
-                  onChange={(e) => setEditContent(e.target.value)}
-                  className="min-w-[150px] bg-background text-foreground"
-                  autoFocus
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleEdit();
-                    if (e.key === 'Escape') setIsEditing(false);
-                  }}
-                />
-                <Button size="sm" onClick={handleEdit}>Save</Button>
-              </div>
-            ) : (
-              message.content && <p className="text-sm break-words">{message.content}</p>
+            {!voiceUrl && (
+              isEditing ? (
+                <div className="flex gap-2">
+                  <Input
+                    value={editContent}
+                    onChange={(e) => setEditContent(e.target.value)}
+                    className="min-w-[150px] bg-background text-foreground"
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleEdit();
+                      if (e.key === 'Escape') setIsEditing(false);
+                    }}
+                  />
+                  <Button size="sm" onClick={handleEdit}>Save</Button>
+                </div>
+              ) : (
+                message.content && <p className="text-sm break-words">{message.content}</p>
+              )
             )}
             
             {message.edited_at && (
