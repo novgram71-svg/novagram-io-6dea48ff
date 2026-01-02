@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff, Loader2, Sparkles, Camera, Heart, MessageCircle, Users, Phone, Mail, User } from 'lucide-react';
+import { useRef } from 'react';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { useSecurityQuestion } from '@/hooks/useSecurityQuestion';
@@ -31,6 +32,8 @@ const Auth = () => {
   const [showSecurityDialog, setShowSecurityDialog] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string; username?: string; phone?: string }>({});
+  const [ripples, setRipples] = useState<{ id: number; x: number; y: number }[]>([]);
+  const cardRef = useRef<HTMLDivElement>(null);
   
   const { signIn, signUp, user } = useAuth();
   const { hasSecurityQuestion, isLoading: loadingSecurityQuestion } = useSecurityQuestion();
@@ -103,6 +106,18 @@ const Auth = () => {
   const handleSecurityQuestionComplete = () => {
     setShowSecurityDialog(false);
     navigate('/');
+  };
+
+  const createRipple = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!cardRef.current) return;
+    const rect = cardRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const id = Date.now();
+    setRipples(prev => [...prev, { id, x, y }]);
+    setTimeout(() => {
+      setRipples(prev => prev.filter(r => r.id !== id));
+    }, 600);
   };
 
   const validate = () => {
@@ -259,8 +274,28 @@ const Auth = () => {
         <Sparkles className="absolute top-[60%] left-[5%] w-5 h-5 text-primary/40 animate-bounce-gentle stagger-5" />
       </div>
 
-      <div className="w-full max-w-md relative z-10">
-        <div className="p-8 space-y-6 animate-slide-up rounded-3xl border border-white/20 bg-white/10 dark:bg-white/5 backdrop-blur-2xl shadow-[0_8px_32px_0_rgba(31,38,135,0.37)] before:absolute before:inset-0 before:rounded-3xl before:bg-gradient-to-br before:from-white/30 before:to-transparent before:pointer-events-none relative overflow-hidden">
+      <div className="w-full max-w-md relative z-10 animate-float-bubble">
+        <div 
+          ref={cardRef}
+          onClick={createRipple}
+          className="p-8 space-y-6 rounded-3xl border border-white/20 bg-white/10 dark:bg-white/5 backdrop-blur-2xl shadow-[0_8px_32px_0_rgba(31,38,135,0.37)] relative overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-[0_12px_48px_0_rgba(31,38,135,0.5)] hover:border-white/30 hover:bg-white/15 dark:hover:bg-white/10"
+        >
+          {/* Gradient overlay */}
+          <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-white/30 to-transparent pointer-events-none" />
+          
+          {/* Ripple effects */}
+          {ripples.map(ripple => (
+            <span
+              key={ripple.id}
+              className="absolute rounded-full bg-white/40 animate-ripple pointer-events-none"
+              style={{
+                left: ripple.x - 10,
+                top: ripple.y - 10,
+                width: 20,
+                height: 20,
+              }}
+            />
+          ))}
           {/* Logo with animation */}
           <div className="text-center animate-slide-up">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-accent mb-4 animate-pulse-soft shadow-lg">
