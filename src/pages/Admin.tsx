@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { Users, Image, MessageSquare, Download, ChevronRight, AlertTriangle, Ban, CheckCircle, XCircle, Bot, Eye, KeyRound, Loader2 } from 'lucide-react';
+import { Users, Image, MessageSquare, Download, ChevronRight, AlertTriangle, Ban, CheckCircle, XCircle, Bot, Eye, KeyRound, Loader2, FileWarning } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin, useAllUsers, useAllPosts, useConversationPartners, useConversation } from '@/hooks/useAdmin';
 import { useAllReports, useUpdateReportStatus, useAllBannedUsers, useBanUser, useUnbanUser } from '@/hooks/useUserModeration';
 import { useAIAbuseReports } from '@/hooks/useAIAbuseReports';
 import { usePasswordResetRequests } from '@/hooks/usePasswordReset';
+import { useAllAppReports, useUpdateAppReportStatus } from '@/hooks/useAppReports';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -36,6 +37,8 @@ const Admin = () => {
   const { data: bannedUsers, isLoading: bannedLoading } = useAllBannedUsers();
   const { reports: aiReports, isLoading: aiReportsLoading, markReviewed } = useAIAbuseReports();
   const { requests: resetRequests, isLoading: resetLoading, approveRequest, rejectRequest } = usePasswordResetRequests();
+  const { data: appReports, isLoading: appReportsLoading } = useAllAppReports();
+  const updateAppReportStatus = useUpdateAppReportStatus();
   
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const [selectedChatPartner, setSelectedChatPartner] = useState<string | null>(null);
@@ -111,6 +114,7 @@ const Admin = () => {
   const pendingReportsCount = reports?.filter((r: any) => r.status === 'pending').length || 0;
   const unreviewedAIReportsCount = aiReports?.filter(r => !r.reviewed).length || 0;
   const pendingResetCount = resetRequests?.length || 0;
+  const pendingAppReportsCount = appReports?.filter((r: any) => r.status === 'pending').length || 0;
 
   return (
     <MainLayout>
@@ -160,6 +164,15 @@ const Admin = () => {
               {pendingResetCount > 0 && (
                 <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
                   {pendingResetCount}
+                </span>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="app-reports" className="gap-2 relative">
+              <FileWarning className="w-4 h-4" />
+              App Issues
+              {pendingAppReportsCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  {pendingAppReportsCount}
                 </span>
               )}
             </TabsTrigger>
@@ -773,6 +786,90 @@ const Admin = () => {
                         <KeyRound className="w-12 h-12 mx-auto mb-4 opacity-50" />
                         <p>No pending password reset requests</p>
                         <p className="text-sm mt-2">User password reset requests will appear here</p>
+                      </div>
+                    )}
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* App Reports Tab */}
+          <TabsContent value="app-reports" className="animate-fade-in">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileWarning className="w-5 h-5" />
+                  App Issue Reports ({appReports?.length || 0})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-[60vh]">
+                  <div className="space-y-4">
+                    {appReportsLoading ? (
+                      Array.from({ length: 3 }).map((_, i) => (
+                        <Skeleton key={i} className="h-32 w-full" />
+                      ))
+                    ) : appReports && appReports.length > 0 ? (
+                      appReports.map((report: any) => (
+                        <div
+                          key={report.id}
+                          className="p-4 rounded-xl bg-secondary/50 border border-border animate-fade-in"
+                        >
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex items-center gap-3">
+                              <Avatar className="w-10 h-10">
+                                <AvatarImage src={report.user?.avatar_url || ''} />
+                                <AvatarFallback>{report.user?.username?.[0]?.toUpperCase() || '?'}</AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="font-semibold">{report.user?.username || 'Unknown'}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {formatDistanceToNow(new Date(report.created_at))} ago
+                                </p>
+                              </div>
+                            </div>
+                            {getStatusBadge(report.status)}
+                          </div>
+                          
+                          <div className="bg-background/50 rounded-lg p-3 mb-3">
+                            <p className="text-sm font-medium mb-1 capitalize">
+                              Issue Type: {report.problem.replace('_', ' ')}
+                            </p>
+                            {report.details && (
+                              <p className="text-sm text-muted-foreground">{report.details}</p>
+                            )}
+                          </div>
+
+                          {report.status === 'pending' && (
+                            <div className="flex gap-2">
+                              <Button
+                                variant="default"
+                                size="sm"
+                                onClick={() => updateAppReportStatus.mutate({ reportId: report.id, status: 'resolved' })}
+                                disabled={updateAppReportStatus.isPending}
+                              >
+                                <CheckCircle className="w-4 h-4 mr-1" />
+                                Resolve
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => updateAppReportStatus.mutate({ reportId: report.id, status: 'dismissed' })}
+                                disabled={updateAppReportStatus.isPending}
+                              >
+                                <XCircle className="w-4 h-4 mr-1" />
+                                Dismiss
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-12 text-muted-foreground animate-fade-in">
+                        <FileWarning className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                        <p>No app issue reports</p>
+                        <p className="text-sm mt-2">User-submitted app issues will appear here</p>
                       </div>
                     )}
                   </div>

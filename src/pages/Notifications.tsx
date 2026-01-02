@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Heart, MessageCircle, UserPlus, CheckCircle, XCircle, Clock, UserCheck, Check, X, Play } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import MainLayout from '@/components/layout/MainLayout';
 import { useNotifications, useMarkNotificationsRead } from '@/hooks/useNotifications';
 import { useAuth } from '@/hooks/useAuth';
@@ -11,6 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
+import PullToRefresh from '@/components/posts/PullToRefresh';
 
 const notificationIcons: Record<string, any> = {
   like: Heart,
@@ -53,9 +55,15 @@ const notificationMessages: Record<string, string> = {
 
 const Notifications = () => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const { data: notifications, isLoading } = useNotifications();
   const markRead = useMarkNotificationsRead();
   const { receivedRequests, acceptRequest, rejectRequest } = useFollowRequests();
+
+  const handleRefresh = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    await queryClient.invalidateQueries({ queryKey: ['followRequests'] });
+  };
 
   // Mark notifications as read when viewing
   useEffect(() => {
@@ -192,15 +200,16 @@ const Notifications = () => {
 
   return (
     <MainLayout>
-      <div className="max-w-2xl mx-auto">
-        {/* Header */}
-        <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-lg border-b border-border">
-          <div className="px-4 py-3">
-            <h1 className="text-xl font-bold">Notifications</h1>
-          </div>
-        </header>
+      <PullToRefresh onRefresh={handleRefresh}>
+        <div className="max-w-2xl mx-auto">
+          {/* Header */}
+          <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-lg border-b border-border">
+            <div className="px-4 py-3">
+              <h1 className="text-xl font-bold">Notifications</h1>
+            </div>
+          </header>
 
-        <div className="divide-y divide-border">
+          <div className="divide-y divide-border">
           {isLoading ? (
             <div className="p-4 space-y-4">
               {[1, 2, 3, 4, 5].map((i) => (
@@ -299,8 +308,9 @@ const Notifications = () => {
               )}
             </>
           )}
+          </div>
         </div>
-      </div>
+      </PullToRefresh>
     </MainLayout>
   );
 };

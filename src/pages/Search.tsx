@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Search as SearchIcon, X, Sparkles, Bot } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 import MainLayout from '@/components/layout/MainLayout';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
@@ -9,13 +10,19 @@ import { useAuth } from '@/hooks/useAuth';
 import { useAllProfiles, useIsFollowing, useToggleFollow } from '@/hooks/useProfiles';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AIChat } from '@/components/search/AIChat';
+import PullToRefresh from '@/components/posts/PullToRefresh';
 
 const Search = () => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [query, setQuery] = useState('');
   const [showAI, setShowAI] = useState(false);
   const { data: profiles, isLoading } = useAllProfiles();
   const toggleFollow = useToggleFollow();
+
+  const handleRefresh = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['profiles'] });
+  };
 
   const filteredUsers = query && profiles
     ? profiles.filter(profile =>
@@ -26,9 +33,10 @@ const Search = () => {
 
   return (
     <MainLayout>
-      <div className="max-w-2xl mx-auto">
-        {/* Mobile Header */}
-        <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-lg border-b border-border md:hidden">
+      <PullToRefresh onRefresh={handleRefresh}>
+        <div className="max-w-2xl mx-auto">
+          {/* Mobile Header */}
+          <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-lg border-b border-border md:hidden">
           <div className="px-4 py-3">
             <div className="flex items-center justify-between mb-3">
               <h1 className="text-lg font-bold">Search</h1>
@@ -161,7 +169,8 @@ const Search = () => {
             </div>
           )}
         </div>
-      </div>
+        </div>
+      </PullToRefresh>
     </MainLayout>
   );
 };
