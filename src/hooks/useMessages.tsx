@@ -23,6 +23,8 @@ export interface MessageWithProfile {
   image_url: string | null;
   file_url: string | null;
   file_name: string | null;
+  voice_url: string | null;
+  reply_to_id: string | null;
   sender: {
     id: string;
     username: string;
@@ -34,6 +36,7 @@ export interface MessageWithProfile {
     avatar_url: string | null;
   };
   reactions?: MessageReaction[];
+  reply_to?: MessageWithProfile | null;
 }
 
 export interface Conversation {
@@ -166,13 +169,17 @@ export const useSendMessage = () => {
       content, 
       imageUrl, 
       fileUrl, 
-      fileName 
+      fileName,
+      voiceUrl,
+      replyToId 
     }: { 
       receiverId: string; 
       content: string; 
       imageUrl?: string;
       fileUrl?: string;
       fileName?: string;
+      voiceUrl?: string;
+      replyToId?: string;
     }) => {
       if (!user) throw new Error('Not authenticated');
 
@@ -185,6 +192,8 @@ export const useSendMessage = () => {
           image_url: imageUrl || null,
           file_url: fileUrl || null,
           file_name: fileName || null,
+          voice_url: voiceUrl || null,
+          reply_to_id: replyToId || null,
         });
 
       if (error) throw error;

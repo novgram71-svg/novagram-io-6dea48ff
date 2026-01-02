@@ -38,13 +38,55 @@ const Auth = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    if (user && !loadingSecurityQuestion) {
-      if (!hasSecurityQuestion) {
-        setShowSecurityDialog(true);
-      } else {
-        navigate('/');
+    const linkAccountIfNeeded = async () => {
+      if (user && !loadingSecurityQuestion) {
+        // Check if we need to link accounts
+        const pendingLink = localStorage.getItem('pending_link_account');
+        if (pendingLink) {
+          try {
+            const previousAccount = JSON.parse(pendingLink);
+            // Link the new account to the previous one
+            const { data: currentProfile } = await supabase
+              .from('profiles')
+              .select('username, avatar_url, email')
+              .eq('id', user.id)
+              .single();
+            
+            if (currentProfile && previousAccount.userId !== user.id) {
+              // Add this account as linked to the previous user's account
+              await supabase.from('linked_accounts').upsert({
+                primary_user_id: previousAccount.userId,
+                linked_user_id: user.id,
+                linked_email: user.email || '',
+                linked_username: currentProfile.username,
+                linked_avatar_url: currentProfile.avatar_url,
+              }, { onConflict: 'primary_user_id,linked_user_id' });
+              
+              // Also link in reverse direction
+              await supabase.from('linked_accounts').upsert({
+                primary_user_id: user.id,
+                linked_user_id: previousAccount.userId,
+                linked_email: previousAccount.email || '',
+                linked_username: previousAccount.username,
+                linked_avatar_url: previousAccount.avatarUrl,
+              }, { onConflict: 'primary_user_id,linked_user_id' });
+            }
+          } catch (error) {
+            console.error('Error linking accounts:', error);
+          } finally {
+            localStorage.removeItem('pending_link_account');
+          }
+        }
+        
+        if (!hasSecurityQuestion) {
+          setShowSecurityDialog(true);
+        } else {
+          navigate('/');
+        }
       }
-    }
+    };
+    
+    linkAccountIfNeeded();
   }, [user, hasSecurityQuestion, loadingSecurityQuestion, navigate]);
 
   const handleSecurityQuestionComplete = () => {

@@ -21,6 +21,8 @@ import AttachmentPreview from '@/components/chat/AttachmentPreview';
 import MessageSearchSheet from '@/components/chat/MessageSearchSheet';
 import ChatThemeSheet from '@/components/chat/ChatThemeSheet';
 import NotesBubble from '@/components/chat/NotesBubble';
+import VoiceRecorder from '@/components/chat/VoiceRecorder';
+import ReplyPreview from '@/components/chat/ReplyPreview';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
@@ -89,6 +91,7 @@ const Messages = () => {
   const [attachment, setAttachment] = useState<{ url: string; name: string; type: 'image' | 'file' } | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [themeSheetOpen, setThemeSheetOpen] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<MessageWithProfile | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   // Chat theme
@@ -200,8 +203,8 @@ const Messages = () => {
     return <Navigate to="/auth" replace />;
   }
 
-  const handleSendMessage = async () => {
-    if ((!newMessage.trim() && !attachment) || !selectedConversation) return;
+  const handleSendMessage = async (voiceUrl?: string) => {
+    if ((!newMessage.trim() && !attachment && !voiceUrl) || !selectedConversation) return;
     
     setTyping(false);
     await sendMessage.mutateAsync({
@@ -210,11 +213,24 @@ const Messages = () => {
       imageUrl: attachment?.type === 'image' ? attachment.url : undefined,
       fileUrl: attachment?.type === 'file' ? attachment.url : undefined,
       fileName: attachment?.name,
+      voiceUrl,
+      replyToId: replyingTo?.id,
     });
     
     setNewMessage('');
     setAttachment(null);
+    setReplyingTo(null);
   };
+
+  // Build reply map
+  const replyMap = useMemo(() => {
+    if (!messages) return {};
+    const map: Record<string, MessageWithProfile> = {};
+    messages.forEach(m => {
+      map[m.id] = m;
+    });
+    return map;
+  }, [messages]);
 
   const handleFileSelect = (file: { url: string; name: string; type: 'image' | 'file' }) => {
     setAttachment(file);
@@ -359,6 +375,8 @@ const Messages = () => {
                       message={message}
                       reactions={reactionsMap[message.id] || []}
                       theme={chatTheme}
+                      onReply={setReplyingTo}
+                      replyToMessage={(message as any).reply_to_id ? replyMap[(message as any).reply_to_id] : null}
                     />
                   ))
                 ) : (
@@ -372,6 +390,16 @@ const Messages = () => {
 
               {/* Message Input - Instagram Style Bubble */}
               <div className={cn("p-3", chatTheme?.backgroundGradient)}>
+                {/* Reply Preview */}
+                {replyingTo && (
+                  <div className="mb-2 px-2">
+                    <ReplyPreview 
+                      message={replyingTo} 
+                      onCancel={() => setReplyingTo(null)}
+                      isOwn={replyingTo.sender_id === user?.id}
+                    />
+                  </div>
+                )}
                 {/* Attachment Preview */}
                 {attachment && (
                   <div className="mb-2 px-2">
@@ -394,7 +422,7 @@ const Messages = () => {
                     />
                     {(newMessage.trim() || attachment) && (
                       <Button
-                        onClick={handleSendMessage}
+                        onClick={() => handleSendMessage()}
                         disabled={sendMessage.isPending}
                         size="sm"
                         className="rounded-full h-8 w-8 p-0 bg-primary hover:bg-primary/90 transition-all duration-200"
@@ -403,6 +431,9 @@ const Messages = () => {
                       </Button>
                     )}
                   </div>
+                  {!newMessage.trim() && !attachment && (
+                    <VoiceRecorder onSend={(url) => handleSendMessage(url)} />
+                  )}
                 </div>
               </div>
             </>
