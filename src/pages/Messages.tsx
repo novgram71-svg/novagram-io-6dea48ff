@@ -310,26 +310,31 @@ const Messages = () => {
                   >
                     <ArrowLeft className="w-5 h-5" />
                   </button>
-                  <div className="relative">
-                    <Avatar className="w-10 h-10 transition-transform hover:scale-105">
-                      <AvatarImage src={selectedConversation.avatar_url || ''} alt={selectedConversation.username} />
-                      <AvatarFallback>{selectedConversation.username[0].toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                    <ActiveStatus 
-                      isOnline={isOnline} 
-                      lastSeen={lastSeen} 
-                      showDot 
-                      className="absolute bottom-0 right-0"
-                    />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-sm">{selectedConversation.username}</p>
-                    {isPartnerTyping ? (
-                      <p className="text-xs text-primary">typing...</p>
-                    ) : (
-                      <ActiveStatus isOnline={isOnline} lastSeen={lastSeen} />
-                    )}
-                  </div>
+                  <button
+                    onClick={() => window.location.href = `/profile/${selectedConversation.id}`}
+                    className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+                  >
+                    <div className="relative">
+                      <Avatar className="w-10 h-10 transition-transform hover:scale-105">
+                        <AvatarImage src={selectedConversation.avatar_url || ''} alt={selectedConversation.username} />
+                        <AvatarFallback>{selectedConversation.username[0].toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                      <ActiveStatus 
+                        isOnline={isOnline} 
+                        lastSeen={lastSeen} 
+                        showDot 
+                        className="absolute bottom-0 right-0"
+                      />
+                    </div>
+                    <div className="text-left">
+                      <p className="font-semibold text-sm">{selectedConversation.username}</p>
+                      {isPartnerTyping ? (
+                        <p className="text-xs text-primary animate-pulse">typing...</p>
+                      ) : (
+                        <ActiveStatus isOnline={isOnline} lastSeen={lastSeen} />
+                      )}
+                    </div>
+                  </button>
                 </div>
                 <Button variant="ghost" size="icon" onClick={() => setThemeSheetOpen(true)}>
                   <Palette className="w-5 h-5" />
@@ -364,30 +369,39 @@ const Messages = () => {
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* Message Input */}
-              <div className="p-4 border-t border-border bg-card/50">
+              {/* Message Input - Instagram Style Bubble */}
+              <div className={cn("p-3", chatTheme?.backgroundGradient)}>
                 {/* Attachment Preview */}
                 {attachment && (
-                  <div className="mb-2">
+                  <div className="mb-2 px-2">
                     <AttachmentPreview file={attachment} onRemove={() => setAttachment(null)} />
                   </div>
                 )}
                 <div className="flex items-center gap-2">
                   <ChatAttachment onFileSelect={handleFileSelect} />
-                  <Input
-                    value={newMessage}
-                    onChange={handleInputChange}
-                    placeholder="Type a message..."
-                    className="flex-1 nova-input"
-                    onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                  />
-                  <Button
-                    onClick={handleSendMessage}
-                    disabled={(!newMessage.trim() && !attachment) || sendMessage.isPending}
-                    className="bg-primary hover:bg-primary/90 transition-all duration-200 hover:scale-105"
-                  >
-                    <Send className="w-5 h-5" />
-                  </Button>
+                  <div className={cn(
+                    "flex-1 flex items-center gap-2 rounded-full border bg-background/80 backdrop-blur-sm px-4 py-2",
+                    "focus-within:ring-2 focus-within:ring-primary/50 transition-all duration-200",
+                    chatTheme ? "border-white/20" : "border-border"
+                  )}>
+                    <Input
+                      value={newMessage}
+                      onChange={handleInputChange}
+                      placeholder="Message..."
+                      className="flex-1 border-0 bg-transparent p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground"
+                      onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                    />
+                    {(newMessage.trim() || attachment) && (
+                      <Button
+                        onClick={handleSendMessage}
+                        disabled={sendMessage.isPending}
+                        size="sm"
+                        className="rounded-full h-8 w-8 p-0 bg-primary hover:bg-primary/90 transition-all duration-200"
+                      >
+                        <Send className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
             </>
