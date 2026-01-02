@@ -260,7 +260,7 @@ const Auth = () => {
       </div>
 
       <div className="w-full max-w-md relative z-10">
-        <div className="nova-card p-8 space-y-6 backdrop-blur-xl bg-card/80 animate-slide-up shadow-2xl">
+        <div className="p-8 space-y-6 animate-slide-up rounded-3xl border border-white/20 bg-white/10 dark:bg-white/5 backdrop-blur-2xl shadow-[0_8px_32px_0_rgba(31,38,135,0.37)] before:absolute before:inset-0 before:rounded-3xl before:bg-gradient-to-br before:from-white/30 before:to-transparent before:pointer-events-none relative overflow-hidden">
           {/* Logo with animation */}
           <div className="text-center animate-slide-up">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-accent mb-4 animate-pulse-soft shadow-lg">
