@@ -127,7 +127,8 @@ const Admin = () => {
         </header>
 
         <Tabs defaultValue="users" className="p-4">
-          <TabsList className="mb-4 flex-wrap">
+          {/* Desktop Tabs */}
+          <TabsList className="mb-4 hidden md:flex flex-wrap">
             <TabsTrigger value="users" className="gap-2">
               <Users className="w-4 h-4" />
               Users
@@ -172,6 +173,51 @@ const Admin = () => {
               App Issues
               {pendingAppReportsCount > 0 && (
                 <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  {pendingAppReportsCount}
+                </span>
+              )}
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Mobile Tabs - Scrollable horizontal list */}
+          <TabsList className="mb-4 md:hidden flex overflow-x-auto gap-1 p-1 w-full justify-start">
+            <TabsTrigger value="users" className="flex-shrink-0 px-3 py-2 text-xs">
+              <Users className="w-4 h-4" />
+            </TabsTrigger>
+            <TabsTrigger value="posts" className="flex-shrink-0 px-3 py-2 text-xs">
+              <Image className="w-4 h-4" />
+            </TabsTrigger>
+            <TabsTrigger value="reports" className="flex-shrink-0 px-3 py-2 text-xs relative">
+              <AlertTriangle className="w-4 h-4" />
+              {pendingReportsCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full w-4 h-4 flex items-center justify-center text-[10px]">
+                  {pendingReportsCount}
+                </span>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="chats" className="flex-shrink-0 px-3 py-2 text-xs">
+              <MessageSquare className="w-4 h-4" />
+            </TabsTrigger>
+            <TabsTrigger value="ai-reports" className="flex-shrink-0 px-3 py-2 text-xs relative">
+              <Bot className="w-4 h-4" />
+              {unreviewedAIReportsCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full w-4 h-4 flex items-center justify-center text-[10px]">
+                  {unreviewedAIReportsCount}
+                </span>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="password-resets" className="flex-shrink-0 px-3 py-2 text-xs relative">
+              <KeyRound className="w-4 h-4" />
+              {pendingResetCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full w-4 h-4 flex items-center justify-center text-[10px]">
+                  {pendingResetCount}
+                </span>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="app-reports" className="flex-shrink-0 px-3 py-2 text-xs relative">
+              <FileWarning className="w-4 h-4" />
+              {pendingAppReportsCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full w-4 h-4 flex items-center justify-center text-[10px]">
                   {pendingAppReportsCount}
                 </span>
               )}

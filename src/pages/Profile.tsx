@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useParams, Navigate, Link, useNavigate } from 'react-router-dom';
 import { Grid3X3, Bookmark, LogOut, UserPlus, UserCheck, MessageCircle, Flag, Ban, MoreHorizontal, Settings, Lock, Clock, UserX } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
+import PullToRefresh from '@/components/posts/PullToRefresh';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile, useProfileStats, useIsFollowing, useToggleFollow, useHasPendingRequest } from '@/hooks/useProfiles';
 import { useUserPosts } from '@/hooks/usePosts';
@@ -20,7 +21,9 @@ import ReportUserDialog from '@/components/profile/ReportUserDialog';
 import FollowListSheet from '@/components/profile/FollowListSheet';
 import { FollowRequestsSheet } from '@/components/profile/FollowRequestsSheet';
 import PrivateAccountNotice from '@/components/profile/PrivateAccountNotice';
+import AccountSwitcher from '@/components/profile/AccountSwitcher';
 import { useToast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,6 +35,7 @@ const Profile = () => {
   const { username } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const { user, profile: currentUserProfile, signOut, loading: authLoading } = useAuth();
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
@@ -56,6 +60,13 @@ const Profile = () => {
   const { savedPosts, isLoading: savedLoading } = useSavedPosts();
 
   const isOwnProfile = user?.id === profile?.id;
+
+  const handleRefresh = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: ['profile'] });
+    await queryClient.invalidateQueries({ queryKey: ['profile-stats'] });
+    await queryClient.invalidateQueries({ queryKey: ['user-posts'] });
+    await queryClient.invalidateQueries({ queryKey: ['saved-posts'] });
+  }, [queryClient]);
 
   const formatCount = (count: number) => {
     if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M`;
@@ -141,52 +152,54 @@ const Profile = () => {
 
   return (
     <MainLayout>
-      <div className="max-w-4xl mx-auto pb-8">
-        {/* Mobile Header */}
-        <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-lg border-b border-border md:hidden">
-          <div className="flex items-center justify-between px-4 py-3">
-            <h1 className="text-lg font-bold">{profile.username}</h1>
-            <div className="flex items-center gap-2">
-              {!isOwnProfile && user && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <MoreHorizontal className="w-5 h-5" />
+      <PullToRefresh onRefresh={handleRefresh}>
+        <div className="max-w-4xl mx-auto pb-8">
+          {/* Mobile Header */}
+          <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-lg border-b border-border md:hidden">
+            <div className="flex items-center justify-between px-4 py-3">
+              {isOwnProfile ? (
+                <AccountSwitcher username={profile.username} avatarUrl={profile.avatar_url} />
+              ) : (
+                <h1 className="text-lg font-bold">{profile.username}</h1>
+              )}
+              <div className="flex items-center gap-2">
+                {!isOwnProfile && user && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <MoreHorizontal className="w-5 h-5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => setReportDialogOpen(true)} className="text-destructive">
+                        <Flag className="w-4 h-4 mr-2" />
+                        Report
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={handleToggleBlock}>
+                        <Ban className="w-4 h-4 mr-2" />
+                        {isBlocked ? 'Unblock' : 'Block'}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+                {isOwnProfile && (
+                  <>
+                    <Button variant="ghost" size="icon" onClick={() => navigate('/settings')}>
+                      <Settings className="w-5 h-5" />
                     </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => setReportDialogOpen(true)} className="text-destructive">
-                      <Flag className="w-4 h-4 mr-2" />
-                      Report
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleToggleBlock}>
-                      <Ban className="w-4 h-4 mr-2" />
-                      {isBlocked ? 'Unblock' : 'Block'}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
-              {isOwnProfile && (
-                <>
-                  <Button variant="ghost" size="icon" onClick={() => navigate('/settings')}>
-                    <Settings className="w-5 h-5" />
-                  </Button>
-                  <Button variant="ghost" size="icon" onClick={handleSignOut}>
-                    <LogOut className="w-5 h-5" />
-                  </Button>
-                </>
-              )}
+                  </>
+                )}
+              </div>
             </div>
-          </div>
-        </header>
+          </header>
 
-        {/* Profile Info */}
-        <div className="p-6 animate-slide-up">
-          <div className="flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-12">
-            {/* Avatar */}
-            <div className="story-ring p-1 transition-all duration-500 hover:scale-110 hover:rotate-3 cursor-pointer animate-float">
-              <Avatar className="w-24 h-24 md:w-36 md:h-36 border-4 border-background">
-                <AvatarImage src={profile.avatar_url || ''} alt={profile.username} />
+          {/* Profile Info */}
+          <div className="p-6 animate-slide-up">
+            <div className="flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-12">
+              {/* Avatar */}
+              <div className="story-ring p-1 transition-all duration-500 hover:scale-110 cursor-pointer">
+                <Avatar className="w-24 h-24 md:w-36 md:h-36 border-4 border-background">
+                  <AvatarImage src={profile.avatar_url || ''} alt={profile.username} />
                 <AvatarFallback className="text-2xl">{profile.username[0].toUpperCase()}</AvatarFallback>
               </Avatar>
             </div>
@@ -495,7 +508,8 @@ const Profile = () => {
             username={profile.username}
           />
         )}
-      </div>
+        </div>
+      </PullToRefresh>
     </MainLayout>
   );
 };
