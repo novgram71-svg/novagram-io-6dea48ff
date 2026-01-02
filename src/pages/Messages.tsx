@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Send, ArrowLeft, MoreVertical, Search, Sparkles, Palette } from 'lucide-react';
 import { useLocation, Navigate } from 'react-router-dom';
 import MainLayout from '@/components/layout/MainLayout';
+import PullToRefresh from '@/components/posts/PullToRefresh';
 import { useAuth } from '@/hooks/useAuth';
 import { useConversations, useMessages, useSendMessage, Conversation, MessageWithProfile } from '@/hooks/useMessages';
 import { useProfileById } from '@/hooks/useProfiles';
@@ -23,7 +24,7 @@ import NotesBubble from '@/components/chat/NotesBubble';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 interface ConversationItemProps {
   conversation: Conversation;
@@ -80,6 +81,7 @@ const ConversationItem = ({ conversation, isSelected, onClick }: ConversationIte
 
 const Messages = () => {
   const location = useLocation();
+  const queryClient = useQueryClient();
   const { user, loading: authLoading } = useAuth();
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [newMessage, setNewMessage] = useState('');
@@ -101,6 +103,11 @@ const Messages = () => {
   const sendMessage = useSendMessage();
   const { isPartnerTyping, setTyping } = useTypingIndicator(selectedConversation?.id || null);
   const { isOnline, lastSeen } = useUserPresence(selectedConversation?.id || null);
+
+  const handleRefresh = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: ['conversations'] });
+    await queryClient.invalidateQueries({ queryKey: ['messages'] });
+  }, [queryClient]);
   
   // Fetch reactions for all messages in the conversation
   const messageIds = messages?.map(m => m.id) || [];
@@ -223,14 +230,15 @@ const Messages = () => {
 
   return (
     <MainLayout>
-      <div className="h-[calc(100vh-80px)] md:h-screen flex">
-        {/* Conversations List */}
-        <div
-          className={cn(
-            'w-full md:w-80 lg:w-96 border-r border-border bg-card/50 flex flex-col',
-            selectedConversation && 'hidden md:flex'
-          )}
-        >
+      <PullToRefresh onRefresh={handleRefresh}>
+        <div className="h-[calc(100vh-80px)] md:h-screen flex">
+          {/* Conversations List */}
+          <div
+            className={cn(
+              'w-full md:w-80 lg:w-96 border-r border-border bg-card/50 flex flex-col',
+              selectedConversation && 'hidden md:flex'
+            )}
+          >
           {/* Header */}
           <div className="p-4 border-b border-border flex items-center justify-between bg-gradient-to-r from-background to-card/50">
             <div className="flex items-center gap-2">
@@ -394,8 +402,9 @@ const Messages = () => {
               </div>
             </div>
           )}
+          </div>
         </div>
-      </div>
+      </PullToRefresh>
 
       {/* Message Search Sheet */}
       <MessageSearchSheet
