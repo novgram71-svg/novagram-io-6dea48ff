@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Send, ArrowLeft, MoreVertical, Search, Sparkles, Palette } from 'lucide-react';
-import { useLocation, Navigate } from 'react-router-dom';
+import { useLocation, Navigate, useNavigate } from 'react-router-dom';
 import MainLayout from '@/components/layout/MainLayout';
 import PullToRefresh from '@/components/posts/PullToRefresh';
 import { useAuth } from '@/hooks/useAuth';
@@ -81,6 +81,7 @@ const ConversationItem = ({ conversation, isSelected, onClick }: ConversationIte
 
 const Messages = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user, loading: authLoading } = useAuth();
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
@@ -311,7 +312,7 @@ const Messages = () => {
                     <ArrowLeft className="w-5 h-5" />
                   </button>
                   <button
-                    onClick={() => window.location.href = `/profile/${selectedConversation.id}`}
+                    onClick={() => navigate(`/profile/${selectedConversation.username}`)}
                     className="flex items-center gap-3 hover:opacity-80 transition-opacity"
                   >
                     <div className="relative">
