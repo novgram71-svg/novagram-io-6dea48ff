@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { StoryWithUser, useRecordStoryView, useStoryViewCount } from '@/hooks/useStories';
 import { useAuth } from '@/hooks/useAuth';
+import { useStoryViewer } from '@/contexts/StoryViewerContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { formatDistanceToNow } from 'date-fns';
@@ -18,9 +19,16 @@ interface StoryViewerProps {
 const StoryViewer = ({ story, onClose }: StoryViewerProps) => {
   const [progress, setProgress] = useState(0);
   const { user } = useAuth();
+  const { setIsViewingStory } = useStoryViewer();
   const recordView = useRecordStoryView();
   const { data: viewCount } = useStoryViewCount(story.id);
   const { data: mentions = [] } = useStoryMentions(story.id);
+
+  // Set viewing story state
+  useEffect(() => {
+    setIsViewingStory(true);
+    return () => setIsViewingStory(false);
+  }, [setIsViewingStory]);
 
   useEffect(() => {
     // Record story view

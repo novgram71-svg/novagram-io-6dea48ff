@@ -23,7 +23,8 @@ import {
   Smartphone,
   Loader2,
   Key,
-  BellRing
+  BellRing,
+  AlertTriangle
 } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
@@ -40,6 +41,7 @@ import { NotificationSettingsSheet } from '@/components/settings/NotificationSet
 import { SavedPostsSheet } from '@/components/settings/SavedPostsSheet';
 import { LoginActivitySheet } from '@/components/settings/LoginActivitySheet';
 import { ChangePasswordSheet } from '@/components/settings/ChangePasswordSheet';
+import { ReportIssueSheet } from '@/components/settings/ReportIssueSheet';
 import { toast } from 'sonner';
 
 interface SettingItemProps {
@@ -100,6 +102,7 @@ const Settings = () => {
   const [savedPostsOpen, setSavedPostsOpen] = useState(false);
   const [loginActivityOpen, setLoginActivityOpen] = useState(false);
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+  const [reportIssueOpen, setReportIssueOpen] = useState(false);
 
   const handleEnablePushNotifications = async () => {
     try {
@@ -360,6 +363,13 @@ const Settings = () => {
           {/* Help & Support */}
           <SettingSection title="Help & Support">
             <SettingItem
+              icon={<AlertTriangle className="w-5 h-5" />}
+              label="Report an Issue"
+              description="Tell us about problems you're facing"
+              onClick={() => setReportIssueOpen(true)}
+            />
+            <Separator />
+            <SettingItem
               icon={<HelpCircle className="w-5 h-5" />}
               label="Help Center"
               description="Get help with your account"
@@ -414,6 +424,10 @@ const Settings = () => {
       <ChangePasswordSheet
         open={changePasswordOpen}
         onOpenChange={setChangePasswordOpen}
+      />
+      <ReportIssueSheet
+        open={reportIssueOpen}
+        onOpenChange={setReportIssueOpen}
       />
     </MainLayout>
   );

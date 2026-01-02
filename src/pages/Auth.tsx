@@ -384,9 +384,16 @@ const Auth = () => {
         </div>
 
         {/* Footer text */}
-        <p className="text-center text-xs text-muted-foreground mt-6 animate-slide-up stagger-5">
-          By continuing, you agree to our Terms of Service and Privacy Policy
-        </p>
+        <div className="text-center mt-6 space-y-2 animate-slide-up stagger-5">
+          <p className="text-xs text-muted-foreground">
+            By continuing, you agree to our Terms of Service and Privacy Policy
+          </p>
+          <div className="pt-4 border-t border-border/50 space-y-1">
+            <p className="text-xs text-muted-foreground">© 2026 All rights reserved</p>
+            <p className="text-xs text-muted-foreground">Created by <span className="font-medium text-foreground">Sampath</span></p>
+            <p className="text-xs text-muted-foreground">Contact: <a href="mailto:sampathlox@gmail.com" className="text-primary hover:underline">sampathlox@gmail.com</a></p>
+          </div>
+        </div>
       </div>
 
       {/* Security Question Dialog */}

@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
+import { StoryViewerProvider } from "@/contexts/StoryViewerContext";
 import { supabase } from "@/integrations/supabase/client";
 import { MissingInfoDialog } from "@/components/auth/MissingInfoDialog";
 import { useNotificationListener } from "@/hooks/usePushNotifications";
@@ -145,15 +146,17 @@ const App = () => (
   <HelmetProvider>
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <NotificationSetup>
-              <AppRoutes />
-            </NotificationSetup>
-          </BrowserRouter>
-        </TooltipProvider>
+        <StoryViewerProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <NotificationSetup>
+                <AppRoutes />
+              </NotificationSetup>
+            </BrowserRouter>
+          </TooltipProvider>
+        </StoryViewerProvider>
       </AuthProvider>
     </QueryClientProvider>
   </HelmetProvider>
