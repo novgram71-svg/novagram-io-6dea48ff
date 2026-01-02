@@ -43,14 +43,40 @@ const AccountSwitcher = ({ username, avatarUrl }: AccountSwitcherProps) => {
     navigate('/auth');
   };
 
-  const handleSwitchAccount = async (email: string) => {
+  const handleSwitchAccount = async (linkedUserId: string, linkedUsername: string) => {
     setOpen(false);
+    
+    // Try to use stored session for seamless switching
+    const storedSessions = JSON.parse(localStorage.getItem('account_sessions') || '{}');
+    const storedSession = storedSessions[linkedUserId];
+    
+    if (storedSession) {
+      try {
+        const { error } = await supabase.auth.setSession({
+          access_token: storedSession.access_token,
+          refresh_token: storedSession.refresh_token,
+        });
+        
+        if (!error) {
+          toast({
+            title: "Switched account",
+            description: `You are now logged in as ${linkedUsername}`,
+          });
+          navigate('/');
+          return;
+        }
+      } catch (error) {
+        console.error('Error switching account:', error);
+      }
+    }
+    
+    // Fallback to manual login if no stored session
     toast({
-      title: "Switch account",
-      description: "Please sign in with the account you want to switch to",
+      title: "Session expired",
+      description: "Please sign in again",
     });
     await signOut();
-    navigate('/auth', { state: { switchToEmail: email } });
+    navigate('/auth');
   };
 
   const handleRemoveLinkedAccount = async (e: React.MouseEvent, accountId: string) => {
@@ -94,7 +120,7 @@ const AccountSwitcher = ({ username, avatarUrl }: AccountSwitcherProps) => {
             {linkedAccounts.map((account) => (
               <DropdownMenuItem 
                 key={account.id}
-                onClick={() => handleSwitchAccount(account.linked_email)}
+                onClick={() => handleSwitchAccount(account.linked_user_id, account.linked_username)}
                 className="flex items-center gap-3 p-3 group"
               >
                 <Avatar className="w-10 h-10">
