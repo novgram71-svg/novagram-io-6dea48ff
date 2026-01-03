@@ -21,11 +21,14 @@ const phoneSchema = z.string().min(10, 'Please enter a valid phone number').rege
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [slideDirection, setSlideDirection] = useState<'left' | 'right'>('left');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [loginMethod, setLoginMethod] = useState<'email' | 'phone' | 'username'>('email');
+  const [prevLoginMethod, setPrevLoginMethod] = useState<'email' | 'phone' | 'username'>('email');
   const [loginIdentifier, setLoginIdentifier] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -34,6 +37,29 @@ const Auth = () => {
   const [errors, setErrors] = useState<{ email?: string; password?: string; username?: string; phone?: string }>({});
   const [ripples, setRipples] = useState<{ id: number; x: number; y: number }[]>([]);
   const cardRef = useRef<HTMLDivElement>(null);
+  const formContainerRef = useRef<HTMLDivElement>(null);
+  
+  // Handle mode switch with swipe animation
+  const handleModeSwitch = () => {
+    setIsTransitioning(true);
+    setSlideDirection(isLogin ? 'left' : 'right');
+    setTimeout(() => {
+      setIsLogin(!isLogin);
+      setErrors({});
+      setTimeout(() => {
+        setIsTransitioning(false);
+      }, 50);
+    }, 150);
+  };
+  
+  // Handle tab switch with smooth transition
+  const handleTabSwitch = (newMethod: 'email' | 'phone' | 'username') => {
+    const methodOrder = ['email', 'phone', 'username'];
+    const currentIndex = methodOrder.indexOf(loginMethod);
+    const newIndex = methodOrder.indexOf(newMethod);
+    setPrevLoginMethod(loginMethod);
+    setLoginMethod(newMethod);
+  };
   
   const { signIn, signUp, user } = useAuth();
   const { hasSecurityQuestion, isLoading: loadingSecurityQuestion } = useSecurityQuestion();
@@ -362,38 +388,56 @@ const Auth = () => {
                 </p>
               </div>
 
-              {/* Form */}
-              <form onSubmit={handleSubmit} className="space-y-4">
-                {isLogin ? (
-                  <>
-                    {/* Login method tabs */}
-                    <div className="animate-slide-up stagger-1">
-                      <Tabs value={loginMethod} onValueChange={(v) => setLoginMethod(v as any)} className="w-full">
-                        <TabsList className="w-full grid grid-cols-3 liquid-glass h-11 p-1 rounded-xl">
-                          <TabsTrigger 
-                            value="email" 
-                            className="gap-1.5 rounded-lg text-xs font-medium data-[state=active]:liquid-glass-button data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-300"
-                          >
-                            <Mail className="w-3.5 h-3.5" />
-                            Email
-                          </TabsTrigger>
-                          <TabsTrigger 
-                            value="phone" 
-                            className="gap-1.5 rounded-lg text-xs font-medium data-[state=active]:liquid-glass-button data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-300"
-                          >
-                            <Phone className="w-3.5 h-3.5" />
-                            Phone
-                          </TabsTrigger>
-                          <TabsTrigger 
-                            value="username" 
-                            className="gap-1.5 rounded-lg text-xs font-medium data-[state=active]:liquid-glass-button data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-300"
-                          >
-                            <User className="w-3.5 h-3.5" />
-                            Username
-                          </TabsTrigger>
-                        </TabsList>
-                      </Tabs>
-                    </div>
+              {/* Form with swipe transition */}
+              <div 
+                ref={formContainerRef}
+                className={`transition-all duration-300 ease-out ${
+                  isTransitioning 
+                    ? slideDirection === 'left' 
+                      ? 'opacity-0 translate-x-[-20px]' 
+                      : 'opacity-0 translate-x-[20px]'
+                    : 'opacity-100 translate-x-0'
+                }`}
+              >
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  {isLogin ? (
+                    <>
+                      {/* Login method tabs with animated indicator */}
+                      <div className="animate-slide-up stagger-1">
+                        <Tabs value={loginMethod} onValueChange={(v) => handleTabSwitch(v as any)} className="w-full">
+                          <TabsList className="w-full grid grid-cols-3 liquid-glass h-11 p-1 rounded-xl relative overflow-hidden">
+                            {/* Animated background indicator */}
+                            <div 
+                              className="absolute h-[calc(100%-8px)] top-1 rounded-lg liquid-glass-button transition-all duration-300 ease-out z-0"
+                              style={{
+                                width: 'calc(33.333% - 4px)',
+                                left: loginMethod === 'email' ? '4px' : loginMethod === 'phone' ? 'calc(33.333% + 2px)' : 'calc(66.666%)',
+                              }}
+                            />
+                            <TabsTrigger 
+                              value="email" 
+                              className="gap-1.5 rounded-lg text-xs font-medium z-10 data-[state=active]:text-white data-[state=active]:bg-transparent transition-all duration-300"
+                            >
+                              <Mail className="w-3.5 h-3.5" />
+                              Email
+                            </TabsTrigger>
+                            <TabsTrigger 
+                              value="phone" 
+                              className="gap-1.5 rounded-lg text-xs font-medium z-10 data-[state=active]:text-white data-[state=active]:bg-transparent transition-all duration-300"
+                            >
+                              <Phone className="w-3.5 h-3.5" />
+                              Phone
+                            </TabsTrigger>
+                            <TabsTrigger 
+                              value="username" 
+                              className="gap-1.5 rounded-lg text-xs font-medium z-10 data-[state=active]:text-white data-[state=active]:bg-transparent transition-all duration-300"
+                            >
+                              <User className="w-3.5 h-3.5" />
+                              Username
+                            </TabsTrigger>
+                          </TabsList>
+                        </Tabs>
+                      </div>
 
                     <div className="space-y-1.5 animate-slide-up stagger-2">
                       <Label htmlFor="loginIdentifier" className="text-sm font-medium text-foreground/80">
@@ -462,66 +506,67 @@ const Auth = () => {
                   </>
                 )}
 
-                {/* Password field */}
-                <div className="space-y-1.5 animate-slide-up stagger-3">
-                  <Label htmlFor="password" className="text-sm font-medium text-foreground/80">Password</Label>
-                  <div className="relative">
-                    <Input
-                      id="password"
-                      type={showPassword ? 'text' : 'password'}
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="liquid-glass-input h-12 rounded-xl px-4 pr-12 text-base placeholder:text-muted-foreground/50"
-                    />
+                  {/* Password field */}
+                  <div className="space-y-1.5 animate-slide-up stagger-3">
+                    <Label htmlFor="password" className="text-sm font-medium text-foreground/80">Password</Label>
+                    <div className="relative">
+                      <Input
+                        id="password"
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder="••••••••"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="liquid-glass-input h-12 rounded-xl px-4 pr-12 text-base placeholder:text-muted-foreground/50"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-all duration-200 hover:scale-110 active:scale-95"
+                      >
+                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      </button>
+                    </div>
+                    {errors.password && (
+                      <p className="text-destructive text-xs animate-fade-in mt-1">{errors.password}</p>
+                    )}
+                  </div>
+
+                  {/* Forgot password link */}
+                  {isLogin && (
                     <button
                       type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-all duration-200 hover:scale-110 active:scale-95"
+                      onClick={() => setShowForgotPassword(true)}
+                      className="text-sm text-primary/80 hover:text-primary font-medium transition-colors animate-slide-up stagger-3"
                     >
-                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      Forgot password?
                     </button>
-                  </div>
-                  {errors.password && (
-                    <p className="text-destructive text-xs animate-fade-in mt-1">{errors.password}</p>
                   )}
-                </div>
 
-                {/* Forgot password link */}
-                {isLogin && (
-                  <button
-                    type="button"
-                    onClick={() => setShowForgotPassword(true)}
-                    className="text-sm text-primary/80 hover:text-primary font-medium transition-colors animate-slide-up stagger-3"
+                  {/* Submit button */}
+                  <Button
+                    type="submit"
+                    className="w-full h-12 rounded-xl liquid-glass-button text-white font-medium text-base animate-slide-up stagger-4 relative overflow-hidden group"
+                    disabled={isLoading}
                   >
-                    Forgot password?
-                  </button>
-                )}
-
-                {/* Submit button */}
-                <Button
-                  type="submit"
-                  className="w-full h-12 rounded-xl liquid-glass-button text-white font-medium text-base animate-slide-up stagger-4 relative overflow-hidden group"
-                  disabled={isLoading}
-                >
-                  {/* Button shimmer effect */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-                  
-                  <span className="relative flex items-center justify-center gap-2">
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                        {isLogin ? 'Signing in...' : 'Creating account...'}
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="w-5 h-5" />
-                        {isLogin ? 'Sign In' : 'Create Account'}
-                      </>
-                    )}
-                  </span>
-                </Button>
-              </form>
+                    {/* Button shimmer effect */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                    
+                    <span className="relative flex items-center justify-center gap-2">
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          {isLogin ? 'Signing in...' : 'Creating account...'}
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-5 h-5" />
+                          {isLogin ? 'Sign In' : 'Create Account'}
+                        </>
+                      )}
+                    </span>
+                  </Button>
+                </form>
+              </div>
 
               {/* Toggle auth mode */}
               <div className="text-center animate-slide-up stagger-5">
@@ -529,10 +574,7 @@ const Auth = () => {
                   {isLogin ? "Don't have an account?" : 'Already have an account?'}{' '}
                   <button
                     type="button"
-                    onClick={() => {
-                      setIsLogin(!isLogin);
-                      setErrors({});
-                    }}
+                    onClick={handleModeSwitch}
                     className="text-primary font-medium hover:underline underline-offset-4 transition-all duration-200"
                   >
                     {isLogin ? 'Sign Up' : 'Sign In'}
