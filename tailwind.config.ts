@@ -109,51 +109,29 @@ export default {
           "80%": { opacity: "0.6" },
           "100%": { transform: "translateY(-20%) scale(1)", opacity: "0" },
         },
-        "liquid-border": {
+        "water-rotate": {
+          "0%": { transform: "rotate(0deg)" },
+          "100%": { transform: "rotate(360deg)" },
+        },
+        "water-wave": {
           "0%": { 
-            backgroundPosition: "0% 50%, 100% 50%, 50% 0%, 50% 100%",
+            borderRadius: "60% 40% 30% 70% / 60% 30% 70% 40%",
           },
           "50%": { 
-            backgroundPosition: "100% 50%, 0% 50%, 50% 100%, 50% 0%",
+            borderRadius: "30% 60% 70% 40% / 50% 60% 30% 60%",
           },
           "100%": { 
-            backgroundPosition: "0% 50%, 100% 50%, 50% 0%, 50% 100%",
-          },
-        },
-        "wave-flow": {
-          "0%": { 
-            transform: "translateX(-100%)",
-          },
-          "100%": { 
-            transform: "translateX(100%)",
-          },
-        },
-        "border-wave-1": {
-          "0%, 100%": { 
-            clipPath: "polygon(0 0, 100% 0, 100% 100%, 0 100%)",
-            opacity: "0.6",
-          },
-          "25%": { 
-            clipPath: "polygon(0 5%, 100% 0, 100% 95%, 0 100%)",
-            opacity: "0.8",
-          },
-          "50%": { 
-            clipPath: "polygon(0 0, 100% 5%, 100% 100%, 0 95%)",
-            opacity: "1",
-          },
-          "75%": { 
-            clipPath: "polygon(0 5%, 100% 0, 100% 95%, 0 100%)",
-            opacity: "0.8",
+            borderRadius: "60% 40% 30% 70% / 60% 30% 70% 40%",
           },
         },
         "glow-pulse": {
           "0%, 100%": { 
-            opacity: "0.4",
-            filter: "blur(8px)",
+            opacity: "0.5",
+            filter: "blur(15px)",
           },
           "50%": { 
             opacity: "0.8",
-            filter: "blur(12px)",
+            filter: "blur(20px)",
           },
         },
       },
@@ -168,9 +146,8 @@ export default {
         "ripple": "ripple 0.6s ease-out forwards",
         "shimmer": "shimmer 3s ease-in-out infinite",
         "bubble-rise": "bubble-rise 4s ease-in-out infinite",
-        "liquid-border": "liquid-border 4s ease-in-out infinite",
-        "wave-flow": "wave-flow 2s linear infinite",
-        "border-wave": "border-wave-1 3s ease-in-out infinite",
+        "water-rotate": "water-rotate 4s linear infinite",
+        "water-wave": "water-wave 6s ease-in-out infinite",
         "glow-pulse": "glow-pulse 2s ease-in-out infinite",
       },
     },
