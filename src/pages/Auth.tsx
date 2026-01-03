@@ -256,81 +256,88 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4 overflow-hidden relative">
-      {/* Animated background elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-20 left-10 w-20 h-20 rounded-full bg-primary/20 blur-xl animate-float" />
-        <div className="absolute top-40 right-20 w-32 h-32 rounded-full bg-accent/20 blur-xl animate-float stagger-2" />
-        <div className="absolute bottom-20 left-1/4 w-24 h-24 rounded-full bg-primary/10 blur-xl animate-float stagger-3" />
-        <div className="absolute bottom-40 right-1/4 w-28 h-28 rounded-full bg-accent/15 blur-xl animate-float stagger-4" />
+    <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 overflow-hidden relative">
+      {/* Gradient mesh background */}
+      <div className="fixed inset-0 bg-gradient-to-br from-background via-background to-background">
+        {/* Soft gradient orbs for light diffusion */}
+        <div className="absolute top-0 left-0 w-[600px] h-[600px] rounded-full bg-primary/10 blur-[120px] animate-float-gentle" />
+        <div className="absolute bottom-0 right-0 w-[500px] h-[500px] rounded-full bg-accent/10 blur-[100px] animate-float-gentle" style={{ animationDelay: '-2s' }} />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full bg-primary/5 blur-[80px] animate-liquid-pulse" />
       </div>
 
-      {/* Floating icons */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <Camera className="absolute top-[15%] left-[10%] w-8 h-8 text-primary/30 animate-bounce-gentle stagger-1" />
-        <Heart className="absolute top-[25%] right-[15%] w-6 h-6 text-destructive/40 animate-bounce-gentle stagger-2" />
-        <MessageCircle className="absolute bottom-[30%] left-[15%] w-7 h-7 text-primary/30 animate-bounce-gentle stagger-3" />
-        <Users className="absolute bottom-[25%] right-[10%] w-8 h-8 text-accent/30 animate-bounce-gentle stagger-4" />
-        <Sparkles className="absolute top-[60%] left-[5%] w-5 h-5 text-primary/40 animate-bounce-gentle stagger-5" />
-      </div>
+      {/* Subtle grid pattern overlay */}
+      <div 
+        className="fixed inset-0 opacity-[0.02]" 
+        style={{
+          backgroundImage: 'radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)',
+          backgroundSize: '40px 40px',
+        }}
+      />
 
+      {/* Main card container */}
       <div className="w-full max-w-md relative z-10">
-        {/* Liquid glass animated border wrapper */}
-        <div className="relative rounded-3xl p-[3px]">
-          {/* Animated water wave border - rotating conic gradient */}
-          <div className="absolute inset-0 rounded-3xl overflow-hidden">
-            {/* Rotating gradient layer */}
+        {/* Liquid glass border effect */}
+        <div className="relative rounded-[2rem] p-[2px]">
+          {/* Animated liquid border */}
+          <div className="absolute inset-0 rounded-[2rem] overflow-hidden">
             <div 
-              className="absolute inset-[-50%] animate-water-rotate"
+              className="absolute inset-[-100%] animate-water-rotate"
               style={{ 
-                background: 'conic-gradient(from 0deg, hsl(var(--primary)), hsl(var(--accent)), hsl(var(--primary) / 0.5), hsl(var(--accent)), hsl(var(--primary)))',
+                background: `conic-gradient(from 0deg at 50% 50%, 
+                  hsl(var(--primary)) 0deg, 
+                  hsl(var(--accent)) 60deg, 
+                  hsl(var(--primary) / 0.3) 120deg, 
+                  hsl(var(--accent) / 0.8) 180deg, 
+                  hsl(var(--primary)) 240deg, 
+                  hsl(var(--accent) / 0.5) 300deg, 
+                  hsl(var(--primary)) 360deg)`,
               }} 
             />
           </div>
           
-          {/* Morphing blob overlay for organic water feel */}
-          <div className="absolute inset-0 rounded-3xl overflow-hidden">
-            <div 
-              className="absolute inset-[-20%] animate-water-wave opacity-70"
-              style={{ 
-                background: 'conic-gradient(from 180deg, hsl(var(--accent)), hsl(var(--primary)), hsl(var(--accent) / 0.6), hsl(var(--primary)), hsl(var(--accent)))',
-                animationDelay: '-3s',
-              }} 
-            />
-          </div>
+          {/* Outer glow */}
+          <div className="absolute -inset-1 rounded-[2.25rem] bg-gradient-to-r from-primary/20 via-accent/20 to-primary/20 blur-xl opacity-60 animate-glow-pulse" />
           
-          {/* Glow effect */}
-          <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-primary via-accent to-primary opacity-30 animate-glow-pulse blur-sm" />
-          
-          {/* Inner card */}
+          {/* Main glass card */}
           <div 
             ref={cardRef}
             onClick={createRipple}
-            className="relative p-8 space-y-6 rounded-3xl bg-background/80 dark:bg-background/90 backdrop-blur-2xl shadow-[0_8px_32px_0_rgba(31,38,135,0.37)] overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-[0_12px_48px_0_rgba(31,38,135,0.5)]"
+            className="relative liquid-glass rounded-[calc(2rem-2px)] p-6 sm:p-8 overflow-hidden"
           >
-            {/* Gradient overlay */}
-            <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-primary/5 via-transparent to-accent/5 pointer-events-none" />
+            {/* Top highlight edge */}
+            <div className="absolute top-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+            
+            {/* Inner glow */}
+            <div className="absolute inset-0 rounded-[calc(2rem-2px)] bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
             
             {/* Shimmer effect */}
-            <div className="absolute inset-0 overflow-hidden rounded-3xl pointer-events-none">
-              <div className="absolute inset-0 w-[200%] h-full bg-gradient-to-r from-transparent via-primary/10 to-transparent animate-shimmer" />
+            <div className="absolute inset-0 overflow-hidden rounded-[calc(2rem-2px)] pointer-events-none">
+              <div className="absolute -inset-full w-[200%] h-full bg-gradient-to-r from-transparent via-white/[0.07] to-transparent animate-liquid-shimmer" />
             </div>
             
-            {/* Floating bubbles */}
-            <div className="absolute inset-0 overflow-hidden rounded-3xl pointer-events-none">
-              <div className="absolute bottom-0 left-[10%] w-3 h-3 rounded-full bg-primary/20 animate-bubble-rise" style={{ animationDelay: '0s' }} />
-              <div className="absolute bottom-0 left-[25%] w-2 h-2 rounded-full bg-accent/15 animate-bubble-rise" style={{ animationDelay: '0.8s' }} />
-              <div className="absolute bottom-0 left-[40%] w-4 h-4 rounded-full bg-primary/10 animate-bubble-rise" style={{ animationDelay: '1.5s' }} />
-              <div className="absolute bottom-0 left-[60%] w-2.5 h-2.5 rounded-full bg-accent/20 animate-bubble-rise" style={{ animationDelay: '2.2s' }} />
-              <div className="absolute bottom-0 left-[75%] w-3 h-3 rounded-full bg-primary/15 animate-bubble-rise" style={{ animationDelay: '3s' }} />
-              <div className="absolute bottom-0 left-[88%] w-2 h-2 rounded-full bg-accent/10 animate-bubble-rise" style={{ animationDelay: '3.5s' }} />
+            {/* Floating micro bubbles */}
+            <div className="absolute inset-0 overflow-hidden rounded-[calc(2rem-2px)] pointer-events-none">
+              {[...Array(8)].map((_, i) => (
+                <div 
+                  key={i}
+                  className="absolute rounded-full bg-white/10 animate-bubble-rise"
+                  style={{ 
+                    left: `${10 + i * 12}%`,
+                    bottom: 0,
+                    width: `${6 + (i % 3) * 4}px`,
+                    height: `${6 + (i % 3) * 4}px`,
+                    animationDelay: `${i * 0.6}s`,
+                    animationDuration: `${4 + (i % 2)}s`,
+                  }} 
+                />
+              ))}
             </div>
             
-            {/* Ripple effects */}
+            {/* Click ripple effects */}
             {ripples.map(ripple => (
               <span
                 key={ripple.id}
-                className="absolute rounded-full bg-primary/30 animate-ripple pointer-events-none"
+                className="absolute rounded-full bg-white/20 animate-ripple pointer-events-none"
                 style={{
                   left: ripple.x - 10,
                   top: ripple.y - 10,
@@ -339,202 +346,221 @@ const Auth = () => {
                 }}
               />
             ))}
-          {/* Logo with animation */}
-          <div className="text-center animate-slide-up">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-accent mb-4 animate-pulse-soft shadow-lg">
-              <Sparkles className="w-8 h-8 text-primary-foreground" />
-            </div>
-            <h1 className="text-4xl font-bold gradient-text mb-2 animate-gradient bg-clip-text">Novagram</h1>
-            <p className="text-muted-foreground text-sm animate-slide-up stagger-1">
-              {isLogin ? 'Welcome back! Sign in to continue' : 'Create your account and start sharing'}
-            </p>
-          </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {isLogin ? (
-              /* Login Form */
-              <>
-                <div className="space-y-2 animate-slide-up stagger-2">
-                  <Label>Login with</Label>
-                  <Tabs value={loginMethod} onValueChange={(v) => setLoginMethod(v as any)} className="w-full">
-                    <TabsList className="w-full grid grid-cols-3">
-                      <TabsTrigger value="email" className="gap-1">
-                        <Mail className="w-3 h-3" />
-                        Email
-                      </TabsTrigger>
-                      <TabsTrigger value="phone" className="gap-1">
-                        <Phone className="w-3 h-3" />
-                        Phone
-                      </TabsTrigger>
-                      <TabsTrigger value="username" className="gap-1">
-                        <User className="w-3 h-3" />
-                        Username
-                      </TabsTrigger>
-                    </TabsList>
-                  </Tabs>
+            {/* Content */}
+            <div className="relative z-10 space-y-6">
+              {/* Logo */}
+              <div className="text-center animate-slide-up">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl liquid-glass-button mb-4 shadow-lg">
+                  <Sparkles className="w-7 h-7 text-white" />
                 </div>
-
-                <div className="space-y-2 animate-slide-up stagger-2">
-                  <Label htmlFor="loginIdentifier">
-                    {loginMethod === 'email' ? 'Email' : loginMethod === 'phone' ? 'Phone Number' : 'Username'}
-                  </Label>
-                  <Input
-                    id="loginIdentifier"
-                    type={loginMethod === 'email' ? 'email' : 'text'}
-                    placeholder={
-                      loginMethod === 'email' ? 'you@example.com' : 
-                      loginMethod === 'phone' ? '+1 234 567 8900' : 
-                      'johndoe'
-                    }
-                    value={loginIdentifier}
-                    onChange={(e) => setLoginIdentifier(e.target.value)}
-                    className="nova-input transition-all duration-300 focus:scale-[1.02] focus:shadow-lg"
-                  />
-                </div>
-              </>
-            ) : (
-              /* Signup Form */
-              <>
-                <div className="space-y-2 animate-slide-up stagger-2">
-                  <Label htmlFor="username">Username</Label>
-                  <Input
-                    id="username"
-                    type="text"
-                    placeholder="johndoe"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    className="nova-input transition-all duration-300 focus:scale-[1.02] focus:shadow-lg"
-                  />
-                  {errors.username && (
-                    <p className="text-destructive text-sm animate-fade-in">{errors.username}</p>
-                  )}
-                </div>
-
-                <div className="space-y-2 animate-slide-up stagger-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="nova-input transition-all duration-300 focus:scale-[1.02] focus:shadow-lg"
-                  />
-                  {errors.email && (
-                    <p className="text-destructive text-sm animate-fade-in">{errors.email}</p>
-                  )}
-                </div>
-
-                <div className="space-y-2 animate-slide-up stagger-2">
-                  <Label htmlFor="phone">Phone Number</Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    placeholder="+1 234 567 8900"
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                    className="nova-input transition-all duration-300 focus:scale-[1.02] focus:shadow-lg"
-                  />
-                  {errors.phone && (
-                    <p className="text-destructive text-sm animate-fade-in">{errors.phone}</p>
-                  )}
-                </div>
-              </>
-            )}
-
-            <div className="space-y-2 animate-slide-up stagger-3">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="nova-input pr-10 transition-all duration-300 focus:scale-[1.02] focus:shadow-lg"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-all duration-200 hover:scale-110"
-                >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
+                <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-foreground mb-2">
+                  Novagram
+                </h1>
+                <p className="text-muted-foreground text-sm font-light">
+                  {isLogin ? 'Welcome back' : 'Create your account'}
+                </p>
               </div>
-              {errors.password && (
-                <p className="text-destructive text-sm animate-fade-in">{errors.password}</p>
-              )}
+
+              {/* Form */}
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {isLogin ? (
+                  <>
+                    {/* Login method tabs */}
+                    <div className="animate-slide-up stagger-1">
+                      <Tabs value={loginMethod} onValueChange={(v) => setLoginMethod(v as any)} className="w-full">
+                        <TabsList className="w-full grid grid-cols-3 liquid-glass h-11 p-1 rounded-xl">
+                          <TabsTrigger 
+                            value="email" 
+                            className="gap-1.5 rounded-lg text-xs font-medium data-[state=active]:liquid-glass-button data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-300"
+                          >
+                            <Mail className="w-3.5 h-3.5" />
+                            Email
+                          </TabsTrigger>
+                          <TabsTrigger 
+                            value="phone" 
+                            className="gap-1.5 rounded-lg text-xs font-medium data-[state=active]:liquid-glass-button data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-300"
+                          >
+                            <Phone className="w-3.5 h-3.5" />
+                            Phone
+                          </TabsTrigger>
+                          <TabsTrigger 
+                            value="username" 
+                            className="gap-1.5 rounded-lg text-xs font-medium data-[state=active]:liquid-glass-button data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-300"
+                          >
+                            <User className="w-3.5 h-3.5" />
+                            Username
+                          </TabsTrigger>
+                        </TabsList>
+                      </Tabs>
+                    </div>
+
+                    <div className="space-y-1.5 animate-slide-up stagger-2">
+                      <Label htmlFor="loginIdentifier" className="text-sm font-medium text-foreground/80">
+                        {loginMethod === 'email' ? 'Email address' : loginMethod === 'phone' ? 'Phone number' : 'Username'}
+                      </Label>
+                      <Input
+                        id="loginIdentifier"
+                        type={loginMethod === 'email' ? 'email' : 'text'}
+                        placeholder={
+                          loginMethod === 'email' ? 'you@example.com' : 
+                          loginMethod === 'phone' ? '+1 234 567 8900' : 
+                          'johndoe'
+                        }
+                        value={loginIdentifier}
+                        onChange={(e) => setLoginIdentifier(e.target.value)}
+                        className="liquid-glass-input h-12 rounded-xl px-4 text-base placeholder:text-muted-foreground/50"
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="space-y-1.5 animate-slide-up stagger-1">
+                      <Label htmlFor="username" className="text-sm font-medium text-foreground/80">Username</Label>
+                      <Input
+                        id="username"
+                        type="text"
+                        placeholder="johndoe"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        className="liquid-glass-input h-12 rounded-xl px-4 text-base placeholder:text-muted-foreground/50"
+                      />
+                      {errors.username && (
+                        <p className="text-destructive text-xs animate-fade-in mt-1">{errors.username}</p>
+                      )}
+                    </div>
+
+                    <div className="space-y-1.5 animate-slide-up stagger-2">
+                      <Label htmlFor="email" className="text-sm font-medium text-foreground/80">Email address</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="you@example.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="liquid-glass-input h-12 rounded-xl px-4 text-base placeholder:text-muted-foreground/50"
+                      />
+                      {errors.email && (
+                        <p className="text-destructive text-xs animate-fade-in mt-1">{errors.email}</p>
+                      )}
+                    </div>
+
+                    <div className="space-y-1.5 animate-slide-up stagger-2">
+                      <Label htmlFor="phone" className="text-sm font-medium text-foreground/80">Phone number</Label>
+                      <Input
+                        id="phone"
+                        type="tel"
+                        placeholder="+1 234 567 8900"
+                        value={phoneNumber}
+                        onChange={(e) => setPhoneNumber(e.target.value)}
+                        className="liquid-glass-input h-12 rounded-xl px-4 text-base placeholder:text-muted-foreground/50"
+                      />
+                      {errors.phone && (
+                        <p className="text-destructive text-xs animate-fade-in mt-1">{errors.phone}</p>
+                      )}
+                    </div>
+                  </>
+                )}
+
+                {/* Password field */}
+                <div className="space-y-1.5 animate-slide-up stagger-3">
+                  <Label htmlFor="password" className="text-sm font-medium text-foreground/80">Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="liquid-glass-input h-12 rounded-xl px-4 pr-12 text-base placeholder:text-muted-foreground/50"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-all duration-200 hover:scale-110 active:scale-95"
+                    >
+                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
+                  {errors.password && (
+                    <p className="text-destructive text-xs animate-fade-in mt-1">{errors.password}</p>
+                  )}
+                </div>
+
+                {/* Forgot password link */}
+                {isLogin && (
+                  <button
+                    type="button"
+                    onClick={() => setShowForgotPassword(true)}
+                    className="text-sm text-primary/80 hover:text-primary font-medium transition-colors animate-slide-up stagger-3"
+                  >
+                    Forgot password?
+                  </button>
+                )}
+
+                {/* Submit button */}
+                <Button
+                  type="submit"
+                  className="w-full h-12 rounded-xl liquid-glass-button text-white font-medium text-base animate-slide-up stagger-4 relative overflow-hidden group"
+                  disabled={isLoading}
+                >
+                  {/* Button shimmer effect */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                  
+                  <span className="relative flex items-center justify-center gap-2">
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        {isLogin ? 'Signing in...' : 'Creating account...'}
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-5 h-5" />
+                        {isLogin ? 'Sign In' : 'Create Account'}
+                      </>
+                    )}
+                  </span>
+                </Button>
+              </form>
+
+              {/* Toggle auth mode */}
+              <div className="text-center animate-slide-up stagger-5">
+                <p className="text-muted-foreground text-sm">
+                  {isLogin ? "Don't have an account?" : 'Already have an account?'}{' '}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsLogin(!isLogin);
+                      setErrors({});
+                    }}
+                    className="text-primary font-medium hover:underline underline-offset-4 transition-all duration-200"
+                  >
+                    {isLogin ? 'Sign Up' : 'Sign In'}
+                  </button>
+                </p>
+              </div>
             </div>
-
-            {isLogin && (
-              <button
-                type="button"
-                onClick={() => setShowForgotPassword(true)}
-                className="text-sm text-primary hover:underline animate-slide-up stagger-3"
-              >
-                Forgot password?
-              </button>
-            )}
-
-            <Button
-              type="submit"
-              className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl animate-slide-up stagger-4"
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  {isLogin ? 'Signing in...' : 'Creating account...'}
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  {isLogin ? 'Sign In' : 'Sign Up'}
-                </>
-              )}
-            </Button>
-          </form>
-
-          {/* Toggle */}
-          <div className="text-center animate-slide-up stagger-5">
-            <p className="text-muted-foreground text-sm">
-              {isLogin ? "Don't have an account?" : 'Already have an account?'}{' '}
-              <button
-                type="button"
-                onClick={() => {
-                  setIsLogin(!isLogin);
-                  setErrors({});
-                }}
-                className="text-primary hover:underline font-medium transition-all duration-200 hover:text-accent"
-              >
-                {isLogin ? 'Sign Up' : 'Sign In'}
-              </button>
-            </p>
-          </div>
           </div>
         </div>
 
-        {/* Footer text */}
-        <div className="text-center mt-6 space-y-2 animate-slide-up stagger-5">
-          <p className="text-xs text-muted-foreground">
+        {/* Footer */}
+        <div className="text-center mt-8 space-y-3 animate-slide-up stagger-5">
+          <p className="text-xs text-muted-foreground/60">
             By continuing, you agree to our Terms of Service and Privacy Policy
           </p>
-          <div className="pt-4 border-t border-border/50 space-y-1">
-            <p className="text-xs text-muted-foreground">© 2026 All rights reserved</p>
-            <p className="text-xs text-muted-foreground">Created by <span className="font-medium text-foreground">Sampath</span></p>
-            <p className="text-xs text-muted-foreground">Contact: <a href="mailto:sampathlox@gmail.com" className="text-primary hover:underline">sampathlox@gmail.com</a></p>
+          <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground/50">
+            <span>© 2026 Novagram</span>
+            <span>•</span>
+            <span>Created by <span className="text-foreground/60">Sampath</span></span>
           </div>
         </div>
       </div>
 
-      {/* Security Question Dialog */}
+      {/* Dialogs */}
       <SecurityQuestionDialog 
         open={showSecurityDialog} 
         onComplete={handleSecurityQuestionComplete} 
       />
-
-      {/* Forgot Password Sheet */}
       <ForgotPasswordSheet 
         open={showForgotPassword} 
         onOpenChange={setShowForgotPassword} 
