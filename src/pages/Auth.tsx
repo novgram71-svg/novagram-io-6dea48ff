@@ -276,32 +276,31 @@ const Auth = () => {
 
       <div className="w-full max-w-md relative z-10">
         {/* Liquid glass animated border wrapper */}
-        <div className="relative rounded-3xl p-[2px] overflow-hidden">
-          {/* Animated liquid border - multiple layers for wave effect */}
-          <div className="absolute inset-0 rounded-3xl">
-            {/* Base glow */}
-            <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-primary via-accent to-primary opacity-40 animate-glow-pulse" />
-            
-            {/* Wave layer 1 */}
-            <div className="absolute inset-0 rounded-3xl overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/80 to-transparent animate-wave-flow" />
-            </div>
-            
-            {/* Wave layer 2 - offset timing */}
-            <div className="absolute inset-0 rounded-3xl overflow-hidden" style={{ animationDelay: '0.5s' }}>
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-accent/60 to-transparent animate-wave-flow" style={{ animationDelay: '1s' }} />
-            </div>
-            
-            {/* Wave layer 3 - different direction */}
-            <div className="absolute inset-0 rounded-3xl overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-l from-transparent via-primary/50 to-transparent animate-wave-flow" style={{ animationDelay: '0.3s', animationDuration: '2.5s' }} />
-            </div>
-            
-            {/* Liquid morphing border effect */}
-            <div className="absolute inset-0 rounded-3xl animate-border-wave">
-              <div className="absolute inset-0 rounded-3xl bg-gradient-conic from-primary via-accent via-primary to-accent opacity-60" style={{ background: 'conic-gradient(from 0deg, hsl(var(--primary)), hsl(var(--accent)), hsl(var(--primary)), hsl(var(--accent)))' }} />
-            </div>
+        <div className="relative rounded-3xl p-[3px]">
+          {/* Animated water wave border - rotating conic gradient */}
+          <div className="absolute inset-0 rounded-3xl overflow-hidden">
+            {/* Rotating gradient layer */}
+            <div 
+              className="absolute inset-[-50%] animate-water-rotate"
+              style={{ 
+                background: 'conic-gradient(from 0deg, hsl(var(--primary)), hsl(var(--accent)), hsl(var(--primary) / 0.5), hsl(var(--accent)), hsl(var(--primary)))',
+              }} 
+            />
           </div>
+          
+          {/* Morphing blob overlay for organic water feel */}
+          <div className="absolute inset-0 rounded-3xl overflow-hidden">
+            <div 
+              className="absolute inset-[-20%] animate-water-wave opacity-70"
+              style={{ 
+                background: 'conic-gradient(from 180deg, hsl(var(--accent)), hsl(var(--primary)), hsl(var(--accent) / 0.6), hsl(var(--primary)), hsl(var(--accent)))',
+                animationDelay: '-3s',
+              }} 
+            />
+          </div>
+          
+          {/* Glow effect */}
+          <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-primary via-accent to-primary opacity-30 animate-glow-pulse blur-sm" />
           
           {/* Inner card */}
           <div 
