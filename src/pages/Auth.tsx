@@ -274,43 +274,72 @@ const Auth = () => {
         <Sparkles className="absolute top-[60%] left-[5%] w-5 h-5 text-primary/40 animate-bounce-gentle stagger-5" />
       </div>
 
-      <div className="w-full max-w-md relative z-10 animate-float-bubble">
-        <div 
-          ref={cardRef}
-          onClick={createRipple}
-          className="p-8 space-y-6 rounded-3xl border border-primary/20 bg-primary/5 dark:bg-primary/10 backdrop-blur-2xl shadow-[0_8px_32px_0_rgba(31,38,135,0.37)] relative overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-[0_12px_48px_0_rgba(31,38,135,0.5)] hover:border-primary/30 hover:bg-primary/10 dark:hover:bg-primary/15"
-        >
-          {/* Gradient overlay */}
-          <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-primary/10 via-transparent to-accent/10 pointer-events-none" />
-          
-          {/* Shimmer effect */}
-          <div className="absolute inset-0 overflow-hidden rounded-3xl pointer-events-none">
-            <div className="absolute inset-0 w-[200%] h-full bg-gradient-to-r from-transparent via-primary/15 to-transparent animate-shimmer" />
+      <div className="w-full max-w-md relative z-10">
+        {/* Liquid glass animated border wrapper */}
+        <div className="relative rounded-3xl p-[2px] overflow-hidden">
+          {/* Animated liquid border - multiple layers for wave effect */}
+          <div className="absolute inset-0 rounded-3xl">
+            {/* Base glow */}
+            <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-primary via-accent to-primary opacity-40 animate-glow-pulse" />
+            
+            {/* Wave layer 1 */}
+            <div className="absolute inset-0 rounded-3xl overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/80 to-transparent animate-wave-flow" />
+            </div>
+            
+            {/* Wave layer 2 - offset timing */}
+            <div className="absolute inset-0 rounded-3xl overflow-hidden" style={{ animationDelay: '0.5s' }}>
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-accent/60 to-transparent animate-wave-flow" style={{ animationDelay: '1s' }} />
+            </div>
+            
+            {/* Wave layer 3 - different direction */}
+            <div className="absolute inset-0 rounded-3xl overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-l from-transparent via-primary/50 to-transparent animate-wave-flow" style={{ animationDelay: '0.3s', animationDuration: '2.5s' }} />
+            </div>
+            
+            {/* Liquid morphing border effect */}
+            <div className="absolute inset-0 rounded-3xl animate-border-wave">
+              <div className="absolute inset-0 rounded-3xl bg-gradient-conic from-primary via-accent via-primary to-accent opacity-60" style={{ background: 'conic-gradient(from 0deg, hsl(var(--primary)), hsl(var(--accent)), hsl(var(--primary)), hsl(var(--accent)))' }} />
+            </div>
           </div>
           
-          {/* Floating bubbles */}
-          <div className="absolute inset-0 overflow-hidden rounded-3xl pointer-events-none">
-            <div className="absolute bottom-0 left-[10%] w-3 h-3 rounded-full bg-primary/20 animate-bubble-rise" style={{ animationDelay: '0s' }} />
-            <div className="absolute bottom-0 left-[25%] w-2 h-2 rounded-full bg-accent/15 animate-bubble-rise" style={{ animationDelay: '0.8s' }} />
-            <div className="absolute bottom-0 left-[40%] w-4 h-4 rounded-full bg-primary/10 animate-bubble-rise" style={{ animationDelay: '1.5s' }} />
-            <div className="absolute bottom-0 left-[60%] w-2.5 h-2.5 rounded-full bg-accent/20 animate-bubble-rise" style={{ animationDelay: '2.2s' }} />
-            <div className="absolute bottom-0 left-[75%] w-3 h-3 rounded-full bg-primary/15 animate-bubble-rise" style={{ animationDelay: '3s' }} />
-            <div className="absolute bottom-0 left-[88%] w-2 h-2 rounded-full bg-accent/10 animate-bubble-rise" style={{ animationDelay: '3.5s' }} />
-          </div>
-          
-          {/* Ripple effects */}
-          {ripples.map(ripple => (
-            <span
-              key={ripple.id}
-              className="absolute rounded-full bg-primary/30 animate-ripple pointer-events-none"
-              style={{
-                left: ripple.x - 10,
-                top: ripple.y - 10,
-                width: 20,
-                height: 20,
-              }}
-            />
-          ))}
+          {/* Inner card */}
+          <div 
+            ref={cardRef}
+            onClick={createRipple}
+            className="relative p-8 space-y-6 rounded-3xl bg-background/80 dark:bg-background/90 backdrop-blur-2xl shadow-[0_8px_32px_0_rgba(31,38,135,0.37)] overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-[0_12px_48px_0_rgba(31,38,135,0.5)]"
+          >
+            {/* Gradient overlay */}
+            <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-primary/5 via-transparent to-accent/5 pointer-events-none" />
+            
+            {/* Shimmer effect */}
+            <div className="absolute inset-0 overflow-hidden rounded-3xl pointer-events-none">
+              <div className="absolute inset-0 w-[200%] h-full bg-gradient-to-r from-transparent via-primary/10 to-transparent animate-shimmer" />
+            </div>
+            
+            {/* Floating bubbles */}
+            <div className="absolute inset-0 overflow-hidden rounded-3xl pointer-events-none">
+              <div className="absolute bottom-0 left-[10%] w-3 h-3 rounded-full bg-primary/20 animate-bubble-rise" style={{ animationDelay: '0s' }} />
+              <div className="absolute bottom-0 left-[25%] w-2 h-2 rounded-full bg-accent/15 animate-bubble-rise" style={{ animationDelay: '0.8s' }} />
+              <div className="absolute bottom-0 left-[40%] w-4 h-4 rounded-full bg-primary/10 animate-bubble-rise" style={{ animationDelay: '1.5s' }} />
+              <div className="absolute bottom-0 left-[60%] w-2.5 h-2.5 rounded-full bg-accent/20 animate-bubble-rise" style={{ animationDelay: '2.2s' }} />
+              <div className="absolute bottom-0 left-[75%] w-3 h-3 rounded-full bg-primary/15 animate-bubble-rise" style={{ animationDelay: '3s' }} />
+              <div className="absolute bottom-0 left-[88%] w-2 h-2 rounded-full bg-accent/10 animate-bubble-rise" style={{ animationDelay: '3.5s' }} />
+            </div>
+            
+            {/* Ripple effects */}
+            {ripples.map(ripple => (
+              <span
+                key={ripple.id}
+                className="absolute rounded-full bg-primary/30 animate-ripple pointer-events-none"
+                style={{
+                  left: ripple.x - 10,
+                  top: ripple.y - 10,
+                  width: 20,
+                  height: 20,
+                }}
+              />
+            ))}
           {/* Logo with animation */}
           <div className="text-center animate-slide-up">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-accent mb-4 animate-pulse-soft shadow-lg">
@@ -483,6 +512,7 @@ const Auth = () => {
                 {isLogin ? 'Sign Up' : 'Sign In'}
               </button>
             </p>
+          </div>
           </div>
         </div>
 
