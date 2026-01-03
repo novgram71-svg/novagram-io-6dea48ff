@@ -95,12 +95,6 @@ export default {
           from: { width: "0%" },
           to: { width: "100%" },
         },
-        "float-bubble": {
-          "0%, 100%": { transform: "translateY(0px) rotate(0deg)" },
-          "25%": { transform: "translateY(-8px) rotate(0.5deg)" },
-          "50%": { transform: "translateY(-4px) rotate(-0.5deg)" },
-          "75%": { transform: "translateY(-10px) rotate(0.3deg)" },
-        },
         "ripple": {
           "0%": { transform: "scale(0)", opacity: "0.6" },
           "100%": { transform: "scale(4)", opacity: "0" },
@@ -115,6 +109,53 @@ export default {
           "80%": { opacity: "0.6" },
           "100%": { transform: "translateY(-20%) scale(1)", opacity: "0" },
         },
+        "liquid-border": {
+          "0%": { 
+            backgroundPosition: "0% 50%, 100% 50%, 50% 0%, 50% 100%",
+          },
+          "50%": { 
+            backgroundPosition: "100% 50%, 0% 50%, 50% 100%, 50% 0%",
+          },
+          "100%": { 
+            backgroundPosition: "0% 50%, 100% 50%, 50% 0%, 50% 100%",
+          },
+        },
+        "wave-flow": {
+          "0%": { 
+            transform: "translateX(-100%)",
+          },
+          "100%": { 
+            transform: "translateX(100%)",
+          },
+        },
+        "border-wave-1": {
+          "0%, 100%": { 
+            clipPath: "polygon(0 0, 100% 0, 100% 100%, 0 100%)",
+            opacity: "0.6",
+          },
+          "25%": { 
+            clipPath: "polygon(0 5%, 100% 0, 100% 95%, 0 100%)",
+            opacity: "0.8",
+          },
+          "50%": { 
+            clipPath: "polygon(0 0, 100% 5%, 100% 100%, 0 95%)",
+            opacity: "1",
+          },
+          "75%": { 
+            clipPath: "polygon(0 5%, 100% 0, 100% 95%, 0 100%)",
+            opacity: "0.8",
+          },
+        },
+        "glow-pulse": {
+          "0%, 100%": { 
+            opacity: "0.4",
+            filter: "blur(8px)",
+          },
+          "50%": { 
+            opacity: "0.8",
+            filter: "blur(12px)",
+          },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -124,10 +165,13 @@ export default {
         "scale-in": "scale-in 0.2s ease-out",
         "pulse-glow": "pulse-glow 2s ease-in-out infinite",
         "story-progress": "story-progress 5s linear",
-        "float-bubble": "float-bubble 6s ease-in-out infinite",
         "ripple": "ripple 0.6s ease-out forwards",
         "shimmer": "shimmer 3s ease-in-out infinite",
         "bubble-rise": "bubble-rise 4s ease-in-out infinite",
+        "liquid-border": "liquid-border 4s ease-in-out infinite",
+        "wave-flow": "wave-flow 2s linear infinite",
+        "border-wave": "border-wave-1 3s ease-in-out infinite",
+        "glow-pulse": "glow-pulse 2s ease-in-out infinite",
       },
     },
   },
