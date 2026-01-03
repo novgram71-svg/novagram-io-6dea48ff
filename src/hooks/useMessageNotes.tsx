@@ -16,6 +16,14 @@ interface MessageNote {
   };
 }
 
+interface NoteReaction {
+  id: string;
+  note_id: string;
+  user_id: string;
+  emoji: string;
+  created_at: string;
+}
+
 export const useMessageNotes = () => {
   const { user } = useAuth();
 
@@ -63,6 +71,102 @@ export const useMyNote = () => {
       return data as MessageNote | null;
     },
     enabled: !!user?.id,
+  });
+};
+
+export const useNoteReactions = (noteId: string) => {
+  return useQuery({
+    queryKey: ['note-reactions', noteId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('note_reactions')
+        .select('*')
+        .eq('note_id', noteId);
+
+      if (error) throw error;
+      return data as NoteReaction[];
+    },
+    enabled: !!noteId,
+  });
+};
+
+export const useMyNoteReaction = (noteId: string) => {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ['my-note-reaction', noteId, user?.id],
+    queryFn: async () => {
+      if (!user?.id || !noteId) return null;
+
+      const { data, error } = await supabase
+        .from('note_reactions')
+        .select('*')
+        .eq('note_id', noteId)
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data as NoteReaction | null;
+    },
+    enabled: !!user?.id && !!noteId,
+  });
+};
+
+export const useReactToNote = () => {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async ({ noteId, emoji }: { noteId: string; emoji: string }) => {
+      if (!user?.id) throw new Error('Not authenticated');
+
+      // Check if user already reacted
+      const { data: existing } = await supabase
+        .from('note_reactions')
+        .select('*')
+        .eq('note_id', noteId)
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (existing) {
+        if (existing.emoji === emoji) {
+          // Remove reaction if same emoji clicked
+          const { error } = await supabase
+            .from('note_reactions')
+            .delete()
+            .eq('id', existing.id);
+          if (error) throw error;
+          return null;
+        } else {
+          // Update to new emoji
+          const { data, error } = await supabase
+            .from('note_reactions')
+            .update({ emoji })
+            .eq('id', existing.id)
+            .select()
+            .single();
+          if (error) throw error;
+          return data;
+        }
+      } else {
+        // Create new reaction
+        const { data, error } = await supabase
+          .from('note_reactions')
+          .insert({
+            note_id: noteId,
+            user_id: user.id,
+            emoji,
+          })
+          .select()
+          .single();
+        if (error) throw error;
+        return data;
+      }
+    },
+    onSuccess: (_, { noteId }) => {
+      queryClient.invalidateQueries({ queryKey: ['note-reactions', noteId] });
+      queryClient.invalidateQueries({ queryKey: ['my-note-reaction', noteId] });
+    },
   });
 };
 
