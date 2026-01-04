@@ -844,58 +844,93 @@
     animation: receipt-read 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
   }
 
-  /* Enhanced Logo Animations */
-  @keyframes logo-float {
-    0%, 100% {
-      transform: translateY(0) rotateX(0deg) rotateY(0deg);
-    }
-    25% {
-      transform: translateY(-4px) rotateX(2deg) rotateY(-2deg);
+  /* Delivery status animation */
+  @keyframes receipt-delivered {
+    0% {
+      opacity: 0;
+      transform: scale(0.8);
     }
     50% {
-      transform: translateY(-6px) rotateX(0deg) rotateY(0deg);
+      transform: scale(1.1);
     }
-    75% {
-      transform: translateY(-4px) rotateX(-2deg) rotateY(2deg);
+    100% {
+      opacity: 1;
+      transform: scale(1);
     }
   }
 
-  @keyframes logo-pulse {
+  .animate-receipt-delivered {
+    animation: receipt-delivered 0.4s ease-out forwards;
+  }
+
+  /* Enhanced Logo Animations - Smooth and Elegant */
+  @keyframes logo-gentle-float {
     0%, 100% {
-      opacity: 0.5;
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-3px);
+    }
+  }
+
+  @keyframes logo-breathe {
+    0%, 100% {
+      opacity: 0.4;
       transform: scale(1);
     }
     50% {
+      opacity: 0.6;
+      transform: scale(1.05);
+    }
+  }
+
+  @keyframes logo-shine {
+    0% {
+      transform: translateX(-150%) skewX(-20deg);
+    }
+    100% {
+      transform: translateX(250%) skewX(-20deg);
+    }
+  }
+
+  @keyframes logo-icon-pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.85;
+    }
+  }
+
+  @keyframes logo-particle {
+    0%, 100% {
+      opacity: 0;
+      transform: translateY(0) scale(0.5);
+    }
+    50% {
       opacity: 0.8;
-      transform: scale(1.1);
+      transform: translateY(-8px) scale(1);
     }
   }
 
-  @keyframes orbit {
-    0% {
-      transform: rotate(0deg);
-    }
-    100% {
-      transform: rotate(360deg);
-    }
+  .animate-logo-gentle-float {
+    animation: logo-gentle-float 4s ease-in-out infinite;
   }
 
-  @keyframes orbit-reverse {
-    0% {
-      transform: rotate(360deg);
-    }
-    100% {
-      transform: rotate(0deg);
-    }
+  .animate-logo-breathe {
+    animation: logo-breathe 3s ease-in-out infinite;
   }
 
-  @keyframes holographic-shine {
-    0% {
-      transform: translateX(-100%) skewX(-20deg);
-    }
-    100% {
-      transform: translateX(200%) skewX(-20deg);
-    }
+  .animate-logo-shine {
+    animation: logo-shine 4s ease-in-out infinite;
+  }
+
+  .animate-logo-icon-pulse {
+    animation: logo-icon-pulse 3s ease-in-out infinite;
+  }
+
+  .animate-logo-particle {
+    animation: logo-particle 3s ease-in-out infinite;
   }
 
   @keyframes sparkle-3d {

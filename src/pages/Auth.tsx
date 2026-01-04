@@ -13,7 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useSecurityQuestion } from '@/hooks/useSecurityQuestion';
 import { SecurityQuestionDialog } from '@/components/auth/SecurityQuestionDialog';
 import { ForgotPasswordSheet } from '@/components/auth/ForgotPasswordSheet';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { cn } from '@/lib/utils';
 
 const emailSchema = z.string().email('Please enter a valid email');
 const passwordSchema = z.string().min(6, 'Password must be at least 6 characters');
@@ -403,33 +403,49 @@ const Auth = () => {
                 <form onSubmit={handleSubmit} className="space-y-4">
                   {isLogin ? (
                     <>
-                      {/* Login method tabs - simple without shifting animation */}
+                      {/* Login method tabs - simple style */}
                       <div className="animate-slide-up stagger-1">
-                        <Tabs value={loginMethod} onValueChange={(v) => setLoginMethod(v as any)} className="w-full">
-                          <TabsList className="w-full grid grid-cols-3 liquid-glass h-11 p-1 rounded-xl">
-                            <TabsTrigger 
-                              value="email" 
-                              className="gap-1.5 rounded-lg text-xs font-medium data-[state=active]:bg-primary/20 data-[state=active]:text-primary transition-colors duration-200"
-                            >
-                              <Mail className="w-3.5 h-3.5" />
-                              Email
-                            </TabsTrigger>
-                            <TabsTrigger 
-                              value="phone" 
-                              className="gap-1.5 rounded-lg text-xs font-medium data-[state=active]:bg-primary/20 data-[state=active]:text-primary transition-colors duration-200"
-                            >
-                              <Phone className="w-3.5 h-3.5" />
-                              Phone
-                            </TabsTrigger>
-                            <TabsTrigger 
-                              value="username" 
-                              className="gap-1.5 rounded-lg text-xs font-medium data-[state=active]:bg-primary/20 data-[state=active]:text-primary transition-colors duration-200"
-                            >
-                              <User className="w-3.5 h-3.5" />
-                              Username
-                            </TabsTrigger>
-                          </TabsList>
-                        </Tabs>
+                        <div className="w-full grid grid-cols-3 liquid-glass h-11 p-1 rounded-xl">
+                          <button
+                            type="button"
+                            onClick={() => setLoginMethod('email')}
+                            className={cn(
+                              "flex items-center justify-center gap-1.5 rounded-lg text-xs font-medium transition-all duration-200",
+                              loginMethod === 'email' 
+                                ? "bg-primary/20 text-primary shadow-sm" 
+                                : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+                            )}
+                          >
+                            <Mail className="w-3.5 h-3.5" />
+                            Email
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setLoginMethod('phone')}
+                            className={cn(
+                              "flex items-center justify-center gap-1.5 rounded-lg text-xs font-medium transition-all duration-200",
+                              loginMethod === 'phone' 
+                                ? "bg-primary/20 text-primary shadow-sm" 
+                                : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+                            )}
+                          >
+                            <Phone className="w-3.5 h-3.5" />
+                            Phone
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setLoginMethod('username')}
+                            className={cn(
+                              "flex items-center justify-center gap-1.5 rounded-lg text-xs font-medium transition-all duration-200",
+                              loginMethod === 'username' 
+                                ? "bg-primary/20 text-primary shadow-sm" 
+                                : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+                            )}
+                          >
+                            <User className="w-3.5 h-3.5" />
+                            Username
+                          </button>
+                        </div>
                       </div>
 
                     <div className="space-y-1.5 animate-slide-up stagger-2">
