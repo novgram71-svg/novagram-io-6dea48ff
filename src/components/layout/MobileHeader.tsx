@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { Heart, Send } from 'lucide-react';
 import { useUnreadNotificationCount } from '@/hooks/useNotifications';
 import { useAuth } from '@/hooks/useAuth';
+import Logo3D from '@/components/ui/Logo3D';
 
 const MobileHeader = () => {
   const { user } = useAuth();
@@ -10,7 +11,9 @@ const MobileHeader = () => {
   return (
     <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-lg border-b border-border md:hidden">
       <div className="flex items-center justify-between px-4 py-3">
-        <h1 className="text-xl font-bold gradient-text">Novagram</h1>
+        <Link to="/">
+          <Logo3D size="sm" />
+        </Link>
         
         {user && (
           <div className="flex items-center gap-4">

@@ -1,4 +1,5 @@
-import { Home, Search, PlusSquare, MessageCircle, User, Heart, LogOut, Shield, Compass, Sparkles } from 'lucide-react';
+import { Home, Search, PlusSquare, MessageCircle, User, Heart, LogOut, Shield, Compass } from 'lucide-react';
+import Logo3D from '@/components/ui/Logo3D';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -26,12 +27,9 @@ const DesktopSidebar = () => {
 
   return (
     <aside className="hidden md:flex flex-col fixed left-0 top-0 h-screen w-64 bg-gradient-to-b from-sidebar to-sidebar/95 border-r border-sidebar-border p-4 backdrop-blur-xl">
-      {/* Logo */}
-      <Link to="/" className="flex items-center gap-2 px-4 py-6 group">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:rotate-3 shadow-lg shadow-primary/30">
-          <Sparkles className="w-5 h-5 text-primary-foreground animate-pulse-soft" />
-        </div>
-        <h1 className="text-xl font-bold gradient-text tracking-tight">Novagram</h1>
+      {/* 3D Logo */}
+      <Link to="/" className="px-4 py-6">
+        <Logo3D size="md" />
       </Link>
 
       {/* Navigation */}

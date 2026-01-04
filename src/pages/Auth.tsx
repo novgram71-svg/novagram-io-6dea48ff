@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff, Loader2, Sparkles, Camera, Heart, MessageCircle, Users, Phone, Mail, User } from 'lucide-react';
+import Logo3D from '@/components/ui/Logo3D';
 import { useRef } from 'react';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
@@ -376,11 +377,11 @@ const Auth = () => {
             {/* Content */}
             <div className="relative z-10 space-y-6">
               {/* Logo */}
-              <div className="text-center animate-slide-up">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl liquid-glass-button mb-4 shadow-lg">
-                  <Sparkles className="w-7 h-7 text-white" />
+              <div className="text-center animate-slide-up flex flex-col items-center">
+                <div className="mb-4">
+                  <Logo3D size="lg" showText={false} />
                 </div>
-                <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-foreground mb-2">
+                <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight bg-gradient-to-r from-primary via-accent to-primary bg-[length:200%_auto] animate-gradient-x bg-clip-text text-transparent mb-2">
                   Novagram
                 </h1>
                 <p className="text-muted-foreground text-sm font-light">
