@@ -15,7 +15,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import ReadReceipt from './ReadReceipt';
+import ReadReceipt, { DeliveryStatus } from './ReadReceipt';
 import SharedPostCard from './SharedPostCard';
 import VoiceMessage from './VoiceMessage';
 import { cn } from '@/lib/utils';
@@ -325,9 +325,9 @@ const MessageBubble = ({ message, reactions = [], theme, onReply, replyToMessage
           </span>
           {isOwn && (
             <ReadReceipt 
-              sent={true} 
-              read={message.read} 
+              status={message.read ? 'read' : 'delivered' as DeliveryStatus}
               readAt={message.read_at}
+              sentAt={message.created_at}
             />
           )}
         </div>
