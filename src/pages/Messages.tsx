@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useConversations, useMessages, useSendMessage, Conversation, MessageWithProfile } from '@/hooks/useMessages';
 import { useProfileById } from '@/hooks/useProfiles';
 import { useTypingIndicator } from '@/hooks/useTypingIndicator';
+import { useConversationTyping } from '@/hooks/useConversationTyping';
 import { useUserPresence, useUpdatePresence } from '@/hooks/usePresence';
 import { useChatTheme, CHAT_THEMES } from '@/hooks/useChatThemes';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -22,6 +23,7 @@ import ChatThemeSheet from '@/components/chat/ChatThemeSheet';
 import NotesBubble from '@/components/chat/NotesBubble';
 import VoiceRecorder from '@/components/chat/VoiceRecorder';
 import ReplyPreview from '@/components/chat/ReplyPreview';
+import ReadReceipt from '@/components/chat/ReadReceipt';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
@@ -31,9 +33,10 @@ interface ConversationItemProps {
   conversation: Conversation;
   isSelected: boolean;
   onClick: () => void;
+  isTyping?: boolean;
 }
 
-const ConversationItem = ({ conversation, isSelected, onClick }: ConversationItemProps) => {
+const ConversationItem = ({ conversation, isSelected, onClick, isTyping }: ConversationItemProps) => {
   const { isOnline, lastSeen } = useUserPresence(conversation.id);
 
   return (
@@ -69,12 +72,19 @@ const ConversationItem = ({ conversation, isSelected, onClick }: ConversationIte
             {formatDistanceToNow(new Date(conversation.lastMessageTime), { addSuffix: false })}
           </span>
         </div>
-        <p className={cn(
-          'text-sm truncate transition-colors',
-          conversation.unreadCount > 0 ? 'text-foreground font-medium' : 'text-muted-foreground'
-        )}>
-          {conversation.lastMessage}
-        </p>
+        {isTyping ? (
+          <div className="flex items-center gap-1.5">
+            <TypingIndicator variant="minimal" />
+            <span className="text-xs text-primary animate-pulse">typing...</span>
+          </div>
+        ) : (
+          <p className={cn(
+            'text-sm truncate transition-colors',
+            conversation.unreadCount > 0 ? 'text-foreground font-medium' : 'text-muted-foreground'
+          )}>
+            {conversation.lastMessage}
+          </p>
+        )}
       </div>
     </button>
   );
@@ -106,6 +116,13 @@ const Messages = () => {
   const sendMessage = useSendMessage();
   const { isPartnerTyping, setTyping } = useTypingIndicator(selectedConversation?.id || null);
   const { isOnline, lastSeen } = useUserPresence(selectedConversation?.id || null);
+  
+  // Get typing status for all conversations
+  const conversationPartnerIds = useMemo(() => 
+    conversations?.map(c => c.id) || [], 
+    [conversations]
+  );
+  const typingUsers = useConversationTyping(conversationPartnerIds);
 
   
   // Fetch reactions for all messages in the conversation
@@ -292,6 +309,7 @@ const Messages = () => {
                   conversation={conversation}
                   isSelected={selectedConversation?.id === conversation.id}
                   onClick={() => setSelectedConversation(conversation)}
+                  isTyping={typingUsers[conversation.id]}
                 />
               ))
             ) : (
