@@ -40,7 +40,7 @@ const ConversationItem = ({ conversation, isSelected, onClick }: ConversationIte
     <button
       onClick={onClick}
       className={cn(
-        'w-full flex items-center gap-3 p-4 hover:bg-secondary/80 transition-all duration-300 animate-slide-up group',
+        'w-full flex items-center gap-3 p-4 hover:bg-secondary/80 transition-all duration-300 group animate-conversation-slide-in',
         isSelected && 'bg-gradient-to-r from-primary/10 to-accent/5 border-l-2 border-primary'
       )}
     >
@@ -340,7 +340,7 @@ const Messages = () => {
                     <div className="text-left">
                       <p className="font-semibold text-sm">{selectedConversation.username}</p>
                       {isPartnerTyping ? (
-                        <p className="text-xs text-primary animate-pulse">typing...</p>
+                        <TypingIndicator variant="inline" />
                       ) : (
                         <ActiveStatus isOnline={isOnline} lastSeen={lastSeen} />
                       )}

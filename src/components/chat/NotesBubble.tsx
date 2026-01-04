@@ -59,43 +59,51 @@ const NotesBubble = () => {
 
   return (
     <>
-      <div className="flex gap-3 px-4 py-3 overflow-x-auto scrollbar-hide">
+      <div className="flex gap-4 px-4 py-4 overflow-x-auto scrollbar-hide">
         {/* My Note / Create Note */}
         <button 
           onClick={myNote ? openEditSheet : openCreateSheet}
-          className="flex flex-col items-center gap-1.5 min-w-fit group"
+          className="flex flex-col items-center gap-2 min-w-fit group"
         >
           <div className="relative">
             {myNote ? (
               <>
-                {/* Note content bubble */}
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
-                  <div className="relative">
-                    <div className="px-3 py-1.5 bg-gradient-to-r from-primary/20 to-accent/20 backdrop-blur-md rounded-full border border-primary/30 shadow-lg animate-float">
-                      <p className="text-xs max-w-[70px] truncate font-medium">{myNote.content}</p>
+                {/* Note content bubble with enhanced animation */}
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10">
+                  <div className="relative animate-note-float">
+                    <div className="px-3 py-2 bg-gradient-to-r from-primary/30 to-accent/30 backdrop-blur-xl rounded-2xl border border-primary/40 shadow-lg animate-note-glow">
+                      <p className="text-xs max-w-[80px] truncate font-medium bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text">{myNote.content}</p>
                     </div>
                     {/* Speech bubble tail */}
-                    <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-gradient-to-br from-primary/20 to-accent/20 rotate-45 border-r border-b border-primary/30" />
+                    <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-gradient-to-br from-primary/30 to-accent/30 rotate-45 border-r border-b border-primary/40 backdrop-blur-xl" />
                   </div>
                 </div>
-                <div className="mt-4">
-                  <Avatar className="w-16 h-16 ring-2 ring-primary ring-offset-2 ring-offset-background transition-all duration-300 group-hover:scale-105 group-hover:ring-primary/80">
-                    <AvatarImage src={profile?.avatar_url || ''} />
-                    <AvatarFallback className="bg-gradient-to-br from-primary/20 to-accent/20">
-                      {profile?.username?.[0]?.toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
+                <div className="mt-6">
+                  <div className="relative">
+                    {/* Glow ring */}
+                    <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary to-accent opacity-30 blur-md group-hover:opacity-50 transition-opacity" />
+                    <Avatar className="w-16 h-16 ring-2 ring-primary ring-offset-2 ring-offset-background transition-all duration-500 group-hover:scale-110 group-hover:ring-4">
+                      <AvatarImage src={profile?.avatar_url || ''} />
+                      <AvatarFallback className="bg-gradient-to-br from-primary/30 to-accent/30">
+                        {profile?.username?.[0]?.toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                  </div>
                   {/* Show reaction count on my note */}
                   <MyNoteReactions noteId={myNote.id} />
                 </div>
               </>
             ) : (
-              <div className="w-16 h-16 rounded-full border-2 border-dashed border-primary/40 flex items-center justify-center transition-all duration-300 group-hover:border-primary group-hover:scale-105 group-hover:bg-primary/5">
-                <Plus className="w-6 h-6 text-primary/60 group-hover:text-primary transition-colors" />
+              <div className="relative">
+                {/* Pulsing border effect */}
+                <div className="absolute inset-0 rounded-full border-2 border-dashed border-primary/30 animate-[spin_8s_linear_infinite]" />
+                <div className="w-16 h-16 rounded-full border-2 border-dashed border-primary/40 flex items-center justify-center transition-all duration-300 group-hover:border-primary group-hover:scale-110 group-hover:bg-primary/10">
+                  <Plus className="w-6 h-6 text-primary/60 group-hover:text-primary transition-all duration-300 group-hover:rotate-90" />
+                </div>
               </div>
             )}
           </div>
-          <span className="text-xs text-muted-foreground font-medium group-hover:text-foreground transition-colors">
+          <span className="text-xs text-muted-foreground font-medium group-hover:text-primary transition-colors duration-300">
             {myNote ? 'Your note' : 'Add note'}
           </span>
         </button>
@@ -273,26 +281,27 @@ const NoteItem = ({ note, index, onSelect, showReactions, onToggleReactions }: N
     .slice(0, 3);
 
   return (
-    <div className="relative flex flex-col items-center gap-1.5 min-w-fit">
+    <div className="relative flex flex-col items-center gap-2 min-w-fit">
       {/* Reaction picker popup */}
       {showReactions && (
-        <div className="absolute -top-14 left-1/2 -translate-x-1/2 z-20 animate-scale-in">
-          <div className="flex gap-1 bg-background/95 backdrop-blur-lg rounded-full px-2 py-1.5 border border-border shadow-xl">
-            {REACTION_EMOJIS.map((emoji) => (
+        <div className="absolute -top-16 left-1/2 -translate-x-1/2 z-20">
+          <div className="flex gap-1.5 bg-background/95 backdrop-blur-xl rounded-2xl px-3 py-2 border border-border/50 shadow-2xl animate-scale-in">
+            {REACTION_EMOJIS.map((emoji, i) => (
               <button
                 key={emoji}
                 onClick={(e) => handleReact(emoji, e)}
                 className={cn(
-                  "w-9 h-9 rounded-full flex items-center justify-center text-lg transition-all duration-200 hover:scale-125 active:scale-95",
+                  "w-10 h-10 rounded-full flex items-center justify-center text-xl transition-all duration-200 hover:scale-125 active:scale-95 animate-reaction-pop",
                   myReaction?.emoji === emoji && "bg-primary/20 ring-2 ring-primary"
                 )}
+                style={{ animationDelay: `${i * 50}ms` }}
               >
                 {emoji}
               </button>
             ))}
           </div>
           {/* Arrow */}
-          <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-background/95 rotate-45 border-r border-b border-border" />
+          <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-background/95 rotate-45 border-r border-b border-border/50" />
         </div>
       )}
       
@@ -300,27 +309,29 @@ const NoteItem = ({ note, index, onSelect, showReactions, onToggleReactions }: N
         onClick={onSelect}
         onContextMenu={handleLongPress}
         onDoubleClick={onToggleReactions}
-        className="flex flex-col items-center gap-1.5 group animate-fade-in"
+        className="flex flex-col items-center gap-2 group"
         style={{ animationDelay: `${index * 100}ms` }}
       >
-        <div className="relative">
+        <div className="relative animate-conversation-slide-in" style={{ animationDelay: `${index * 80}ms` }}>
           {/* Note content bubble */}
-          <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
-            <div className="relative">
-              <div className="px-3 py-1.5 bg-gradient-to-r from-accent/20 to-primary/20 backdrop-blur-md rounded-full border border-accent/30 shadow-lg animate-float" style={{ animationDelay: `${index * 200}ms` }}>
-                <p className="text-xs max-w-[70px] truncate font-medium">{note.content}</p>
+          <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10">
+            <div className="relative animate-note-float" style={{ animationDelay: `${index * 200}ms` }}>
+              <div className="px-3 py-2 bg-gradient-to-r from-accent/30 to-primary/30 backdrop-blur-xl rounded-2xl border border-accent/40 shadow-lg animate-note-glow">
+                <p className="text-xs max-w-[80px] truncate font-medium">{note.content}</p>
               </div>
               {/* Speech bubble tail */}
-              <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-gradient-to-br from-accent/20 to-primary/20 rotate-45 border-r border-b border-accent/30" />
+              <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-gradient-to-br from-accent/30 to-primary/30 rotate-45 border-r border-b border-accent/40 backdrop-blur-xl" />
             </div>
           </div>
-          <div className="mt-4 relative">
+          <div className="mt-6 relative">
+            {/* Hover glow effect */}
+            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-accent to-primary opacity-0 group-hover:opacity-30 blur-md transition-opacity duration-300" />
             <Avatar className={cn(
-              "w-16 h-16 ring-2 ring-offset-2 ring-offset-background transition-all duration-300 group-hover:scale-105",
-              myReaction ? "ring-primary" : "ring-accent/60 group-hover:ring-accent"
+              "w-16 h-16 ring-2 ring-offset-2 ring-offset-background transition-all duration-500 group-hover:scale-110",
+              myReaction ? "ring-primary group-hover:ring-4" : "ring-accent/60 group-hover:ring-accent"
             )}>
               <AvatarImage src={note.profiles?.avatar_url || ''} />
-              <AvatarFallback className="bg-gradient-to-br from-accent/20 to-primary/20">
+              <AvatarFallback className="bg-gradient-to-br from-accent/30 to-primary/30">
                 {note.profiles?.username?.[0]?.toUpperCase()}
               </AvatarFallback>
             </Avatar>
