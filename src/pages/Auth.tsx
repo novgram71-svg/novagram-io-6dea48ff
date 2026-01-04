@@ -403,35 +403,27 @@ const Auth = () => {
                 <form onSubmit={handleSubmit} className="space-y-4">
                   {isLogin ? (
                     <>
-                      {/* Login method tabs with animated indicator */}
+                      {/* Login method tabs - simple without shifting animation */}
                       <div className="animate-slide-up stagger-1">
-                        <Tabs value={loginMethod} onValueChange={(v) => handleTabSwitch(v as any)} className="w-full">
-                          <TabsList className="w-full grid grid-cols-3 liquid-glass h-11 p-1 rounded-xl relative overflow-hidden">
-                            {/* Animated background indicator */}
-                            <div 
-                              className="absolute h-[calc(100%-8px)] top-1 rounded-lg liquid-glass-button transition-all duration-300 ease-out z-0"
-                              style={{
-                                width: 'calc(33.333% - 4px)',
-                                left: loginMethod === 'email' ? '4px' : loginMethod === 'phone' ? 'calc(33.333% + 2px)' : 'calc(66.666%)',
-                              }}
-                            />
+                        <Tabs value={loginMethod} onValueChange={(v) => setLoginMethod(v as any)} className="w-full">
+                          <TabsList className="w-full grid grid-cols-3 liquid-glass h-11 p-1 rounded-xl">
                             <TabsTrigger 
                               value="email" 
-                              className="gap-1.5 rounded-lg text-xs font-medium z-10 data-[state=active]:text-white data-[state=active]:bg-transparent transition-all duration-300"
+                              className="gap-1.5 rounded-lg text-xs font-medium data-[state=active]:bg-primary/20 data-[state=active]:text-primary transition-colors duration-200"
                             >
                               <Mail className="w-3.5 h-3.5" />
                               Email
                             </TabsTrigger>
                             <TabsTrigger 
                               value="phone" 
-                              className="gap-1.5 rounded-lg text-xs font-medium z-10 data-[state=active]:text-white data-[state=active]:bg-transparent transition-all duration-300"
+                              className="gap-1.5 rounded-lg text-xs font-medium data-[state=active]:bg-primary/20 data-[state=active]:text-primary transition-colors duration-200"
                             >
                               <Phone className="w-3.5 h-3.5" />
                               Phone
                             </TabsTrigger>
                             <TabsTrigger 
                               value="username" 
-                              className="gap-1.5 rounded-lg text-xs font-medium z-10 data-[state=active]:text-white data-[state=active]:bg-transparent transition-all duration-300"
+                              className="gap-1.5 rounded-lg text-xs font-medium data-[state=active]:bg-primary/20 data-[state=active]:text-primary transition-colors duration-200"
                             >
                               <User className="w-3.5 h-3.5" />
                               Username
