@@ -39,6 +39,7 @@ export const VerificationSheet = ({ open, onOpenChange }: VerificationSheetProps
   const maxPoints = 20;
   const progress = (points / maxPoints) * 100;
   const isVerified = verification?.is_verified ?? false;
+  const wasReferred = verification?.was_referred ?? false;
   const referralCode = verification?.referral_code ?? '';
   const referralLink = `${window.location.origin}/auth?ref=${referralCode}`;
 
@@ -218,37 +219,41 @@ export const VerificationSheet = ({ open, onOpenChange }: VerificationSheetProps
 
             <Separator />
 
-            {/* Apply Referral Code */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <Gift className="w-5 h-5 text-primary" />
-                <h4 className="font-semibold">Have a Referral Code?</h4>
-              </div>
-              
-              <div className="flex gap-2">
-                <Input 
-                  value={referralInput}
-                  onChange={(e) => setReferralInput(e.target.value.toUpperCase())}
-                  placeholder="Enter referral code"
-                  className="font-mono uppercase tracking-widest"
-                />
-                <Button 
-                  onClick={handleApplyReferral}
-                  disabled={processReferral.isPending || !referralInput.trim()}
-                >
-                  {processReferral.isPending ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    'Apply'
-                  )}
-                </Button>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                You can only use one referral code and it must be applied before earning your own referrals
-              </p>
-            </div>
+            {/* Apply Referral Code - Only show if not already referred */}
+            {!wasReferred && !isVerified && (
+              <>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Gift className="w-5 h-5 text-primary" />
+                    <h4 className="font-semibold">Have a Referral Code?</h4>
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <Input 
+                      value={referralInput}
+                      onChange={(e) => setReferralInput(e.target.value.toUpperCase())}
+                      placeholder="Enter referral code"
+                      className="font-mono uppercase tracking-widest"
+                    />
+                    <Button 
+                      onClick={handleApplyReferral}
+                      disabled={processReferral.isPending || !referralInput.trim()}
+                    >
+                      {processReferral.isPending ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        'Apply'
+                      )}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    You can only use one referral code and it must be applied before earning your own referrals
+                  </p>
+                </div>
 
-            <Separator />
+                <Separator />
+              </>
+            )}
 
             {/* Referral History */}
             <div className="space-y-4">

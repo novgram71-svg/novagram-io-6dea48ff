@@ -1,18 +1,21 @@
-import { useEffect } from 'react';
-import { Heart, MessageCircle, UserPlus, CheckCircle, XCircle, Clock, UserCheck, Check, X, Play } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Heart, MessageCircle, UserPlus, CheckCircle, XCircle, Clock, UserCheck, Check, X, Play, BadgeCheck, PartyPopper } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import MainLayout from '@/components/layout/MainLayout';
 import { useNotifications, useMarkNotificationsRead } from '@/hooks/useNotifications';
 import { useAuth } from '@/hooks/useAuth';
 import { useFollowRequests } from '@/hooks/useFollowRequests';
+import { usePendingBadge, useAcceptBadge } from '@/hooks/useVerification';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
 import PullToRefresh from '@/components/posts/PullToRefresh';
+import NovaBadge from '@/components/profile/NovaBadge';
 
 const notificationIcons: Record<string, any> = {
   like: Heart,
@@ -25,6 +28,7 @@ const notificationIcons: Record<string, any> = {
   story_like: Heart,
   story_reply: Play,
   message: MessageCircle,
+  verification_gift: BadgeCheck,
 };
 
 const notificationColors: Record<string, string> = {
@@ -38,6 +42,7 @@ const notificationColors: Record<string, string> = {
   story_like: 'text-red-500',
   story_reply: 'text-purple-500',
   message: 'text-blue-500',
+  verification_gift: 'text-primary',
 };
 
 const notificationMessages: Record<string, string> = {
@@ -51,6 +56,7 @@ const notificationMessages: Record<string, string> = {
   story_like: 'liked your story',
   story_reply: 'replied to your story',
   message: 'sent you a message',
+  verification_gift: 'gave you a Nova verification badge!',
 };
 
 const Notifications = () => {
@@ -59,10 +65,14 @@ const Notifications = () => {
   const { data: notifications, isLoading } = useNotifications();
   const markRead = useMarkNotificationsRead();
   const { receivedRequests, acceptRequest, rejectRequest } = useFollowRequests();
+  const { data: pendingBadge } = usePendingBadge();
+  const acceptBadge = useAcceptBadge();
+  const [showVerifiedPopup, setShowVerifiedPopup] = useState(false);
 
   const handleRefresh = async () => {
     await queryClient.invalidateQueries({ queryKey: ['notifications'] });
     await queryClient.invalidateQueries({ queryKey: ['followRequests'] });
+    await queryClient.invalidateQueries({ queryKey: ['pending-badge'] });
   };
 
   // Mark notifications as read when viewing
@@ -71,6 +81,15 @@ const Notifications = () => {
       markRead.mutate();
     }
   }, [notifications]);
+
+  const handleAcceptBadge = async () => {
+    const result = await acceptBadge.mutateAsync();
+    if (result.success) {
+      setShowVerifiedPopup(true);
+      queryClient.invalidateQueries({ queryKey: ['pending-badge'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    }
+  };
 
   const handleAcceptRequest = async (requesterId: string, username: string) => {
     try {
@@ -200,6 +219,36 @@ const Notifications = () => {
 
   return (
     <MainLayout>
+      {/* Verified Popup */}
+      <Dialog open={showVerifiedPopup} onOpenChange={setShowVerifiedPopup}>
+        <DialogContent className="max-w-sm text-center">
+          <div className="flex flex-col items-center py-6">
+            <div className="relative mb-6">
+              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center animate-nova-badge">
+                <BadgeCheck className="w-12 h-12 text-white" />
+              </div>
+              <PartyPopper className="absolute -top-2 -right-2 w-10 h-10 text-yellow-500 animate-bounce" />
+            </div>
+            <h2 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent mb-2">
+              Congratulations! 🎉
+            </h2>
+            <p className="text-muted-foreground mb-4">
+              You are now Nova Verified! Your profile now displays the exclusive Nova badge.
+            </p>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <NovaBadge size="sm" showTooltip={false} />
+              <span>Valid for 2 months</span>
+            </div>
+            <Button 
+              onClick={() => setShowVerifiedPopup(false)}
+              className="mt-6 bg-gradient-to-r from-primary to-accent"
+            >
+              Awesome!
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <PullToRefresh onRefresh={handleRefresh}>
         <div className="max-w-2xl mx-auto">
           {/* Header */}
@@ -224,6 +273,32 @@ const Notifications = () => {
             </div>
           ) : (
             <>
+              {/* Pending Badge Section */}
+              {pendingBadge && (
+                <div className="p-4 bg-gradient-to-r from-primary/10 via-accent/10 to-primary/5">
+                  <div className="flex items-center gap-4 p-4 rounded-2xl bg-background/60 backdrop-blur-sm animate-fade-in">
+                    <div className="relative">
+                      <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center animate-nova-badge">
+                        <BadgeCheck className="w-7 h-7 text-white" />
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-lg">Nova Badge Awaits!</h3>
+                      <p className="text-sm text-muted-foreground">
+                        An admin has gifted you the Nova verification badge
+                      </p>
+                    </div>
+                    <Button 
+                      onClick={handleAcceptBadge}
+                      disabled={acceptBadge.isPending}
+                      className="bg-gradient-to-r from-primary to-accent hover:opacity-90"
+                    >
+                      {acceptBadge.isPending ? 'Accepting...' : 'Accept'}
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               {/* Pending Follow Requests Section */}
               {receivedRequests && receivedRequests.length > 0 && (
                 <div className="p-4 bg-gradient-to-r from-primary/5 to-purple-500/5">
@@ -297,7 +372,7 @@ const Notifications = () => {
                 </div>
               )}
 
-              {notifications?.length === 0 && (!receivedRequests || receivedRequests.length === 0) && (
+              {notifications?.length === 0 && (!receivedRequests || receivedRequests.length === 0) && !pendingBadge && (
                 <div className="flex flex-col items-center justify-center py-16 text-muted-foreground animate-fade-in">
                   <Heart className="w-12 h-12 mb-4" />
                   <h3 className="font-semibold text-lg mb-1">No Activity Yet</h3>

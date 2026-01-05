@@ -308,21 +308,21 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 overflow-hidden relative will-change-transform">
-      {/* Floating icons background */}
-      <FloatingIcons />
-      
+    <div className="min-h-screen min-h-[100dvh] flex items-center justify-center p-4 sm:p-6 overflow-hidden relative will-change-transform transform-gpu">
       {/* Gradient mesh background */}
-      <div className="fixed inset-0 bg-gradient-to-br from-background via-background to-background">
-        {/* Soft gradient orbs for light diffusion */}
-        <div className="absolute top-0 left-0 w-[600px] h-[600px] rounded-full bg-primary/10 blur-[120px] animate-float-gentle" />
-        <div className="absolute bottom-0 right-0 w-[500px] h-[500px] rounded-full bg-accent/10 blur-[100px] animate-float-gentle" style={{ animationDelay: '-2s' }} />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full bg-primary/5 blur-[80px] animate-liquid-pulse" />
+      <div className="fixed inset-0 bg-gradient-to-br from-background via-background to-background z-0">
+        {/* Soft gradient orbs for light diffusion - reduced for mobile performance */}
+        <div className="absolute top-0 left-0 w-[400px] sm:w-[600px] h-[400px] sm:h-[600px] rounded-full bg-primary/10 blur-[80px] sm:blur-[120px] animate-float-gentle" />
+        <div className="absolute bottom-0 right-0 w-[350px] sm:w-[500px] h-[350px] sm:h-[500px] rounded-full bg-accent/10 blur-[70px] sm:blur-[100px] animate-float-gentle" style={{ animationDelay: '-2s' }} />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] sm:w-[400px] h-[300px] sm:h-[400px] rounded-full bg-primary/5 blur-[60px] sm:blur-[80px] animate-liquid-pulse" />
       </div>
+
+      {/* Floating icons background - above gradient */}
+      <FloatingIcons />
 
       {/* Subtle grid pattern overlay */}
       <div 
-        className="fixed inset-0 opacity-[0.02]" 
+        className="fixed inset-0 opacity-[0.02] z-[2]" 
         style={{
           backgroundImage: 'radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)',
           backgroundSize: '40px 40px',
