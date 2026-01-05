@@ -10,6 +10,7 @@ import { useIsPrivateAccount, useCanViewProfile } from '@/hooks/usePrivateAccoun
 import { useIsBlocked, useToggleBlock } from '@/hooks/useUserModeration';
 import { useSavedPosts } from '@/hooks/useSavedPosts';
 import { useFollowRequests } from '@/hooks/useFollowRequests';
+import { useUserVerificationStatus } from '@/hooks/useVerification';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -22,6 +23,7 @@ import FollowListSheet from '@/components/profile/FollowListSheet';
 import { FollowRequestsSheet } from '@/components/profile/FollowRequestsSheet';
 import PrivateAccountNotice from '@/components/profile/PrivateAccountNotice';
 import AccountSwitcher from '@/components/profile/AccountSwitcher';
+import NovaBadge from '@/components/profile/NovaBadge';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -55,6 +57,7 @@ const Profile = () => {
   const { data: canViewProfile } = useCanViewProfile(profile?.id, user?.id);
   const { data: hasPendingRequest } = useHasPendingRequest(profile?.id);
   const { receivedRequests } = useFollowRequests();
+  const { isVerified } = useUserVerificationStatus(profile?.id);
   const toggleFollow = useToggleFollow();
   const toggleBlock = useToggleBlock();
   const { savedPosts, isLoading: savedLoading } = useSavedPosts();
@@ -212,7 +215,10 @@ const Profile = () => {
                     <AccountSwitcher username={profile.username} avatarUrl={profile.avatar_url} />
                   </div>
                 ) : null}
-                <h2 className={cn("text-xl font-semibold gradient-text", isOwnProfile && "md:hidden")}>{profile.username}</h2>
+                <div className="flex items-center gap-2">
+                  <h2 className={cn("text-xl font-semibold gradient-text", isOwnProfile && "md:hidden")}>{profile.username}</h2>
+                  {isVerified && <NovaBadge size="md" />}
+                </div>
                 
                 {isOwnProfile ? (
                   <div className="flex gap-2 flex-wrap justify-center md:justify-start">

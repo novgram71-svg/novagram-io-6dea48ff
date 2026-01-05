@@ -41,9 +41,10 @@ export const AIChat = ({ onClose }: AIChatProps) => {
   return (
     <div 
       className={cn(
-        "fixed inset-0 z-50 bg-background/95 backdrop-blur-xl flex flex-col",
+        "fixed inset-0 z-50 bg-background/95 backdrop-blur-xl flex flex-col will-change-transform",
         isClosing ? "animate-slide-out-down" : "animate-slide-in-up"
       )}
+      style={{ height: '100dvh' }}
     >
       {/* Gradient background effects */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -86,8 +87,8 @@ export const AIChat = ({ onClose }: AIChatProps) => {
       </header>
 
       {/* Messages */}
-      <ScrollArea className="flex-1 relative z-10" ref={scrollRef}>
-        <div className="p-4 pb-24 max-w-3xl mx-auto">
+      <ScrollArea className="flex-1 relative z-10 overflow-y-auto" ref={scrollRef}>
+        <div className="p-4 pb-6 max-w-3xl mx-auto">
           {messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
               <div className="relative mb-8">
@@ -154,29 +155,29 @@ export const AIChat = ({ onClose }: AIChatProps) => {
         </div>
       </ScrollArea>
 
-      {/* Input */}
-      <div className="relative z-10 border-t border-border/50 bg-background/80 backdrop-blur-lg safe-area-bottom">
-        <form onSubmit={handleSubmit} className="p-4 max-w-3xl mx-auto">
-          <div className="flex gap-3 items-center">
+      {/* Input - Fixed at bottom for mobile */}
+      <div className="relative z-10 border-t border-border/50 bg-background/95 backdrop-blur-lg pb-safe">
+        <form onSubmit={handleSubmit} className="p-3 sm:p-4 max-w-3xl mx-auto">
+          <div className="flex gap-2 sm:gap-3 items-center">
             <div className="flex-1 relative">
               <Input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Message Nova..."
-                className="h-12 rounded-2xl pl-5 pr-12 bg-secondary/50 border-border/50 focus:bg-secondary/80 transition-colors text-base"
+                className="h-11 sm:h-12 rounded-2xl pl-4 sm:pl-5 pr-10 sm:pr-12 bg-secondary/50 border-border/50 focus:bg-secondary/80 transition-colors text-base"
                 disabled={isLoading}
               />
-              <div className="absolute right-2 top-1/2 -translate-y-1/2">
-                <Sparkles className="w-5 h-5 text-muted-foreground/50" />
+              <div className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2">
+                <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground/50" />
               </div>
             </div>
             <Button 
               type="submit" 
               disabled={isLoading || !input.trim()} 
               size="icon"
-              className="h-12 w-12 rounded-2xl bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg"
+              className="h-11 w-11 sm:h-12 sm:w-12 rounded-2xl bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg flex-shrink-0"
             >
-              <Send className="w-5 h-5" />
+              <Send className="w-4 h-4 sm:w-5 sm:h-5" />
             </Button>
           </div>
         </form>

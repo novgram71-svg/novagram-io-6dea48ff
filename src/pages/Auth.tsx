@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,12 +7,13 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff, Loader2, Sparkles, Camera, Heart, MessageCircle, Users, Phone, Mail, User } from 'lucide-react';
 import Logo3D from '@/components/ui/Logo3D';
-import { useRef } from 'react';
+import FloatingIcons from '@/components/auth/FloatingIcons';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { useSecurityQuestion } from '@/hooks/useSecurityQuestion';
 import { SecurityQuestionDialog } from '@/components/auth/SecurityQuestionDialog';
 import { ForgotPasswordSheet } from '@/components/auth/ForgotPasswordSheet';
+import { useProcessReferral } from '@/hooks/useVerification';
 import { cn } from '@/lib/utils';
 
 const emailSchema = z.string().email('Please enter a valid email');
@@ -21,6 +22,9 @@ const usernameSchema = z.string().min(3, 'Username must be at least 3 characters
 const phoneSchema = z.string().min(10, 'Please enter a valid phone number').regex(/^[0-9+\-\s()]+$/, 'Invalid phone number format');
 
 const Auth = () => {
+  const [searchParams] = useSearchParams();
+  const referralCodeFromUrl = searchParams.get('ref');
+  
   const [isLogin, setIsLogin] = useState(true);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [slideDirection, setSlideDirection] = useState<'left' | 'right'>('left');
@@ -37,8 +41,19 @@ const Auth = () => {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string; username?: string; phone?: string }>({});
   const [ripples, setRipples] = useState<{ id: number; x: number; y: number }[]>([]);
+  const [pendingReferral, setPendingReferral] = useState<string | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const formContainerRef = useRef<HTMLDivElement>(null);
+  
+  const processReferral = useProcessReferral();
+  
+  // Store referral code from URL for processing after signup
+  useEffect(() => {
+    if (referralCodeFromUrl) {
+      setPendingReferral(referralCodeFromUrl);
+      setIsLogin(false); // Switch to signup mode if coming from referral link
+    }
+  }, [referralCodeFromUrl]);
   
   // Handle mode switch with swipe animation
   const handleModeSwitch = () => {
@@ -119,6 +134,16 @@ const Auth = () => {
           }
         }
         
+        // Process pending referral code
+        if (pendingReferral) {
+          try {
+            await processReferral.mutateAsync(pendingReferral);
+            setPendingReferral(null);
+          } catch (error) {
+            console.error('Error processing referral:', error);
+          }
+        }
+        
         if (!hasSecurityQuestion) {
           setShowSecurityDialog(true);
         } else {
@@ -128,7 +153,7 @@ const Auth = () => {
     };
     
     linkAccountIfNeeded();
-  }, [user, hasSecurityQuestion, loadingSecurityQuestion, navigate]);
+  }, [user, hasSecurityQuestion, loadingSecurityQuestion, navigate, pendingReferral, processReferral]);
 
   const handleSecurityQuestionComplete = () => {
     setShowSecurityDialog(false);
@@ -283,7 +308,10 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 overflow-hidden relative">
+    <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 overflow-hidden relative will-change-transform">
+      {/* Floating icons background */}
+      <FloatingIcons />
+      
       {/* Gradient mesh background */}
       <div className="fixed inset-0 bg-gradient-to-br from-background via-background to-background">
         {/* Soft gradient orbs for light diffusion */}
