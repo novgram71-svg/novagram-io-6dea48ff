@@ -1259,31 +1259,46 @@ export type Database = {
       }
       user_verification: {
         Row: {
+          admin_granted: boolean | null
+          badge_granted_by: string | null
           created_at: string
           id: string
           is_verified: boolean
+          pending_badge: boolean | null
           points: number
           referral_code: string
           updated_at: string
           user_id: string
+          verified_until: string | null
+          was_referred: boolean | null
         }
         Insert: {
+          admin_granted?: boolean | null
+          badge_granted_by?: string | null
           created_at?: string
           id?: string
           is_verified?: boolean
+          pending_badge?: boolean | null
           points?: number
           referral_code: string
           updated_at?: string
           user_id: string
+          verified_until?: string | null
+          was_referred?: boolean | null
         }
         Update: {
+          admin_granted?: boolean | null
+          badge_granted_by?: string | null
           created_at?: string
           id?: string
           is_verified?: boolean
+          pending_badge?: boolean | null
           points?: number
           referral_code?: string
           updated_at?: string
           user_id?: string
+          verified_until?: string | null
+          was_referred?: boolean | null
         }
         Relationships: [
           {
@@ -1300,6 +1315,9 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_badge: { Args: never; Returns: Json }
+      admin_grant_badge: { Args: { target_user_id: string }; Returns: Json }
+      check_badge_expiration: { Args: never; Returns: undefined }
       generate_referral_code: { Args: { user_id: string }; Returns: string }
       has_role: {
         Args: {

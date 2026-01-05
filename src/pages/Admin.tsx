@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { Users, Image, MessageSquare, Download, ChevronRight, AlertTriangle, Ban, CheckCircle, XCircle, Bot, Eye, KeyRound, Loader2, FileWarning } from 'lucide-react';
+import { Users, Image, MessageSquare, Download, ChevronRight, AlertTriangle, Ban, CheckCircle, XCircle, Bot, Eye, KeyRound, Loader2, FileWarning, BadgeCheck } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin, useAllUsers, useAllPosts, useConversationPartners, useConversation } from '@/hooks/useAdmin';
@@ -8,6 +8,7 @@ import { useAllReports, useUpdateReportStatus, useAllBannedUsers, useBanUser, us
 import { useAIAbuseReports } from '@/hooks/useAIAbuseReports';
 import { usePasswordResetRequests } from '@/hooks/usePasswordReset';
 import { useAllAppReports, useUpdateAppReportStatus } from '@/hooks/useAppReports';
+import { useAdminGrantBadge } from '@/hooks/useVerification';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -49,6 +50,7 @@ const Admin = () => {
   const updateReportStatus = useUpdateReportStatus();
   const banUser = useBanUser();
   const unbanUser = useUnbanUser();
+  const grantBadge = useAdminGrantBadge();
 
   const selectedUserProfile = users?.find(u => u.id === selectedUser);
   const selectedPartnerProfile = chatPartners?.find((p: any) => p.id === selectedChatPartner);
@@ -266,7 +268,34 @@ const Admin = () => {
                             <div className="text-right text-sm text-muted-foreground">
                               <p>Joined {formatDistanceToNow(new Date(u.created_at))} ago</p>
                             </div>
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 flex-wrap">
+                              {/* Grant Nova Badge */}
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="outline" size="sm" className="text-primary hover:text-primary">
+                                    <BadgeCheck className="w-4 h-4 mr-1" />
+                                    Badge
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Give Nova Badge to {u.username}?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      This will send a notification to the user. They can accept the badge which will be valid for 2 months.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction 
+                                      className="bg-gradient-to-r from-primary to-accent"
+                                      onClick={() => grantBadge.mutate(u.id)}
+                                    >
+                                      Send Badge
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+
                               {isBanned ? (
                                 <AlertDialog>
                                   <AlertDialogTrigger asChild>

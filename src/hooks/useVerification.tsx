@@ -11,6 +11,11 @@ interface VerificationData {
   referral_code: string;
   created_at: string;
   updated_at: string;
+  verified_until: string | null;
+  was_referred: boolean;
+  admin_granted: boolean;
+  pending_badge: boolean;
+  badge_granted_by: string | null;
 }
 
 interface ReferralData {
@@ -80,11 +85,17 @@ export const useUserVerificationStatus = (userId: string | undefined) => {
       
       const { data, error } = await supabase
         .from('user_verification')
-        .select('is_verified')
+        .select('is_verified, verified_until')
         .eq('user_id', userId)
         .maybeSingle();
       
       if (error || !data) return false;
+      
+      // Check if verification has expired
+      if (data.verified_until && new Date(data.verified_until) < new Date()) {
+        return false;
+      }
+      
       return data.is_verified;
     },
     enabled: !!userId,
@@ -161,5 +172,76 @@ export const useProcessReferral = () => {
     onError: (error: any) => {
       toast.error(error.message || 'Failed to process referral');
     },
+  });
+};
+
+export const useAdminGrantBadge = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (targetUserId: string) => {
+      const { data, error } = await supabase
+        .rpc('admin_grant_badge', { target_user_id: targetUserId });
+      
+      if (error) throw error;
+      return data as { success: boolean; error?: string };
+    },
+    onSuccess: (data) => {
+      if (data.success) {
+        toast.success('Nova badge sent! User will receive a notification.');
+        queryClient.invalidateQueries({ queryKey: ['verification'] });
+      } else {
+        toast.error(data.error || 'Failed to grant badge');
+      }
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to grant badge');
+    },
+  });
+};
+
+export const useAcceptBadge = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase
+        .rpc('accept_badge');
+      
+      if (error) throw error;
+      return data as { success: boolean; error?: string; verified_until?: string };
+    },
+    onSuccess: (data) => {
+      if (data.success) {
+        queryClient.invalidateQueries({ queryKey: ['verification'] });
+        queryClient.invalidateQueries({ queryKey: ['user-verification-status'] });
+      } else {
+        toast.error(data.error || 'Failed to accept badge');
+      }
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to accept badge');
+    },
+  });
+};
+
+export const usePendingBadge = () => {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ['pending-badge', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      
+      const { data, error } = await supabase
+        .from('user_verification')
+        .select('pending_badge, badge_granted_by')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (error || !data) return null;
+      return data.pending_badge ? data : null;
+    },
+    enabled: !!user?.id,
   });
 };

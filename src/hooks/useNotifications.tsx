@@ -13,7 +13,8 @@ export type NotificationType =
   | 'password_reset_rejected'
   | 'story_like'
   | 'story_reply'
-  | 'message';
+  | 'message'
+  | 'verification_gift';
 
 export interface NotificationWithActor {
   id: string;
