@@ -24,7 +24,8 @@ import {
   Loader2,
   Key,
   BellRing,
-  AlertTriangle
+  AlertTriangle,
+  BadgeCheck
 } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
@@ -42,6 +43,8 @@ import { SavedPostsSheet } from '@/components/settings/SavedPostsSheet';
 import { LoginActivitySheet } from '@/components/settings/LoginActivitySheet';
 import { ChangePasswordSheet } from '@/components/settings/ChangePasswordSheet';
 import { ReportIssueSheet } from '@/components/settings/ReportIssueSheet';
+import { VerificationSheet } from '@/components/settings/VerificationSheet';
+import { useVerification } from '@/hooks/useVerification';
 import { toast } from 'sonner';
 
 interface SettingItemProps {
@@ -93,6 +96,7 @@ const Settings = () => {
   const { user, profile, signOut, loading } = useAuth();
   const { settings, isLoading: settingsLoading, updateSetting, isUpdating } = useUserSettings();
   const { isSupported, permission, requestPermission, pushToken } = usePushNotifications();
+  const { verification } = useVerification();
   
   // Sheet states
   const [blockedUsersOpen, setBlockedUsersOpen] = useState(false);
@@ -103,6 +107,7 @@ const Settings = () => {
   const [loginActivityOpen, setLoginActivityOpen] = useState(false);
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   const [reportIssueOpen, setReportIssueOpen] = useState(false);
+  const [verificationOpen, setVerificationOpen] = useState(false);
 
   const handleEnablePushNotifications = async () => {
     try {
@@ -350,6 +355,23 @@ const Settings = () => {
             />
           </SettingSection>
 
+          {/* Verification */}
+          <SettingSection title="Verification">
+            <SettingItem
+              icon={<BadgeCheck className={verification?.is_verified ? "w-5 h-5 text-primary" : "w-5 h-5"} />}
+              label="Get Nova Verified"
+              description={verification?.is_verified ? "You're verified! ✨" : `${verification?.points || 0}/20 points earned`}
+              onClick={() => setVerificationOpen(true)}
+              rightElement={
+                verification?.is_verified ? (
+                  <span className="text-xs text-primary font-medium">Verified</span>
+                ) : (
+                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                )
+              }
+            />
+          </SettingSection>
+
           {/* Security */}
           <SettingSection title="Security">
             <SettingItem
@@ -428,6 +450,10 @@ const Settings = () => {
       <ReportIssueSheet
         open={reportIssueOpen}
         onOpenChange={setReportIssueOpen}
+      />
+      <VerificationSheet
+        open={verificationOpen}
+        onOpenChange={setVerificationOpen}
       />
     </MainLayout>
   );

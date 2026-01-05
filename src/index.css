@@ -1027,4 +1027,74 @@
   .animate-text-shimmer {
     animation: text-shimmer 4s ease-in-out infinite;
   }
+
+  /* Nova Badge Animation */
+  @keyframes nova-badge {
+    0%, 100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.1);
+    }
+  }
+
+  .animate-nova-badge {
+    animation: nova-badge 2s ease-in-out infinite;
+  }
+
+  /* Floating Icons for Auth */
+  @keyframes float-icon {
+    0% {
+      transform: translateY(100vh) rotate(0deg);
+      opacity: 0;
+    }
+    10% {
+      opacity: 0.2;
+    }
+    90% {
+      opacity: 0.2;
+    }
+    100% {
+      transform: translateY(-100vh) rotate(360deg);
+      opacity: 0;
+    }
+  }
+
+  @keyframes float-icon-reverse {
+    0% {
+      transform: translateY(-100vh) rotate(360deg);
+      opacity: 0;
+    }
+    10% {
+      opacity: 0.1;
+    }
+    90% {
+      opacity: 0.1;
+    }
+    100% {
+      transform: translateY(100vh) rotate(0deg);
+      opacity: 0;
+    }
+  }
+
+  .animate-float-icon {
+    animation: float-icon 15s linear infinite;
+  }
+
+  .animate-float-icon-reverse {
+    animation: float-icon-reverse 20s linear infinite;
+  }
+
+  /* Safe area padding for mobile */
+  .pb-safe {
+    padding-bottom: max(env(safe-area-inset-bottom), 0.75rem);
+  }
+
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
 }
