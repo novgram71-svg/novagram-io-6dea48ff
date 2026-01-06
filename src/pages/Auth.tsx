@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Eye, EyeOff, Loader2, Sparkles, Camera, Heart, MessageCircle, Users, Phone, Mail, User } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Sparkles, Camera, Heart, MessageCircle, Users, Phone, Mail, User, ArrowLeft, RefreshCw } from 'lucide-react';
 import Logo3D from '@/components/ui/Logo3D';
 import FloatingIcons from '@/components/auth/FloatingIcons';
 import { z } from 'zod';
@@ -15,6 +15,7 @@ import { SecurityQuestionDialog } from '@/components/auth/SecurityQuestionDialog
 import { ForgotPasswordSheet } from '@/components/auth/ForgotPasswordSheet';
 import { useProcessReferral } from '@/hooks/useVerification';
 import { cn } from '@/lib/utils';
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 
 const emailSchema = z.string().email('Please enter a valid email');
 const passwordSchema = z.string().min(6, 'Password must be at least 6 characters');
@@ -42,6 +43,9 @@ const Auth = () => {
   const [errors, setErrors] = useState<{ email?: string; password?: string; username?: string; phone?: string }>({});
   const [ripples, setRipples] = useState<{ id: number; x: number; y: number }[]>([]);
   const [pendingReferral, setPendingReferral] = useState<string | null>(null);
+  const [verificationCode, setVerificationCode] = useState('');
+  const [isResending, setIsResending] = useState(false);
+  const [resendCountdown, setResendCountdown] = useState(0);
   const cardRef = useRef<HTMLDivElement>(null);
   const formContainerRef = useRef<HTMLDivElement>(null);
   
@@ -54,6 +58,14 @@ const Auth = () => {
       setIsLogin(false); // Switch to signup mode if coming from referral link
     }
   }, [referralCodeFromUrl]);
+
+  // Countdown timer for resend button
+  useEffect(() => {
+    if (resendCountdown > 0) {
+      const timer = setTimeout(() => setResendCountdown(resendCountdown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resendCountdown]);
   
   // Handle mode switch with swipe animation
   const handleModeSwitch = () => {
@@ -77,7 +89,7 @@ const Auth = () => {
     setLoginMethod(newMethod);
   };
   
-  const { signIn, signUp, user } = useAuth();
+  const { signIn, signUp, user, pendingVerification, verifyEmail, resendVerificationCode, clearPendingVerification } = useAuth();
   const { hasSecurityQuestion, isLoading: loadingSecurityQuestion } = useSecurityQuestion();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -266,6 +278,12 @@ const Auth = () => {
               description: 'Invalid credentials. Please try again.',
               variant: 'destructive',
             });
+          } else if (error.message.includes('Email not confirmed')) {
+            toast({
+              title: 'Email not verified',
+              description: 'Please verify your email before logging in.',
+              variant: 'destructive',
+            });
           } else {
             toast({
               title: 'Login failed',
@@ -280,7 +298,7 @@ const Auth = () => {
           });
         }
       } else {
-        const { error } = await signUp(email, password, username, phoneNumber);
+        const { error, needsVerification } = await signUp(email, password, username, phoneNumber);
         if (error) {
           if (error.message.includes('User already registered')) {
             toast({
@@ -295,6 +313,12 @@ const Auth = () => {
               variant: 'destructive',
             });
           }
+        } else if (needsVerification) {
+          setResendCountdown(60);
+          toast({
+            title: 'Verification code sent!',
+            description: 'Please check your email for the verification code.',
+          });
         } else {
           toast({
             title: 'Account created!',
@@ -305,6 +329,63 @@ const Auth = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleVerifyEmail = async () => {
+    if (verificationCode.length !== 6) {
+      toast({
+        title: 'Invalid code',
+        description: 'Please enter the 6-digit verification code.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { error } = await verifyEmail(verificationCode);
+      if (error) {
+        toast({
+          title: 'Verification failed',
+          description: error.message || 'Invalid or expired verification code.',
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Email verified!',
+          description: 'Your account has been verified successfully.',
+        });
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResendCode = async () => {
+    setIsResending(true);
+    try {
+      const { error } = await resendVerificationCode();
+      if (error) {
+        toast({
+          title: 'Failed to resend',
+          description: error.message || 'Could not resend verification code.',
+          variant: 'destructive',
+        });
+      } else {
+        setResendCountdown(60);
+        toast({
+          title: 'Code resent!',
+          description: 'A new verification code has been sent to your email.',
+        });
+      }
+    } finally {
+      setIsResending(false);
+    }
+  };
+
+  const handleBackFromVerification = () => {
+    clearPendingVerification();
+    setVerificationCode('');
   };
 
   return (
@@ -413,11 +494,91 @@ const Auth = () => {
                   Novagram
                 </h1>
                 <p className="text-muted-foreground text-sm font-light">
-                  {isLogin ? 'Welcome back' : 'Create your account'}
+                  {pendingVerification 
+                    ? 'Verify your email' 
+                    : isLogin 
+                      ? 'Welcome back' 
+                      : 'Create your account'}
                 </p>
               </div>
 
-              {/* Form with swipe transition */}
+              {/* Verification Code Form */}
+              {pendingVerification ? (
+                <div className="space-y-6 animate-slide-up">
+                  <div className="text-center space-y-2">
+                    <p className="text-sm text-muted-foreground">
+                      We've sent a verification code to
+                    </p>
+                    <p className="text-sm font-medium text-foreground">
+                      {pendingVerification.email}
+                    </p>
+                  </div>
+
+                  <div className="flex justify-center">
+                    <InputOTP
+                      value={verificationCode}
+                      onChange={setVerificationCode}
+                      maxLength={6}
+                    >
+                      <InputOTPGroup>
+                        <InputOTPSlot index={0} className="liquid-glass-input w-12 h-14 text-xl" />
+                        <InputOTPSlot index={1} className="liquid-glass-input w-12 h-14 text-xl" />
+                        <InputOTPSlot index={2} className="liquid-glass-input w-12 h-14 text-xl" />
+                        <InputOTPSlot index={3} className="liquid-glass-input w-12 h-14 text-xl" />
+                        <InputOTPSlot index={4} className="liquid-glass-input w-12 h-14 text-xl" />
+                        <InputOTPSlot index={5} className="liquid-glass-input w-12 h-14 text-xl" />
+                      </InputOTPGroup>
+                    </InputOTP>
+                  </div>
+
+                  <Button
+                    type="button"
+                    onClick={handleVerifyEmail}
+                    className="w-full h-12 rounded-xl liquid-glass-button text-white font-medium text-base relative overflow-hidden group"
+                    disabled={isLoading || verificationCode.length !== 6}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                    <span className="relative flex items-center justify-center gap-2">
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          Verifying...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-5 h-5" />
+                          Verify Email
+                        </>
+                      )}
+                    </span>
+                  </Button>
+
+                  <div className="flex items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={handleBackFromVerification}
+                      className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <ArrowLeft className="w-4 h-4" />
+                      Back
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleResendCode}
+                      disabled={resendCountdown > 0 || isResending}
+                      className="flex items-center gap-1 text-sm text-primary hover:text-primary/80 disabled:text-muted-foreground disabled:cursor-not-allowed transition-colors"
+                    >
+                      {isResending ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <RefreshCw className="w-4 h-4" />
+                      )}
+                      {resendCountdown > 0 ? `Resend in ${resendCountdown}s` : 'Resend code'}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+              /* Form with swipe transition */
               <div 
                 ref={formContainerRef}
                 className={`transition-all duration-300 ease-out ${
@@ -604,8 +765,10 @@ const Auth = () => {
                   </Button>
                 </form>
               </div>
+              )}
 
               {/* Toggle auth mode */}
+              {!pendingVerification && (
               <div className="text-center animate-slide-up stagger-5">
                 <p className="text-muted-foreground text-sm">
                   {isLogin ? "Don't have an account?" : 'Already have an account?'}{' '}
@@ -618,6 +781,7 @@ const Auth = () => {
                   </button>
                 </p>
               </div>
+              )}
             </div>
           </div>
         </div>
