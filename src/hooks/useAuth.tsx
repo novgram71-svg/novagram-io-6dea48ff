@@ -18,10 +18,14 @@ interface AuthContextType {
   profile: Profile | null;
   loading: boolean;
   isBanned: boolean;
-  signUp: (email: string, password: string, username: string, phoneNumber?: string) => Promise<{ error: any }>;
+  pendingVerification: { email: string; password: string; username: string; phoneNumber?: string } | null;
+  signUp: (email: string, password: string, username: string, phoneNumber?: string) => Promise<{ error: any; needsVerification?: boolean }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  verifyEmail: (token: string) => Promise<{ error: any }>;
+  resendVerificationCode: () => Promise<{ error: any }>;
+  clearPendingVerification: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -32,6 +36,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [isBanned, setIsBanned] = useState(false);
+  const [pendingVerification, setPendingVerification] = useState<{ email: string; password: string; username: string; phoneNumber?: string } | null>(null);
 
   const fetchProfile = async (userId: string) => {
     const { data, error } = await supabase
@@ -141,8 +146,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       },
     });
 
-    // Update phone number in profile if provided
-    if (!error && data.user && phoneNumber) {
+    if (error) {
+      return { error };
+    }
+
+    // Check if email confirmation is required (user exists but not confirmed)
+    if (data.user && !data.session) {
+      // Store pending verification data
+      setPendingVerification({ email, password, username, phoneNumber });
+      return { error: null, needsVerification: true };
+    }
+
+    // Update phone number in profile if provided and user is confirmed
+    if (!error && data.user && data.session && phoneNumber) {
       await supabase
         .from('profiles')
         .update({ phone_number: phoneNumber })
@@ -150,6 +166,50 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
     
     return { error };
+  };
+
+  const verifyEmail = async (token: string) => {
+    if (!pendingVerification) {
+      return { error: { message: 'No pending verification' } };
+    }
+
+    const { data, error } = await supabase.auth.verifyOtp({
+      email: pendingVerification.email,
+      token,
+      type: 'email',
+    });
+
+    if (error) {
+      return { error };
+    }
+
+    // Update phone number in profile if provided
+    if (data.user && pendingVerification.phoneNumber) {
+      await supabase
+        .from('profiles')
+        .update({ phone_number: pendingVerification.phoneNumber })
+        .eq('id', data.user.id);
+    }
+
+    setPendingVerification(null);
+    return { error: null };
+  };
+
+  const resendVerificationCode = async () => {
+    if (!pendingVerification) {
+      return { error: { message: 'No pending verification' } };
+    }
+
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email: pendingVerification.email,
+    });
+
+    return { error };
+  };
+
+  const clearPendingVerification = () => {
+    setPendingVerification(null);
   };
 
   const signIn = async (email: string, password: string) => {
@@ -165,10 +225,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await supabase.auth.signOut();
     setProfile(null);
     setIsBanned(false);
+    setPendingVerification(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, profile, loading, isBanned, signUp, signIn, signOut, refreshProfile }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      session, 
+      profile, 
+      loading, 
+      isBanned, 
+      pendingVerification,
+      signUp, 
+      signIn, 
+      signOut, 
+      refreshProfile,
+      verifyEmail,
+      resendVerificationCode,
+      clearPendingVerification,
+    }}>
       {children}
     </AuthContext.Provider>
   );
