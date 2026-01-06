@@ -4,7 +4,7 @@ project_id = "hqjsqnomxouudtpjuwhp"
 verify_jwt = true
 
 [functions.approve-password-reset]
-verify_jwt = true
+verify_jwt = false
 
 [functions.send-push-notification]
 verify_jwt = false
