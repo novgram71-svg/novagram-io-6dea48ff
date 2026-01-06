@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { PasswordStrengthIndicator } from '@/components/ui/PasswordStrengthIndicator';
 
 interface ChangePasswordSheetProps {
   open: boolean;
@@ -82,6 +83,7 @@ export const ChangePasswordSheet = ({ open, onOpenChange }: ChangePasswordSheetP
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
+            <PasswordStrengthIndicator password={newPassword} />
           </div>
 
           <div className="space-y-2">

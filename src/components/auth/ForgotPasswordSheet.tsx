@@ -7,6 +7,7 @@ import { KeyRound, Loader2, CheckCircle, Eye, EyeOff, RefreshCw, ArrowLeft } fro
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
+import { PasswordStrengthIndicator } from '@/components/ui/PasswordStrengthIndicator';
 
 interface ForgotPasswordSheetProps {
   open: boolean;
@@ -349,6 +350,7 @@ export const ForgotPasswordSheet = ({ open, onOpenChange }: ForgotPasswordSheetP
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
+                <PasswordStrengthIndicator password={newPassword} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="confirm-password">Confirm Password</Label>

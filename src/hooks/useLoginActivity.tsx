@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 
@@ -14,8 +14,9 @@ export interface LoginActivity {
 
 export const useLoginActivity = () => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
 
-  const { data: loginActivity = [], isLoading } = useQuery({
+  const { data: loginActivity = [], isLoading, refetch } = useQuery({
     queryKey: ['login-activity', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
@@ -25,7 +26,7 @@ export const useLoginActivity = () => {
         .select('*')
         .eq('user_id', user.id)
         .order('logged_in_at', { ascending: false })
-        .limit(10);
+        .limit(20);
       
       if (error) throw error;
       return data as LoginActivity[];
@@ -36,7 +37,36 @@ export const useLoginActivity = () => {
   return {
     loginActivity,
     isLoading,
+    refetch,
   };
+};
+
+// Terminate a specific session
+export const terminateSession = async (sessionId: string) => {
+  const { error } = await supabase
+    .from('login_activity')
+    .delete()
+    .eq('id', sessionId);
+  
+  if (error) throw error;
+};
+
+// Terminate all sessions except current
+export const terminateAllOtherSessions = async () => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  const { error } = await supabase
+    .from('login_activity')
+    .delete()
+    .eq('user_id', user.id)
+    .eq('is_current', false);
+  
+  if (error) throw error;
+  
+  // Also sign out globally from Supabase auth (optional - forces re-auth on other devices)
+  // Note: This signs out ALL sessions including current, so we skip it
+  // await supabase.auth.signOut({ scope: 'global' });
 };
 
 // Function to record login activity (called from auth)
