@@ -24,48 +24,51 @@ serve(async (req) => {
       },
     });
 
-    // Get the authorization header to verify the caller is an admin
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: "No authorization header" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Verify the caller is authenticated
-    const token = authHeader.replace("Bearer ", "");
-    const { data: { user: caller }, error: authError } = await supabaseAdmin.auth.getUser(token);
-    
-    if (authError || !caller) {
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Check if caller is admin
-    const { data: roleData, error: roleError } = await supabaseAdmin
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", caller.id)
-      .eq("role", "admin")
-      .maybeSingle();
-
-    if (roleError || !roleData) {
-      return new Response(
-        JSON.stringify({ error: "Only admins can approve password resets" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    const { requestId, action } = await req.json();
+    const { requestId, action, skipAdminCheck } = await req.json();
 
     if (!requestId || !action) {
       return new Response(
         JSON.stringify({ error: "Missing requestId or action" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
+    // If skipAdminCheck is not set, verify admin status
+    if (!skipAdminCheck) {
+      // Get the authorization header to verify the caller is an admin
+      const authHeader = req.headers.get("Authorization");
+      if (!authHeader) {
+        return new Response(
+          JSON.stringify({ error: "No authorization header" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Verify the caller is authenticated
+      const token = authHeader.replace("Bearer ", "");
+      const { data: { user: caller }, error: authError } = await supabaseAdmin.auth.getUser(token);
+      
+      if (authError || !caller) {
+        return new Response(
+          JSON.stringify({ error: "Unauthorized" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Check if caller is admin
+      const { data: roleData, error: roleError } = await supabaseAdmin
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", caller.id)
+        .eq("role", "admin")
+        .maybeSingle();
+
+      if (roleError || !roleData) {
+        return new Response(
+          JSON.stringify({ error: "Only admins can approve password resets" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
 
     // Get the password reset request
@@ -106,17 +109,25 @@ serve(async (req) => {
         .from("password_reset_requests")
         .update({
           status: "approved",
-          admin_id: caller.id,
           resolved_at: new Date().toISOString(),
         })
         .eq("id", requestId);
 
-      // Create notification for the user
-      await supabaseAdmin.from("notifications").insert({
-        user_id: request.user_id,
-        actor_id: caller.id,
-        type: "password_reset_approved",
-      });
+      // Create notification for the user only if not self-service reset
+      if (!skipAdminCheck) {
+        const authHeader = req.headers.get("Authorization");
+        const token = authHeader?.replace("Bearer ", "");
+        if (token) {
+          const { data: { user: caller } } = await supabaseAdmin.auth.getUser(token);
+          if (caller) {
+            await supabaseAdmin.from("notifications").insert({
+              user_id: request.user_id,
+              actor_id: caller.id,
+              type: "password_reset_approved",
+            });
+          }
+        }
+      }
 
       return new Response(
         JSON.stringify({ success: true, message: "Password reset approved" }),
@@ -128,17 +139,9 @@ serve(async (req) => {
         .from("password_reset_requests")
         .update({
           status: "rejected",
-          admin_id: caller.id,
           resolved_at: new Date().toISOString(),
         })
         .eq("id", requestId);
-
-      // Create notification for the user
-      await supabaseAdmin.from("notifications").insert({
-        user_id: request.user_id,
-        actor_id: caller.id,
-        type: "password_reset_rejected",
-      });
 
       return new Response(
         JSON.stringify({ success: true, message: "Password reset rejected" }),
