@@ -12,13 +12,22 @@ interface Profile {
   updated_at: string;
 }
 
+interface PendingVerification {
+  email: string;
+  password: string;
+  username: string;
+  phoneNumber?: string;
+  verificationCode: string;
+  expiresAt: number;
+}
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   profile: Profile | null;
   loading: boolean;
   isBanned: boolean;
-  pendingVerification: { email: string; password: string; username: string; phoneNumber?: string } | null;
+  pendingVerification: PendingVerification | null;
   signUp: (email: string, password: string, username: string, phoneNumber?: string) => Promise<{ error: any; needsVerification?: boolean }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
@@ -36,7 +45,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [isBanned, setIsBanned] = useState(false);
-  const [pendingVerification, setPendingVerification] = useState<{ email: string; password: string; username: string; phoneNumber?: string } | null>(null);
+  const [pendingVerification, setPendingVerification] = useState<PendingVerification | null>(null);
 
   const fetchProfile = async (userId: string) => {
     const { data, error } = await supabase
@@ -131,17 +140,80 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
+  const generateVerificationCode = (): string => {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+  };
+
+  const sendVerificationEmail = async (email: string, code: string, username?: string) => {
+    const { error } = await supabase.functions.invoke('send-verification-email', {
+      body: { email, code, username },
+    });
+    return { error };
+  };
+
   const signUp = async (email: string, password: string, username: string, phoneNumber?: string) => {
+    // Check if email is already registered
+    const { data: existingProfile } = await supabase
+      .from('profiles')
+      .select('email')
+      .eq('email', email)
+      .maybeSingle();
+
+    if (existingProfile) {
+      return { error: { message: 'User already registered' } };
+    }
+
+    // Generate verification code
+    const verificationCode = generateVerificationCode();
+    const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
+
+    // Send verification email via our edge function
+    const { error: emailError } = await sendVerificationEmail(email, verificationCode, username);
+    
+    if (emailError) {
+      console.error('Failed to send verification email:', emailError);
+      return { error: { message: 'Failed to send verification email. Please try again.' } };
+    }
+
+    // Store pending verification data
+    setPendingVerification({ 
+      email, 
+      password, 
+      username, 
+      phoneNumber, 
+      verificationCode,
+      expiresAt,
+    });
+    
+    return { error: null, needsVerification: true };
+  };
+
+  const verifyEmail = async (token: string) => {
+    if (!pendingVerification) {
+      return { error: { message: 'No pending verification' } };
+    }
+
+    // Check if code has expired
+    if (Date.now() > pendingVerification.expiresAt) {
+      return { error: { message: 'Verification code has expired. Please request a new one.' } };
+    }
+
+    // Verify the code matches
+    if (token !== pendingVerification.verificationCode) {
+      return { error: { message: 'Invalid verification code' } };
+    }
+
+    // Code is valid, now actually create the account
     const redirectUrl = `${window.location.origin}/`;
     
     const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
+      email: pendingVerification.email,
+      password: pendingVerification.password,
       options: {
         emailRedirectTo: redirectUrl,
         data: {
-          username,
-          phone_number: phoneNumber,
+          username: pendingVerification.username,
+          phone_number: pendingVerification.phoneNumber,
         },
       },
     });
@@ -150,45 +222,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return { error };
     }
 
-    // Check if email confirmation is required (user exists but not confirmed)
-    if (data.user && !data.session) {
-      // Store pending verification data
-      setPendingVerification({ email, password, username, phoneNumber });
-      return { error: null, needsVerification: true };
-    }
-
-    // Update phone number in profile if provided and user is confirmed
-    if (!error && data.user && data.session && phoneNumber) {
-      await supabase
-        .from('profiles')
-        .update({ phone_number: phoneNumber })
-        .eq('id', data.user.id);
-    }
-    
-    return { error };
-  };
-
-  const verifyEmail = async (token: string) => {
-    if (!pendingVerification) {
-      return { error: { message: 'No pending verification' } };
-    }
-
-    const { data, error } = await supabase.auth.verifyOtp({
-      email: pendingVerification.email,
-      token,
-      type: 'email',
-    });
-
-    if (error) {
-      return { error };
-    }
-
     // Update phone number in profile if provided
     if (data.user && pendingVerification.phoneNumber) {
-      await supabase
-        .from('profiles')
-        .update({ phone_number: pendingVerification.phoneNumber })
-        .eq('id', data.user.id);
+      setTimeout(async () => {
+        await supabase
+          .from('profiles')
+          .update({ phone_number: pendingVerification.phoneNumber })
+          .eq('id', data.user!.id);
+      }, 500);
     }
 
     setPendingVerification(null);
@@ -200,12 +241,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return { error: { message: 'No pending verification' } };
     }
 
-    const { error } = await supabase.auth.resend({
-      type: 'signup',
-      email: pendingVerification.email,
+    // Generate new code
+    const newCode = generateVerificationCode();
+    const newExpiresAt = Date.now() + 10 * 60 * 1000;
+
+    // Send new verification email
+    const { error } = await sendVerificationEmail(
+      pendingVerification.email, 
+      newCode, 
+      pendingVerification.username
+    );
+
+    if (error) {
+      return { error: { message: 'Failed to resend verification code' } };
+    }
+
+    // Update pending verification with new code
+    setPendingVerification({
+      ...pendingVerification,
+      verificationCode: newCode,
+      expiresAt: newExpiresAt,
     });
 
-    return { error };
+    return { error: null };
   };
 
   const clearPendingVerification = () => {
