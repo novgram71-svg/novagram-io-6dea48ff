@@ -1542,6 +1542,19 @@ export type Database = {
       }
       check_badge_expiration: { Args: never; Returns: undefined }
       generate_referral_code: { Args: { user_id: string }; Returns: string }
+      get_profile_safe: {
+        Args: { profile_id: string }
+        Returns: {
+          avatar_url: string
+          bio: string
+          created_at: string
+          email: string
+          id: string
+          phone_number: string
+          updated_at: string
+          username: string
+        }[]
+      }
       get_user_presence: {
         Args: { target_user_id: string }
         Returns: {
