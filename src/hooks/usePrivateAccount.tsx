@@ -7,14 +7,15 @@ export const useIsPrivateAccount = (userId: string | undefined) => {
     queryFn: async () => {
       if (!userId) return false;
       
+      // Use RPC function for secure access to private status
       const { data, error } = await supabase
-        .from('user_settings')
-        .select('private_account')
-        .eq('user_id', userId)
-        .maybeSingle();
+        .rpc('get_user_private_status', { target_user_id: userId });
       
-      if (error) return false;
-      return data?.private_account || false;
+      if (error) {
+        console.error('Error checking private status:', error);
+        return false;
+      }
+      return data || false;
     },
     enabled: !!userId,
   });

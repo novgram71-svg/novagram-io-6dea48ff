@@ -55,20 +55,21 @@ export const useUserPresence = (userId: string | null) => {
   const [isOnline, setIsOnline] = useState(false);
   const [lastSeen, setLastSeen] = useState<string | null>(null);
 
-  // Initial fetch
+  // Initial fetch using RPC function for secure access
   const { data } = useQuery({
     queryKey: ['presence', userId],
     queryFn: async () => {
       if (!userId) return null;
       
+      // Use RPC function to respect activity_status privacy setting
       const { data, error } = await supabase
-        .from('user_presence')
-        .select('*')
-        .eq('user_id', userId)
-        .single();
+        .rpc('get_user_presence', { target_user_id: userId });
 
-      if (error && error.code !== 'PGRST116') throw error;
-      return data;
+      if (error) {
+        console.error('Error fetching presence:', error);
+        return null;
+      }
+      return data?.[0] || null;
     },
     enabled: !!userId,
   });
@@ -76,8 +77,8 @@ export const useUserPresence = (userId: string | null) => {
   // Set initial state
   useEffect(() => {
     if (data) {
-      setIsOnline(data.is_online);
-      setLastSeen(data.last_seen);
+      setIsOnline(data.is_online || false);
+      setLastSeen(data.last_seen || null);
     }
   }, [data]);
 
