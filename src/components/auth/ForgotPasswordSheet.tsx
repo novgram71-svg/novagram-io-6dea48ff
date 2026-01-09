@@ -165,24 +165,13 @@ export const ForgotPasswordSheet = ({ open, onOpenChange }: ForgotPasswordSheetP
         return;
       }
 
-      // Create a password reset request and immediately approve it via edge function
-      const passwordHash = btoa(newPassword);
-      
-      const { data: request, error: insertError } = await supabase
-        .from('password_reset_requests')
-        .insert({
-          user_id: userId,
-          new_password_hash: passwordHash,
-          status: 'pending',
-        })
-        .select()
-        .single();
-
-      if (insertError) throw insertError;
-
-      // Auto-approve the request
+      // SECURITY FIX: Send password directly to edge function instead of storing in database
+      // This prevents password exposure in database storage
       const response = await supabase.functions.invoke('approve-password-reset', {
-        body: { requestId: request.id, action: 'approve', skipAdminCheck: true },
+        body: { 
+          userId: userId,
+          newPassword: newPassword 
+        },
       });
 
       if (response.error) throw new Error(response.error.message);
