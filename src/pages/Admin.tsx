@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { Users, Image, MessageSquare, Download, ChevronRight, AlertTriangle, Ban, CheckCircle, XCircle, Bot, Eye, KeyRound, Loader2, FileWarning, BadgeCheck } from 'lucide-react';
+import { Users, Image, MessageSquare, Download, ChevronRight, AlertTriangle, Ban, CheckCircle, XCircle, Bot, Eye, KeyRound, Loader2, FileWarning, BadgeCheck, Trash2 } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
-import { useIsAdmin, useAllUsers, useAllPosts, useConversationPartners, useConversation } from '@/hooks/useAdmin';
+import { useIsAdmin, useAllUsers, useAllPosts, useConversationPartners, useConversation, useAdminDeletePost } from '@/hooks/useAdmin';
 import { useAllReports, useUpdateReportStatus, useAllBannedUsers, useBanUser, useUnbanUser } from '@/hooks/useUserModeration';
 import { useAIAbuseReports } from '@/hooks/useAIAbuseReports';
 import { usePasswordResetRequests } from '@/hooks/usePasswordReset';
@@ -51,6 +51,7 @@ const Admin = () => {
   const banUser = useBanUser();
   const unbanUser = useUnbanUser();
   const grantBadge = useAdminGrantBadge();
+  const deletePost = useAdminDeletePost();
 
   const selectedUserProfile = users?.find(u => u.id === selectedUser);
   const selectedPartnerProfile = chatPartners?.find((p: any) => p.id === selectedChatPartner);
@@ -387,12 +388,42 @@ const Admin = () => {
                             className="w-full aspect-square object-cover transition-transform duration-300 group-hover:scale-110"
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-background/90 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3">
-                            <div className="flex items-center gap-2">
-                              <Avatar className="w-6 h-6">
-                                <AvatarImage src={post.profiles?.avatar_url || ''} />
-                                <AvatarFallback>{post.profiles?.username?.[0]?.toUpperCase()}</AvatarFallback>
-                              </Avatar>
-                              <span className="text-sm font-medium">{post.profiles?.username}</span>
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <Avatar className="w-6 h-6">
+                                  <AvatarImage src={post.profiles?.avatar_url || ''} />
+                                  <AvatarFallback>{post.profiles?.username?.[0]?.toUpperCase()}</AvatarFallback>
+                                </Avatar>
+                                <span className="text-sm font-medium">{post.profiles?.username}</span>
+                              </div>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button 
+                                    variant="destructive" 
+                                    size="icon" 
+                                    className="h-8 w-8"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Delete this post?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      This will permanently delete the post by @{post.profiles?.username}. This action cannot be undone.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction 
+                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                      onClick={() => deletePost.mutate(post.id)}
+                                    >
+                                      Delete Post
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
                             </div>
                             {post.caption && (
                               <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{post.caption}</p>

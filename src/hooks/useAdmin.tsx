@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 
@@ -145,5 +145,40 @@ export const useConversation = (userId1: string | null, userId2: string | null) 
       return data;
     },
     enabled: isAdmin === true && !!userId1 && !!userId2,
+  });
+};
+
+export const useAdminDeletePost = () => {
+  const queryClient = useQueryClient();
+  const { data: isAdmin } = useIsAdmin();
+
+  return useMutation({
+    mutationFn: async (postId: string) => {
+      if (!isAdmin) throw new Error('Not authorized');
+
+      // Delete associated likes first
+      await supabase.from('likes').delete().eq('post_id', postId);
+      
+      // Delete associated comments
+      await supabase.from('comments').delete().eq('post_id', postId);
+      
+      // Delete saved posts references
+      await supabase.from('saved_posts').delete().eq('post_id', postId);
+      
+      // Delete notifications related to this post
+      await supabase.from('notifications').delete().eq('post_id', postId);
+      
+      // Delete the post (admin can delete any post via RLS policy)
+      const { error } = await supabase
+        .from('posts')
+        .delete()
+        .eq('id', postId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['allPosts'] });
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
+    },
   });
 };
