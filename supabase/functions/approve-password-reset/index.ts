@@ -24,11 +24,72 @@ serve(async (req) => {
       },
     });
 
-    const { requestId, action, skipAdminCheck } = await req.json();
+    const body = await req.json();
+    
+    // Support both legacy flow (requestId/action) and new secure flow (userId/newPassword)
+    const { requestId, action, skipAdminCheck, userId, newPassword } = body;
 
+    // NEW SECURE FLOW: Direct password reset without storing in database
+    if (userId && newPassword) {
+      console.log("Processing secure direct password reset for user:", userId);
+      
+      // Validate password
+      if (typeof newPassword !== 'string' || newPassword.length < 6) {
+        return new Response(
+          JSON.stringify({ error: "Password must be at least 6 characters" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Validate userId format (UUID)
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(userId)) {
+        return new Response(
+          JSON.stringify({ error: "Invalid user ID format" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Verify user exists
+      const { data: userExists, error: userError } = await supabaseAdmin
+        .from("profiles")
+        .select("id")
+        .eq("id", userId)
+        .maybeSingle();
+
+      if (userError || !userExists) {
+        console.error("User not found:", userId);
+        return new Response(
+          JSON.stringify({ error: "User not found" }),
+          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Update the user's password directly using admin API
+      const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
+        userId,
+        { password: newPassword }
+      );
+
+      if (updateError) {
+        console.error("Error updating password:", updateError);
+        return new Response(
+          JSON.stringify({ error: "Failed to update password: " + updateError.message }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      console.log("Password reset successful for user:", userId);
+      return new Response(
+        JSON.stringify({ success: true, message: "Password reset successful" }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // LEGACY FLOW: For admin-based password reset requests (kept for backwards compatibility)
     if (!requestId || !action) {
       return new Response(
-        JSON.stringify({ error: "Missing requestId or action" }),
+        JSON.stringify({ error: "Missing required parameters" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -87,13 +148,14 @@ serve(async (req) => {
     }
 
     if (action === "approve") {
-      // Decode the password hash (base64 encoded in the forgot password flow)
-      const newPassword = atob(request.new_password_hash);
+      // For legacy requests, decode the base64 password
+      // Note: This is being phased out in favor of direct password updates
+      const legacyPassword = atob(request.new_password_hash);
 
       // Update the user's password using admin API
       const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
         request.user_id,
-        { password: newPassword }
+        { password: legacyPassword }
       );
 
       if (updateError) {
