@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { ChevronDown, Plus, LogOut, Check, X } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -11,7 +11,6 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { useLinkedAccounts, useRemoveLinkedAccount } from '@/hooks/useLinkedAccounts';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 interface AccountSwitcherProps {
@@ -46,37 +45,16 @@ const AccountSwitcher = ({ username, avatarUrl }: AccountSwitcherProps) => {
   const handleSwitchAccount = async (linkedUserId: string, linkedUsername: string) => {
     setOpen(false);
     
-    // Try to use stored session for seamless switching
-    const storedSessions = JSON.parse(localStorage.getItem('account_sessions') || '{}');
-    const storedSession = storedSessions[linkedUserId];
-    
-    if (storedSession) {
-      try {
-        const { error } = await supabase.auth.setSession({
-          access_token: storedSession.access_token,
-          refresh_token: storedSession.refresh_token,
-        });
-        
-        if (!error) {
-          toast({
-            title: "Switched account",
-            description: `You are now logged in as ${linkedUsername}`,
-          });
-          navigate('/');
-          return;
-        }
-      } catch (error) {
-        console.error('Error switching account:', error);
-      }
-    }
-    
-    // Fallback to manual login if no stored session
+    // Security: Require re-authentication for account switching
+    // This prevents token theft via XSS attacks
     toast({
-      title: "Session expired",
-      description: "Please sign in again",
+      title: "Switching account",
+      description: `Please sign in as ${linkedUsername}`,
     });
     await signOut();
-    navigate('/auth');
+    navigate('/auth', { 
+      state: { switchToAccount: linkedUsername } 
+    });
   };
 
   const handleRemoveLinkedAccount = async (e: React.MouseEvent, accountId: string) => {
