@@ -97,16 +97,8 @@ const Auth = () => {
   useEffect(() => {
     const linkAccountIfNeeded = async () => {
       if (user && !loadingSecurityQuestion) {
-        // Store session for this account for seamless switching
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-          const storedSessions = JSON.parse(localStorage.getItem('account_sessions') || '{}');
-          storedSessions[user.id] = {
-            access_token: session.access_token,
-            refresh_token: session.refresh_token,
-          };
-          localStorage.setItem('account_sessions', JSON.stringify(storedSessions));
-        }
+        // Security: Remove any previously stored account sessions (legacy cleanup)
+        localStorage.removeItem('account_sessions');
         
         // Check if we need to link accounts
         const pendingLink = localStorage.getItem('pending_link_account');
