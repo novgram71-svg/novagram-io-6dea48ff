@@ -17,6 +17,7 @@ interface ForgotPasswordSheetProps {
 export const ForgotPasswordSheet = ({ open, onOpenChange }: ForgotPasswordSheetProps) => {
   const [step, setStep] = useState<'email' | 'verify' | 'password' | 'success'>('email');
   const [email, setEmail] = useState('');
+  const [userId, setUserId] = useState<string | null>(null);
   const [verificationCode, setVerificationCode] = useState('');
   const [generatedCode, setGeneratedCode] = useState('');
   const [codeExpiresAt, setCodeExpiresAt] = useState(0);
@@ -55,18 +56,19 @@ export const ForgotPasswordSheet = ({ open, onOpenChange }: ForgotPasswordSheetP
 
     setIsLoading(true);
     try {
-      // Find user by email
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('id, email')
-        .eq('email', email.trim())
-        .maybeSingle();
+      // Find user by email using secure RPC function
+      const { data: userId, error } = await supabase.rpc('check_user_exists_by_email', {
+        user_email: email.trim()
+      });
 
       if (error) throw error;
-      if (!profile) {
+      if (!userId) {
         toast({ title: 'No account found with this email', variant: 'destructive' });
         return;
       }
+      
+      // Store the user ID for password reset
+      setUserId(userId);
 
       // Generate and send verification code
       const code = generateCode();
@@ -157,49 +159,34 @@ export const ForgotPasswordSheet = ({ open, onOpenChange }: ForgotPasswordSheetP
 
     setIsLoading(true);
     try {
-      // Use Supabase's password reset with the user's email
-      // First, we need to sign in the user temporarily to update their password
-      // Since we verified the email, we can use the admin API or a workaround
+      if (!userId) {
+        toast({ title: 'Session expired. Please start over.', variant: 'destructive' });
+        setStep('email');
+        return;
+      }
+
+      // Create a password reset request and immediately approve it via edge function
+      const passwordHash = btoa(newPassword);
       
-      // The cleanest approach is to use Supabase's built-in password reset
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth?reset=true`,
+      const { data: request, error: insertError } = await supabase
+        .from('password_reset_requests')
+        .insert({
+          user_id: userId,
+          new_password_hash: passwordHash,
+          status: 'pending',
+        })
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+
+      // Auto-approve the request
+      const response = await supabase.functions.invoke('approve-password-reset', {
+        body: { requestId: request.id, action: 'approve', skipAdminCheck: true },
       });
 
-      if (error) {
-        // If the built-in reset doesn't work, we'll use our edge function approach
-        // For now, let's store the new password hash and auto-approve it
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('email', email)
-          .single();
-
-        if (profile) {
-          // Create a password reset request and immediately approve it via edge function
-          const passwordHash = btoa(newPassword);
-          
-          const { data: request, error: insertError } = await supabase
-            .from('password_reset_requests')
-            .insert({
-              user_id: profile.id,
-              new_password_hash: passwordHash,
-              status: 'pending',
-            })
-            .select()
-            .single();
-
-          if (insertError) throw insertError;
-
-          // Auto-approve the request
-          const response = await supabase.functions.invoke('approve-password-reset', {
-            body: { requestId: request.id, action: 'approve', skipAdminCheck: true },
-          });
-
-          if (response.error) throw new Error(response.error.message);
-          if (response.data?.error) throw new Error(response.data.error);
-        }
-      }
+      if (response.error) throw new Error(response.error.message);
+      if (response.data?.error) throw new Error(response.data.error);
 
       setStep('success');
       toast({
@@ -217,6 +204,7 @@ export const ForgotPasswordSheet = ({ open, onOpenChange }: ForgotPasswordSheetP
   const handleClose = () => {
     setStep('email');
     setEmail('');
+    setUserId(null);
     setVerificationCode('');
     setGeneratedCode('');
     setNewPassword('');

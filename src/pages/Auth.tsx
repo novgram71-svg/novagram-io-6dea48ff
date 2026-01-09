@@ -218,34 +218,17 @@ const Auth = () => {
   };
 
   const findUserByIdentifier = async (identifier: string): Promise<string | null> => {
-    // Try email first
-    let { data } = await supabase
-      .from('profiles')
-      .select('email')
-      .eq('email', identifier)
-      .maybeSingle();
+    // Use secure RPC function to find user email by identifier
+    const { data, error } = await supabase.rpc('find_user_email_by_identifier', {
+      identifier: identifier.trim()
+    });
     
-    if (data?.email) return data.email;
-
-    // Try username
-    ({ data } = await supabase
-      .from('profiles')
-      .select('email')
-      .eq('username', identifier)
-      .maybeSingle());
+    if (error) {
+      console.error('Error finding user:', error);
+      return null;
+    }
     
-    if (data?.email) return data.email;
-
-    // Try phone
-    ({ data } = await supabase
-      .from('profiles')
-      .select('email')
-      .eq('phone_number', identifier)
-      .maybeSingle());
-    
-    if (data?.email) return data.email;
-
-    return null;
+    return data;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
