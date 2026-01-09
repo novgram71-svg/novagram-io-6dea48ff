@@ -1541,6 +1541,14 @@ export type Database = {
         Returns: boolean
       }
       check_badge_expiration: { Args: never; Returns: undefined }
+      check_user_exists_by_email: {
+        Args: { user_email: string }
+        Returns: string
+      }
+      find_user_email_by_identifier: {
+        Args: { identifier: string }
+        Returns: string
+      }
       generate_referral_code: { Args: { user_id: string }; Returns: string }
       get_profile_safe: {
         Args: { profile_id: string }
