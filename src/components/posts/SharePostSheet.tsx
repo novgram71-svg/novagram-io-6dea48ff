@@ -41,10 +41,9 @@ const SharePostSheet = ({ postId, isPublic, open, onOpenChange }: SharePostSheet
 
       const followingIds = following.map(f => f.following_id);
       
+      // Use secure batch function for profiles
       const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, username, avatar_url')
-        .in('id', followingIds);
+        .rpc('get_profiles_by_ids', { user_ids: followingIds });
 
       return profiles || [];
     },

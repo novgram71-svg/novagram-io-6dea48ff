@@ -29,10 +29,9 @@ export const useAllUsers = () => {
   return useQuery({
     queryKey: ['allUsers'],
     queryFn: async () => {
+      // Use secure function - admins get full data, others get masked email/phone
       const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .rpc('get_all_profiles_safe');
 
       if (error) throw error;
       return data;

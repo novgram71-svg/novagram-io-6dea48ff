@@ -115,14 +115,12 @@ export const useBlockedUsers = () => {
       
       if (error) throw error;
       
-      // Fetch profiles separately
+      // Fetch profiles using secure batch function
       const blockedIds = data.map(b => b.blocked_id);
       if (blockedIds.length === 0) return [];
       
       const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, username, avatar_url')
-        .in('id', blockedIds);
+        .rpc('get_profiles_by_ids', { user_ids: blockedIds });
       
       return data.map(b => ({
         ...b,
@@ -176,14 +174,12 @@ export const useCloseFriends = () => {
       
       if (error) throw error;
       
-      // Fetch profiles separately
+      // Fetch profiles using secure batch function
       const friendIds = data.map(f => f.friend_id);
       if (friendIds.length === 0) return [];
       
       const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, username, avatar_url')
-        .in('id', friendIds);
+        .rpc('get_profiles_by_ids', { user_ids: friendIds });
       
       return data.map(f => ({
         ...f,

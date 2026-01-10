@@ -128,14 +128,12 @@ export const useReferrals = () => {
         return [];
       }
 
-      // Fetch profiles for referred users
+      // Fetch profiles for referred users using secure batch function
       const referredIds = data.map(r => r.referred_id);
       if (referredIds.length === 0) return [];
 
       const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, username, avatar_url')
-        .in('id', referredIds);
+        .rpc('get_profiles_by_ids', { user_ids: referredIds });
 
       const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
 
