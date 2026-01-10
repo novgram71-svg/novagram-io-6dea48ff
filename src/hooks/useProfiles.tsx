@@ -9,19 +9,32 @@ export interface ProfileStats {
 }
 
 export const useProfile = (username: string | undefined) => {
+  const { user } = useAuth();
+  
   return useQuery({
-    queryKey: ['profile', username],
+    queryKey: ['profile', username, user?.id],
     queryFn: async () => {
       if (!username) return null;
 
+      // First search to find user by username
+      const { data: searchResult, error: searchError } = await supabase
+        .rpc('search_profiles_safe', { search_query: username, result_limit: 1 });
+
+      if (searchError) throw searchError;
+      
+      // Find exact match
+      const exactMatch = searchResult?.find((p: { username: string }) => 
+        p.username.toLowerCase() === username.toLowerCase()
+      );
+      
+      if (!exactMatch) return null;
+      
+      // Get full profile with privacy controls
       const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('username', username)
-        .single();
+        .rpc('get_profile_safe', { profile_id: exactMatch.id });
 
       if (error) throw error;
-      return data;
+      return data?.[0] || null;
     },
     enabled: !!username,
   });
@@ -33,14 +46,12 @@ export const useProfileById = (userId: string | undefined) => {
     queryFn: async () => {
       if (!userId) return null;
 
+      // Use secure function that masks email/phone for non-owners
       const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
+        .rpc('get_profile_safe', { profile_id: userId });
 
       if (error) throw error;
-      return data;
+      return data?.[0] || null;
     },
     enabled: !!userId,
   });
@@ -194,10 +205,9 @@ export const useAllProfiles = () => {
   return useQuery({
     queryKey: ['profiles'],
     queryFn: async () => {
+      // Use secure function that returns masked data for non-admins
       const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .rpc('get_all_profiles_safe');
 
       if (error) throw error;
       return data;
@@ -211,11 +221,9 @@ export const useSearchProfiles = (query: string) => {
     queryFn: async () => {
       if (!query || query.length < 2) return [];
 
+      // Use secure search function
       const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .ilike('username', `%${query}%`)
-        .limit(20);
+        .rpc('search_profiles_safe', { search_query: query, result_limit: 20 });
 
       if (error) throw error;
       return data;

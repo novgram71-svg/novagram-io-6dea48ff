@@ -48,14 +48,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [pendingVerification, setPendingVerification] = useState<PendingVerification | null>(null);
 
   const fetchProfile = async (userId: string) => {
+    // Use secure function to fetch profile - user can see their own data
     const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
+      .rpc('get_profile_safe', { profile_id: userId });
     
-    if (!error && data) {
-      setProfile(data);
+    if (!error && data?.[0]) {
+      setProfile(data[0]);
     }
   };
 
