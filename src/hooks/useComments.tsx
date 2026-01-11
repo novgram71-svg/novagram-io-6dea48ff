@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { commentSchema } from '@/lib/validation';
 
 export interface CommentWithUser {
   id: string;
@@ -42,12 +43,19 @@ export const useAddComment = () => {
     mutationFn: async ({ postId, content, postOwnerId }: { postId: string; content: string; postOwnerId?: string }) => {
       if (!user) throw new Error('Not authenticated');
 
+      // Validate and sanitize comment content
+      const validationResult = commentSchema.safeParse(content);
+      if (!validationResult.success) {
+        throw new Error(validationResult.error.errors[0]?.message || 'Invalid comment');
+      }
+      const sanitizedContent = validationResult.data;
+
       const { error } = await supabase
         .from('comments')
         .insert({
           post_id: postId,
           user_id: user.id,
-          content,
+          content: sanitizedContent,
         });
 
       if (error) throw error;

@@ -9,6 +9,8 @@ import { useComments, useAddComment } from '@/hooks/useComments';
 import { useAuth } from '@/hooks/useAuth';
 import { formatDistanceToNow } from 'date-fns';
 import { Link } from 'react-router-dom';
+import { commentSchema } from '@/lib/validation';
+import { toast } from 'sonner';
 
 interface CommentsSheetProps {
   postId: string;
@@ -27,8 +29,19 @@ const CommentsSheet = ({ postId, postOwnerId, open, onOpenChange }: CommentsShee
     e.preventDefault();
     if (!newComment.trim()) return;
 
+    // Validate comment content using Zod schema
+    const validationResult = commentSchema.safeParse(newComment);
+    
+    if (!validationResult.success) {
+      const errorMessage = validationResult.error.errors[0]?.message || 'Invalid comment';
+      toast.error(errorMessage);
+      return;
+    }
+
+    const sanitizedContent = validationResult.data;
+
     addComment.mutate(
-      { postId, content: newComment, postOwnerId },
+      { postId, content: sanitizedContent, postOwnerId },
       {
         onSuccess: () => setNewComment(''),
       }
