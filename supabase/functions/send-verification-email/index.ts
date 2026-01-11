@@ -1,33 +1,94 @@
+/**
+ * Verification Email Edge Function
+ * Sends email verification codes via Gmail SMTP
+ * 
+ * Security features:
+ * - Rate limiting (3 requests per 5 minutes per email)
+ * - Input validation (email format, code format)
+ * - Secure credential handling (environment variables only)
+ * - No sensitive data in logs
+ */
+
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import {
+  corsHeaders,
+  checkRateLimit,
+  rateLimitResponse,
+  validationSchemas,
+  validateInput,
+  validationErrorResponse,
+  parseRequestBody,
+  getClientIP,
+} from "../_shared/security.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
-
-interface VerificationEmailRequest {
-  email: string;
-  code: string;
-  username?: string;
-}
-
-const handler = async (req: Request): Promise<Response> => {
+serve(async (req) => {
+  // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Only allow POST requests
+  if (req.method !== "POST") {
+    return new Response(
+      JSON.stringify({ error: "Method not allowed" }),
+      { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
   try {
-    const { email, code, username }: VerificationEmailRequest = await req.json();
+    // Parse request body safely
+    const parseResult = await parseRequestBody(req, 10 * 1024); // 10KB max
+    if (!parseResult.success) {
+      return validationErrorResponse([parseResult.error!]);
+    }
+    const body = parseResult.data!;
+
+    // Validate input
+    const validation = validateInput(body, validationSchemas['send-verification-email']);
+    if (!validation.valid) {
+      return validationErrorResponse(validation.errors);
+    }
+
+    const { email, code, username } = 
+      validation.sanitizedData as {
+        email: string;
+        code: string;
+        username?: string;
+      };
+
+    // Check rate limit (use email as identifier for stricter limiting)
+    const clientIP = getClientIP(req);
+    const rateLimit = await checkRateLimit(req, 'send-verification-email', `${clientIP}:${email}`);
+    if (!rateLimit.allowed) {
+      return rateLimitResponse(rateLimit.retryAfter!);
+    }
     
-    console.log(`Sending verification email to: ${email}`);
+    console.log(`Sending verification email to: ${email.substring(0, 3)}***`); // Masked logging
 
     const gmailUser = Deno.env.get("GMAIL_USER");
     const gmailAppPassword = Deno.env.get("GMAIL_APP_PASSWORD");
 
     if (!gmailUser || !gmailAppPassword) {
       console.error("Gmail credentials not configured");
-      throw new Error("Email service not configured");
+      return new Response(
+        JSON.stringify({ error: "Email service not configured" }),
+        { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
+
+    // Sanitize username for HTML display
+    const safeUsername = username 
+      ? username.replace(/[<>&"']/g, (c) => {
+          const entities: Record<string, string> = {
+            '<': '&lt;',
+            '>': '&gt;',
+            '&': '&amp;',
+            '"': '&quot;',
+            "'": '&#39;'
+          };
+          return entities[c] || c;
+        })
+      : undefined;
 
     const htmlContent = `
       <!DOCTYPE html>
@@ -48,7 +109,7 @@ const handler = async (req: Request): Promise<Response> => {
                       <span style="font-size: 32px; font-weight: bold; color: #8b5cf6;">✨ Novagram</span>
                     </div>
                     <h1 style="color: #ffffff; font-size: 24px; margin: 0 0 10px 0; font-weight: 600;">
-                      Welcome${username ? `, ${username}` : ''}! 👋
+                      Welcome${safeUsername ? `, ${safeUsername}` : ''}! 👋
                     </h1>
                     <p style="color: #a1a1aa; font-size: 14px; margin: 0 0 30px 0; line-height: 1.5;">
                       Enter this verification code to complete your signup
@@ -111,6 +172,7 @@ const handler = async (req: Request): Promise<Response> => {
     const authResponse = await sendCommand(btoa(gmailAppPassword));
     
     if (!authResponse.startsWith("235")) {
+      conn.close();
       throw new Error("SMTP authentication failed");
     }
 
@@ -165,16 +227,14 @@ const handler = async (req: Request): Promise<Response> => {
         headers: { "Content-Type": "application/json", ...corsHeaders },
       }
     );
-  } catch (error: any) {
-    console.error("Error sending verification email:", error);
+  } catch (error: unknown) {
+    console.error("Error sending verification email:", error instanceof Error ? error.message : 'Unknown error');
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: "Failed to send verification email" }),
       {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       }
     );
   }
-};
-
-serve(handler);
+});
