@@ -1383,6 +1383,7 @@ export type Database = {
         Args: { user_email: string }
         Returns: string
       }
+      cleanup_old_login_activity: { Args: never; Returns: undefined }
       cleanup_rate_limits: { Args: never; Returns: undefined }
       find_user_email_by_identifier: {
         Args: { identifier: string }
@@ -1466,6 +1467,10 @@ export type Database = {
           id: string
           username: string
         }[]
+      }
+      verify_security_answer: {
+        Args: { p_answer: string; p_user_id: string }
+        Returns: boolean
       }
     }
     Enums: {
