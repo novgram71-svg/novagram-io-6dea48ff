@@ -1,10 +1,25 @@
+/**
+ * Push Notification Edge Function
+ * Sends push notifications via Firebase Cloud Messaging
+ * 
+ * Security features:
+ * - Rate limiting (50 requests per minute)
+ * - Input validation and sanitization
+ * - Secure API key handling (environment variables only)
+ * - No sensitive data in notification payloads
+ */
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import {
+  corsHeaders,
+  checkRateLimit,
+  rateLimitResponse,
+  validationSchemas,
+  validateInput,
+  validationErrorResponse,
+  parseRequestBody,
+} from "../_shared/security.ts";
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -12,8 +27,41 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Only allow POST requests
+  if (req.method !== 'POST') {
+    return new Response(
+      JSON.stringify({ error: 'Method not allowed' }),
+      { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
   try {
-    const { userId, title, body, data } = await req.json();
+    // Parse request body safely
+    const parseResult = await parseRequestBody(req, 20 * 1024); // 20KB max
+    if (!parseResult.success) {
+      return validationErrorResponse([parseResult.error!]);
+    }
+    const body = parseResult.data!;
+
+    // Validate input
+    const validation = validateInput(body, validationSchemas['send-push-notification']);
+    if (!validation.valid) {
+      return validationErrorResponse(validation.errors);
+    }
+
+    const { userId, title, body: notificationBody, data } = 
+      validation.sanitizedData as {
+        userId: string;
+        title: string;
+        body: string;
+        data?: Record<string, unknown>;
+      };
+
+    // Check rate limit
+    const rateLimit = await checkRateLimit(req, 'send-push-notification', userId);
+    if (!rateLimit.allowed) {
+      return rateLimitResponse(rateLimit.retryAfter!);
+    }
 
     console.log('Sending push notification to user:', userId);
 
@@ -56,10 +104,13 @@ serve(async (req) => {
               to: token,
               notification: {
                 title,
-                body,
+                body: notificationBody,
                 icon: '/favicon.ico',
               },
-              data,
+              // Sanitize data payload - only allow string values
+              data: data ? Object.fromEntries(
+                Object.entries(data).filter(([_, v]) => typeof v === 'string' || typeof v === 'number')
+              ) : undefined,
             }),
           });
 
@@ -84,7 +135,7 @@ serve(async (req) => {
   } catch (error: unknown) {
     console.error('Error in send-push-notification:', error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
+      JSON.stringify({ error: 'An error occurred processing your request' }),
       { 
         status: 500, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
