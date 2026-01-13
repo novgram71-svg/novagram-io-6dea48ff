@@ -20,7 +20,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp
 const emailSchema = z.string().email('Please enter a valid email');
 const passwordSchema = z.string().min(6, 'Password must be at least 6 characters');
 const usernameSchema = z.string().min(3, 'Username must be at least 3 characters').regex(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores');
-const phoneSchema = z.string().min(10, 'Please enter a valid phone number').regex(/^[0-9+\-\s()]+$/, 'Invalid phone number format');
+const phoneSchema = z.string().min(10, 'Please enter a valid phone number').regex(/^[0-9+\-\s()]+$/, 'Invalid phone number format').optional().or(z.literal(''));
 
 const Auth = () => {
   const [searchParams] = useSearchParams();
@@ -192,10 +192,13 @@ const Auth = () => {
         newErrors.username = e.errors[0].message;
       }
 
-      try {
-        phoneSchema.parse(phoneNumber);
-      } catch (e: any) {
-        newErrors.phone = e.errors[0].message;
+      // Phone is optional - only validate if provided
+      if (phoneNumber && phoneNumber.trim().length > 0) {
+        try {
+          z.string().min(10, 'Please enter a valid phone number').regex(/^[0-9+\-\s()]+$/, 'Invalid phone number format').parse(phoneNumber);
+        } catch (e: any) {
+          newErrors.phone = e.errors[0].message;
+        }
       }
     }
     
