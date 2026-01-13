@@ -1097,4 +1097,369 @@
   .safe-area-top {
     padding-top: env(safe-area-inset-top);
   }
+
+  /* ========== Indian Festival Theme Animations ========== */
+  
+  /* Generic festival float animation */
+  @keyframes festival-float {
+    0%, 100% {
+      transform: translateY(0) rotate(0deg) scale(1);
+      opacity: 0.6;
+    }
+    25% {
+      transform: translateY(-20px) rotate(5deg) scale(1.1);
+      opacity: 0.8;
+    }
+    50% {
+      transform: translateY(-40px) rotate(-3deg) scale(1);
+      opacity: 0.7;
+    }
+    75% {
+      transform: translateY(-20px) rotate(3deg) scale(1.05);
+      opacity: 0.9;
+    }
+  }
+
+  .animate-festival-float {
+    animation: festival-float 6s ease-in-out infinite;
+  }
+
+  /* Diwali - Diya flicker effect */
+  @keyframes diya-flicker {
+    0%, 100% {
+      filter: brightness(1) drop-shadow(0 0 8px hsl(45 100% 50%));
+      transform: scale(1) rotate(0deg);
+    }
+    25% {
+      filter: brightness(1.3) drop-shadow(0 0 15px hsl(30 100% 50%));
+      transform: scale(1.1) rotate(2deg);
+    }
+    50% {
+      filter: brightness(1.1) drop-shadow(0 0 10px hsl(45 100% 55%));
+      transform: scale(1.05) rotate(-1deg);
+    }
+    75% {
+      filter: brightness(1.4) drop-shadow(0 0 20px hsl(30 100% 45%));
+      transform: scale(1.15) rotate(1deg);
+    }
+  }
+
+  .animate-diya-flicker {
+    animation: diya-flicker 2s ease-in-out infinite, festival-float 8s ease-in-out infinite;
+  }
+
+  /* Holi - Color splash effect */
+  @keyframes color-splash {
+    0%, 100% {
+      transform: scale(1) rotate(0deg);
+      filter: hue-rotate(0deg) saturate(1.5);
+    }
+    25% {
+      transform: scale(1.2) rotate(90deg);
+      filter: hue-rotate(90deg) saturate(2);
+    }
+    50% {
+      transform: scale(0.9) rotate(180deg);
+      filter: hue-rotate(180deg) saturate(1.8);
+    }
+    75% {
+      transform: scale(1.15) rotate(270deg);
+      filter: hue-rotate(270deg) saturate(2.2);
+    }
+  }
+
+  .animate-color-splash {
+    animation: color-splash 4s ease-in-out infinite, festival-float 6s ease-in-out infinite;
+  }
+
+  /* Patriotic wave (Independence Day / Republic Day) */
+  @keyframes patriotic-wave {
+    0%, 100% {
+      transform: translateY(0) scaleX(1);
+      opacity: 0.7;
+    }
+    50% {
+      transform: translateY(-15px) scaleX(1.05);
+      opacity: 1;
+    }
+  }
+
+  .animate-patriotic-wave {
+    animation: patriotic-wave 3s ease-in-out infinite, festival-float 7s ease-in-out infinite;
+  }
+
+  /* Fireworks burst */
+  @keyframes firework-burst {
+    0% {
+      transform: scale(0.5) translateY(20px);
+      opacity: 0;
+    }
+    50% {
+      transform: scale(1.3) translateY(-30px);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(0.8) translateY(-50px);
+      opacity: 0;
+    }
+  }
+
+  .animate-firework-burst {
+    animation: firework-burst 3s ease-out infinite;
+  }
+
+  /* Snowfall */
+  @keyframes snowfall {
+    0% {
+      transform: translateY(-10px) rotate(0deg);
+      opacity: 0;
+    }
+    10% {
+      opacity: 0.8;
+    }
+    90% {
+      opacity: 0.6;
+    }
+    100% {
+      transform: translateY(100vh) rotate(360deg);
+      opacity: 0;
+    }
+  }
+
+  .animate-snowfall {
+    animation: snowfall 8s linear infinite;
+  }
+
+  /* Confetti */
+  @keyframes confetti-fall {
+    0% {
+      transform: translateY(-10px) rotate(0deg) scale(1);
+      opacity: 0;
+    }
+    20% {
+      opacity: 1;
+    }
+    80% {
+      opacity: 0.8;
+    }
+    100% {
+      transform: translateY(100vh) rotate(720deg) scale(0.5);
+      opacity: 0;
+    }
+  }
+
+  .animate-confetti {
+    animation: confetti-fall 5s linear infinite;
+  }
+
+  /* Spring bloom */
+  @keyframes spring-bloom {
+    0%, 100% {
+      transform: scale(1) rotate(0deg);
+      filter: brightness(1);
+    }
+    50% {
+      transform: scale(1.2) rotate(180deg);
+      filter: brightness(1.3);
+    }
+  }
+
+  .animate-spring-bloom {
+    animation: spring-bloom 6s ease-in-out infinite, festival-float 8s ease-in-out infinite;
+  }
+
+  /* Harvest dance */
+  @keyframes harvest-dance {
+    0%, 100% {
+      transform: translateY(0) rotate(-5deg);
+    }
+    25% {
+      transform: translateY(-10px) rotate(5deg);
+    }
+    50% {
+      transform: translateY(-5px) rotate(-3deg);
+    }
+    75% {
+      transform: translateY(-15px) rotate(3deg);
+    }
+  }
+
+  .animate-harvest-dance {
+    animation: harvest-dance 4s ease-in-out infinite;
+  }
+
+  /* Rakhi spin */
+  @keyframes rakhi-spin {
+    0%, 100% {
+      transform: rotate(0deg) scale(1);
+    }
+    50% {
+      transform: rotate(180deg) scale(1.1);
+    }
+  }
+
+  .animate-rakhi-spin {
+    animation: rakhi-spin 5s ease-in-out infinite, festival-float 7s ease-in-out infinite;
+  }
+
+  /* Peacock shimmer (Janmashtami) */
+  @keyframes peacock-shimmer {
+    0%, 100% {
+      filter: brightness(1) hue-rotate(0deg);
+      transform: scale(1);
+    }
+    50% {
+      filter: brightness(1.3) hue-rotate(30deg);
+      transform: scale(1.1);
+    }
+  }
+
+  .animate-peacock-shimmer {
+    animation: peacock-shimmer 4s ease-in-out infinite, festival-float 6s ease-in-out infinite;
+  }
+
+  /* Ganesh float */
+  @keyframes ganesh-float {
+    0%, 100% {
+      transform: translateY(0) scale(1);
+      filter: drop-shadow(0 0 5px hsl(30 100% 50%));
+    }
+    50% {
+      transform: translateY(-20px) scale(1.05);
+      filter: drop-shadow(0 0 15px hsl(45 100% 55%));
+    }
+  }
+
+  .animate-ganesh-float {
+    animation: ganesh-float 5s ease-in-out infinite;
+  }
+
+  /* Dandiya swirl (Navratri) */
+  @keyframes dandiya-swirl {
+    0% {
+      transform: rotate(0deg) translateX(0);
+    }
+    25% {
+      transform: rotate(90deg) translateX(5px);
+    }
+    50% {
+      transform: rotate(180deg) translateX(0);
+    }
+    75% {
+      transform: rotate(270deg) translateX(-5px);
+    }
+    100% {
+      transform: rotate(360deg) translateX(0);
+    }
+  }
+
+  .animate-dandiya-swirl {
+    animation: dandiya-swirl 4s linear infinite, festival-float 6s ease-in-out infinite;
+  }
+
+  /* Victory glow (Dussehra) */
+  @keyframes victory-glow {
+    0%, 100% {
+      filter: brightness(1) drop-shadow(0 0 5px hsl(30 100% 50%));
+    }
+    50% {
+      filter: brightness(1.5) drop-shadow(0 0 20px hsl(0 100% 50%));
+    }
+  }
+
+  .animate-victory-glow {
+    animation: victory-glow 3s ease-in-out infinite, festival-float 5s ease-in-out infinite;
+  }
+
+  /* Sun rays (Chhath Puja) */
+  @keyframes sun-rays {
+    0%, 100% {
+      transform: scale(1);
+      filter: brightness(1) drop-shadow(0 0 10px hsl(45 100% 55%));
+    }
+    50% {
+      transform: scale(1.15);
+      filter: brightness(1.4) drop-shadow(0 0 25px hsl(30 100% 50%));
+    }
+  }
+
+  .animate-sun-rays {
+    animation: sun-rays 4s ease-in-out infinite;
+  }
+
+  /* Float kite (Sankranti) */
+  @keyframes float-kite {
+    0%, 100% {
+      transform: translateY(0) rotate(-10deg) translateX(0);
+    }
+    25% {
+      transform: translateY(-30px) rotate(5deg) translateX(20px);
+    }
+    50% {
+      transform: translateY(-20px) rotate(-5deg) translateX(-10px);
+    }
+    75% {
+      transform: translateY(-40px) rotate(8deg) translateX(15px);
+    }
+  }
+
+  .animate-float-kite {
+    animation: float-kite 6s ease-in-out infinite;
+  }
+
+  /* Shimmer effect for banners */
+  @keyframes shimmer {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
+  .animate-shimmer {
+    animation: shimmer 2s ease-in-out infinite;
+  }
+
+  /* Page transition animations */
+  @keyframes page-enter {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-page-enter {
+    animation: page-enter 0.4s ease-out forwards;
+  }
+
+  /* Enhanced card hover effects */
+  .nova-card-enhanced {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .nova-card-enhanced:hover {
+    transform: translateY(-4px) scale(1.01);
+    box-shadow: 0 20px 40px -15px hsl(var(--primary) / 0.2);
+  }
+
+  /* Stagger animation for list items */
+  @keyframes stagger-in {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-stagger-in {
+    animation: stagger-in 0.3s ease-out forwards;
+  }
 }
