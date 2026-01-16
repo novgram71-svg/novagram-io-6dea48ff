@@ -10,8 +10,6 @@ import { StoryViewerProvider } from "@/contexts/StoryViewerContext";
 import { supabase } from "@/integrations/supabase/client";
 import { MissingInfoDialog } from "@/components/auth/MissingInfoDialog";
 import { useNotificationListener } from "@/hooks/usePushNotifications";
-import FestivalParticles from "@/components/festivals/FestivalParticles";
-import FestivalBanner from "@/components/festivals/FestivalBanner";
 import Index from "./pages/Index";
 import Profile from "./pages/Profile";
 import Search from "./pages/Search";
@@ -150,9 +148,6 @@ const App = () => (
       <AuthProvider>
         <StoryViewerProvider>
           <TooltipProvider>
-            {/* Festival theme elements - shows based on Indian festival calendar */}
-            <FestivalParticles />
-            <FestivalBanner />
             <Toaster />
             <Sonner />
             <BrowserRouter>
