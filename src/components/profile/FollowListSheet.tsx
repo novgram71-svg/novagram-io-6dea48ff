@@ -122,8 +122,8 @@ const FollowUserItem = ({ user, currentUserId, onClose }: FollowUserItemProps) =
     >
       <div className="flex items-center gap-3">
         <Avatar className="w-12 h-12">
-          <AvatarImage src={user.avatar_url || ''} alt={user.username} />
-          <AvatarFallback>{user.username[0].toUpperCase()}</AvatarFallback>
+          <AvatarImage src={user?.avatar_url || ''} alt={user?.username || 'User'} />
+          <AvatarFallback>{user?.username?.[0]?.toUpperCase() || 'U'}</AvatarFallback>
         </Avatar>
         <div>
           <p className="font-medium">{user.username}</p>
