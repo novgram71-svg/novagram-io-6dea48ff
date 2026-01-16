@@ -112,12 +112,12 @@ const DesktopSidebar = () => {
               className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gradient-to-r hover:from-sidebar-accent hover:to-sidebar-accent/50 transition-all duration-300 group"
             >
               <Avatar className="w-10 h-10 ring-2 ring-offset-2 ring-offset-sidebar ring-primary/30 transition-all duration-300 group-hover:ring-primary">
-                <AvatarImage src={profile.avatar_url || ''} alt={profile.username} />
-                <AvatarFallback className="bg-gradient-to-br from-primary/20 to-accent/20">{profile.username[0].toUpperCase()}</AvatarFallback>
+                <AvatarImage src={profile?.avatar_url || ''} alt={profile?.username || 'User'} />
+                <AvatarFallback className="bg-gradient-to-br from-primary/20 to-accent/20">{profile?.username?.[0]?.toUpperCase() || 'U'}</AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm truncate group-hover:text-primary transition-colors">{profile.username}</p>
-                <p className="text-xs text-muted-foreground truncate">{profile.email}</p>
+                <p className="font-semibold text-sm truncate group-hover:text-primary transition-colors">{profile?.username || 'User'}</p>
+                <p className="text-xs text-muted-foreground truncate">{profile?.email || ''}</p>
               </div>
             </Link>
             
