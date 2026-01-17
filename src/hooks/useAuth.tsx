@@ -14,7 +14,7 @@ interface Profile {
 
 interface PendingVerification {
   email: string;
-  password: string;
+  // NOTE: Password is NOT stored in state for security - user must re-enter it during verification
   username: string;
   phoneNumber?: string;
   verificationCode: string;
@@ -32,7 +32,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
-  verifyEmail: (token: string) => Promise<{ error: any }>;
+  verifyEmail: (token: string, password: string) => Promise<{ error: any }>;
   resendVerificationCode: () => Promise<{ error: any }>;
   clearPendingVerification: () => void;
 }
@@ -173,10 +173,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return { error: { message: 'Failed to send verification email. Please try again.' } };
     }
 
-    // Store pending verification data
+    // Store pending verification data - NOTE: password is NOT stored for security
     setPendingVerification({ 
       email, 
-      password, 
+      // password intentionally NOT stored - user must re-enter during verification
       username, 
       phoneNumber, 
       verificationCode,
@@ -186,7 +186,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return { error: null, needsVerification: true };
   };
 
-  const verifyEmail = async (token: string) => {
+  const verifyEmail = async (token: string, password: string) => {
     if (!pendingVerification) {
       return { error: { message: 'No pending verification' } };
     }
@@ -201,12 +201,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return { error: { message: 'Invalid verification code' } };
     }
 
+    // Validate password is provided (security: password is passed fresh, not from state)
+    if (!password || password.length < 6) {
+      return { error: { message: 'Please enter your password to complete verification' } };
+    }
+
     // Code is valid, now actually create the account
     const redirectUrl = `${window.location.origin}/`;
     
     const { data, error } = await supabase.auth.signUp({
       email: pendingVerification.email,
-      password: pendingVerification.password,
+      password: password, // Use fresh password from parameter, not from state
       options: {
         emailRedirectTo: redirectUrl,
         data: {

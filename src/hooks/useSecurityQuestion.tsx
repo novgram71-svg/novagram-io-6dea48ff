@@ -10,8 +10,9 @@ export const useSecurityQuestion = () => {
     queryKey: ['security-question', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
+      // Use the secure view that doesn't expose answer_hash
       const { data, error } = await supabase
-        .from('security_questions')
+        .from('security_questions_safe')
         .select('*')
         .eq('user_id', user.id)
         .maybeSingle();
@@ -46,9 +47,17 @@ export const useSecurityQuestion = () => {
   });
 
   const verifyAnswer = async (answer: string): Promise<boolean> => {
-    if (!securityQuestion) return false;
-    const answerHash = btoa(answer.toLowerCase().trim());
-    return answerHash === securityQuestion.answer_hash;
+    // Use the secure database function to verify - never compare hashes client-side
+    if (!user?.id) return false;
+    const { data, error } = await supabase.rpc('verify_security_answer', {
+      p_user_id: user.id,
+      p_answer: answer
+    });
+    if (error) {
+      console.error('Error verifying security answer:', error);
+      return false;
+    }
+    return data === true;
   };
 
   return {
@@ -64,17 +73,14 @@ export const useSecurityQuestion = () => {
 export const useVerifySecurityQuestion = () => {
   return useMutation({
     mutationFn: async ({ userId, answer }: { userId: string; answer: string }) => {
-      const { data, error } = await supabase
-        .from('security_questions')
-        .select('answer_hash')
-        .eq('user_id', userId)
-        .maybeSingle();
+      // Use the secure database function to verify - never expose answer_hash to client
+      const { data, error } = await supabase.rpc('verify_security_answer', {
+        p_user_id: userId,
+        p_answer: answer
+      });
       
       if (error) throw error;
-      if (!data) throw new Error('No security question found');
-      
-      const answerHash = btoa(answer.toLowerCase().trim());
-      if (answerHash !== data.answer_hash) {
+      if (data !== true) {
         throw new Error('Incorrect answer');
       }
       

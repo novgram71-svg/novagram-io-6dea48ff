@@ -1576,9 +1576,7 @@ export type Database = {
           avatar_url: string | null
           bio: string | null
           created_at: string | null
-          email: string | null
           id: string | null
-          phone_number: string | null
           updated_at: string | null
           username: string | null
         }
@@ -1586,9 +1584,7 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string | null
-          email?: never
           id?: string | null
-          phone_number?: never
           updated_at?: string | null
           username?: string | null
         }
@@ -1596,11 +1592,42 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string | null
-          email?: never
           id?: string | null
-          phone_number?: never
           updated_at?: string | null
           username?: string | null
+        }
+        Relationships: []
+      }
+      security_questions_safe: {
+        Row: {
+          created_at: string | null
+          failed_attempts: number | null
+          id: string | null
+          is_locked: boolean | null
+          locked_until: string | null
+          question: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          failed_attempts?: number | null
+          id?: string | null
+          is_locked?: boolean | null
+          locked_until?: string | null
+          question?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          failed_attempts?: number | null
+          id?: string | null
+          is_locked?: boolean | null
+          locked_until?: string | null
+          question?: string | null
+          updated_at?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
