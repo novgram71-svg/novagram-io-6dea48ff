@@ -44,6 +44,8 @@ const Auth = () => {
   const [ripples, setRipples] = useState<{ id: number; x: number; y: number }[]>([]);
   const [pendingReferral, setPendingReferral] = useState<string | null>(null);
   const [verificationCode, setVerificationCode] = useState('');
+  const [verificationPassword, setVerificationPassword] = useState(''); // Password re-entry for security
+  const [showVerificationPassword, setShowVerificationPassword] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [resendCountdown, setResendCountdown] = useState(0);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -319,9 +321,19 @@ const Auth = () => {
       return;
     }
 
+    if (!verificationPassword || verificationPassword.length < 6) {
+      toast({
+        title: 'Password required',
+        description: 'Please re-enter your password to complete verification.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
-      const { error } = await verifyEmail(verificationCode);
+      // Pass the password fresh - it's not stored in React state for security
+      const { error } = await verifyEmail(verificationCode, verificationPassword);
       if (error) {
         toast({
           title: 'Verification failed',
@@ -329,6 +341,8 @@ const Auth = () => {
           variant: 'destructive',
         });
       } else {
+        // Clear password from memory immediately after successful verification
+        setVerificationPassword('');
         toast({
           title: 'Email verified!',
           description: 'Your account has been verified successfully.',
@@ -364,6 +378,7 @@ const Auth = () => {
   const handleBackFromVerification = () => {
     clearPendingVerification();
     setVerificationCode('');
+    setVerificationPassword(''); // Clear password when going back
   };
 
   return (
@@ -509,11 +524,38 @@ const Auth = () => {
                     </InputOTP>
                   </div>
 
+                  {/* Password re-entry for security - password is NOT stored in React state */}
+                  <div className="space-y-1.5">
+                    <Label htmlFor="verificationPassword" className="text-sm font-medium text-foreground/80">
+                      Re-enter your password
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      For security, please re-enter your password to complete signup
+                    </p>
+                    <div className="relative">
+                      <Input
+                        id="verificationPassword"
+                        type={showVerificationPassword ? "text" : "password"}
+                        placeholder="Your password"
+                        value={verificationPassword}
+                        onChange={(e) => setVerificationPassword(e.target.value)}
+                        className="liquid-glass-input h-12 rounded-xl px-4 pr-10 text-base placeholder:text-muted-foreground/50"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowVerificationPassword(!showVerificationPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        {showVerificationPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      </button>
+                    </div>
+                  </div>
+
                   <Button
                     type="button"
                     onClick={handleVerifyEmail}
                     className="w-full h-12 rounded-xl liquid-glass-button text-white font-medium text-base relative overflow-hidden group"
-                    disabled={isLoading || verificationCode.length !== 6}
+                    disabled={isLoading || verificationCode.length !== 6 || verificationPassword.length < 6}
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
                     <span className="relative flex items-center justify-center gap-2">
