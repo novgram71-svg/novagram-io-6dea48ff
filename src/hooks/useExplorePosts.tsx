@@ -15,7 +15,8 @@ export const useExplorePosts = () => {
             username,
             avatar_url
           ),
-          likes (count)
+          likes (user_id),
+          comments (id)
         `)
         .order('created_at', { ascending: false })
         .limit(50);
@@ -24,13 +25,14 @@ export const useExplorePosts = () => {
       
       // Sort by engagement (likes)
       const sortedPosts = posts?.sort((a, b) => {
-        const aLikes = a.likes?.[0]?.count || 0;
-        const bLikes = b.likes?.[0]?.count || 0;
+        const aLikes = a.likes?.length || 0;
+        const bLikes = b.likes?.length || 0;
         return bLikes - aLikes;
       });
       
       return sortedPosts || [];
     },
+    staleTime: 1000 * 60 * 2, // 2 minutes
   });
 };
 
@@ -51,8 +53,8 @@ export const useTrendingPosts = () => {
             username,
             avatar_url
           ),
-          likes (count),
-          comments (count)
+          likes (user_id),
+          comments (id)
         `)
         .gte('created_at', yesterday.toISOString())
         .order('created_at', { ascending: false });
@@ -61,12 +63,13 @@ export const useTrendingPosts = () => {
       
       // Sort by total engagement
       const sortedPosts = posts?.sort((a, b) => {
-        const aEngagement = (a.likes?.[0]?.count || 0) + (a.comments?.[0]?.count || 0);
-        const bEngagement = (b.likes?.[0]?.count || 0) + (b.comments?.[0]?.count || 0);
+        const aEngagement = (a.likes?.length || 0) + (a.comments?.length || 0);
+        const bEngagement = (b.likes?.length || 0) + (b.comments?.length || 0);
         return bEngagement - aEngagement;
       });
       
       return sortedPosts?.slice(0, 20) || [];
     },
+    staleTime: 1000 * 60 * 2, // 2 minutes
   });
 };

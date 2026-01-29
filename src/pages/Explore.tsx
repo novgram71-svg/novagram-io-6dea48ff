@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search as SearchIcon, TrendingUp, Hash, X, Sparkles, Grid, Film } from 'lucide-react';
+import { Search as SearchIcon, TrendingUp, Hash, X, Sparkles, Grid } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useAllProfiles } from '@/hooks/useProfiles';
 import StoriesBar from '@/components/stories/StoriesBar';
 import { AIChat } from '@/components/search/AIChat';
+import PostGrid from '@/components/posts/PostGrid';
 
 const Explore = () => {
   const { user } = useAuth();
@@ -175,81 +176,21 @@ const Explore = () => {
               </TabsList>
 
               <TabsContent value="trending" className="animate-fade-in">
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
-                  {loadingTrending ? (
-                    Array.from({ length: 9 }).map((_, i) => (
-                      <Skeleton key={i} className="aspect-square" />
-                    ))
-                  ) : trendingPosts && trendingPosts.length > 0 ? (
-                    trendingPosts.map((post: any, index: number) => (
-                      <Link
-                        key={post.id}
-                        to={`/post/${post.id}`}
-                        className="relative group overflow-hidden aspect-square animate-fade-in"
-                        style={{ animationDelay: `${index * 50}ms` }}
-                      >
-                        <img
-                          src={post.image_url}
-                          alt=""
-                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
-                          <div className="flex items-center gap-2">
-                            <Avatar className="w-6 h-6">
-                              <AvatarImage src={post.profiles?.avatar_url || ''} />
-                              <AvatarFallback>{post.profiles?.username?.[0]?.toUpperCase()}</AvatarFallback>
-                            </Avatar>
-                            <span className="text-xs font-medium truncate">{post.profiles?.username}</span>
-                          </div>
-                        </div>
-                      </Link>
-                    ))
-                  ) : (
-                    <div className="col-span-full text-center py-12 text-muted-foreground">
-                      <TrendingUp className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                      <p>No trending posts yet</p>
-                    </div>
-                  )}
-                </div>
+                <PostGrid
+                  posts={trendingPosts}
+                  isLoading={loadingTrending}
+                  emptyMessage="No trending posts yet"
+                  emptyIcon={<TrendingUp className="w-12 h-12 mx-auto opacity-50" />}
+                />
               </TabsContent>
 
               <TabsContent value="explore" className="animate-fade-in">
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
-                  {loadingExplore ? (
-                    Array.from({ length: 12 }).map((_, i) => (
-                      <Skeleton key={i} className="aspect-square" />
-                    ))
-                  ) : explorePosts && explorePosts.length > 0 ? (
-                    explorePosts.map((post: any, index: number) => (
-                      <Link
-                        key={post.id}
-                        to={`/post/${post.id}`}
-                        className="relative group overflow-hidden aspect-square animate-fade-in"
-                        style={{ animationDelay: `${index * 30}ms` }}
-                      >
-                        <img
-                          src={post.image_url}
-                          alt=""
-                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
-                          <div className="flex items-center gap-2">
-                            <Avatar className="w-6 h-6">
-                              <AvatarImage src={post.profiles?.avatar_url || ''} />
-                              <AvatarFallback>{post.profiles?.username?.[0]?.toUpperCase()}</AvatarFallback>
-                            </Avatar>
-                            <span className="text-xs font-medium truncate">{post.profiles?.username}</span>
-                          </div>
-                        </div>
-                      </Link>
-                    ))
-                  ) : (
-                    <div className="col-span-full text-center py-12 text-muted-foreground">
-                      <Grid className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                      <p>No posts to explore yet</p>
-                    </div>
-                  )}
-                </div>
+                <PostGrid
+                  posts={explorePosts}
+                  isLoading={loadingExplore}
+                  emptyMessage="No posts to explore yet"
+                  emptyIcon={<Grid className="w-12 h-12 mx-auto opacity-50" />}
+                />
               </TabsContent>
             </Tabs>
           </div>
