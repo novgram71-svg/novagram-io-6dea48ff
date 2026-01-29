@@ -4,13 +4,20 @@ import MobileHeader from '@/components/layout/MobileHeader';
 import StoriesBar from '@/components/stories/StoriesBar';
 import Feed from '@/components/posts/Feed';
 import PullToRefresh from '@/components/posts/PullToRefresh';
+import { memo } from 'react';
+
+// Memoize components to prevent unnecessary re-renders
+const MemoizedStoriesBar = memo(StoriesBar);
+const MemoizedFeed = memo(Feed);
 
 const Index = () => {
   const queryClient = useQueryClient();
 
   const handleRefresh = async () => {
-    await queryClient.invalidateQueries({ queryKey: ['posts'] });
-    await queryClient.invalidateQueries({ queryKey: ['stories'] });
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['feed-posts'] }),
+      queryClient.invalidateQueries({ queryKey: ['stories'] }),
+    ]);
   };
 
   return (
@@ -21,12 +28,12 @@ const Index = () => {
 
           {/* Stories */}
           <section className="border-b border-border bg-card/50">
-            <StoriesBar />
+            <MemoizedStoriesBar />
           </section>
 
           {/* Feed */}
           <section className="py-6">
-            <Feed />
+            <MemoizedFeed />
           </section>
         </div>
       </PullToRefresh>
