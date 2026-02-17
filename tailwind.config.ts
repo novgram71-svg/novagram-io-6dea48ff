@@ -62,6 +62,9 @@ export default {
         },
       },
       borderRadius: {
+        "3xl": "1.5rem",
+        "2xl": "1.25rem",
+        xl: "1rem",
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
@@ -76,7 +79,7 @@ export default {
           to: { height: "0" },
         },
         "fade-in": {
-          from: { opacity: "0", transform: "translateY(10px)" },
+          from: { opacity: "0", transform: "translateY(8px)" },
           to: { opacity: "1", transform: "translateY(0)" },
         },
         "slide-in-right": {
@@ -102,6 +105,13 @@ export default {
         "shimmer": {
           "0%": { transform: "translateX(-100%) rotate(15deg)" },
           "100%": { transform: "translateX(200%) rotate(15deg)" },
+        },
+        "skeleton-shimmer": {
+          "100%": { transform: "translateX(100%)" },
+        },
+        "page-enter": {
+          from: { opacity: "0", transform: "translateY(12px) scale(0.99)" },
+          to: { opacity: "1", transform: "translateY(0) scale(1)" },
         },
         "bubble-rise": {
           "0%": { transform: "translateY(100%) scale(0.5)", opacity: "0" },
@@ -138,9 +148,9 @@ export default {
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "fade-in": "fade-in 0.3s ease-out",
-        "slide-in-right": "slide-in-right 0.3s ease-out",
-        "scale-in": "scale-in 0.2s ease-out",
+        "fade-in": "fade-in 0.4s cubic-bezier(0.4,0,0.2,1)",
+        "slide-in-right": "slide-in-right 0.4s cubic-bezier(0.4,0,0.2,1)",
+        "scale-in": "scale-in 0.3s cubic-bezier(0.4,0,0.2,1)",
         "pulse-glow": "pulse-glow 2s ease-in-out infinite",
         "story-progress": "story-progress 5s linear",
         "ripple": "ripple 0.6s ease-out forwards",
@@ -149,6 +159,7 @@ export default {
         "water-rotate": "water-rotate 4s linear infinite",
         "water-wave": "water-wave 6s ease-in-out infinite",
         "glow-pulse": "glow-pulse 2s ease-in-out infinite",
+        "page-enter": "page-enter 0.5s cubic-bezier(0.4,0,0.2,1) forwards",
       },
     },
   },

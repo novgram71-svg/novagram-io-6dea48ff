@@ -23,18 +23,24 @@ const Feed = () => {
     return (
       <div className="max-w-lg mx-auto space-y-6 px-4 md:px-0">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="nova-card overflow-hidden">
+          <div key={i} className="nova-card overflow-hidden rounded-2xl" style={{ animationDelay: `${i * 120}ms` }}>
             <div className="flex items-center gap-3 p-4">
               <Skeleton className="w-10 h-10 rounded-full" />
               <div className="space-y-2">
-                <Skeleton className="w-24 h-4" />
-                <Skeleton className="w-16 h-3" />
+                <Skeleton className="w-28 h-4 rounded-full" />
+                <Skeleton className="w-16 h-3 rounded-full" />
               </div>
             </div>
-            <Skeleton className="aspect-square w-full" />
-            <div className="p-4 space-y-2">
-              <Skeleton className="w-full h-4" />
-              <Skeleton className="w-3/4 h-4" />
+            <Skeleton className="aspect-square w-full rounded-none" />
+            <div className="p-4 space-y-3">
+              <div className="flex gap-4">
+                <Skeleton className="w-7 h-7 rounded-full" />
+                <Skeleton className="w-7 h-7 rounded-full" />
+                <Skeleton className="w-7 h-7 rounded-full" />
+              </div>
+              <Skeleton className="w-20 h-4 rounded-full" />
+              <Skeleton className="w-full h-4 rounded-full" />
+              <Skeleton className="w-3/4 h-4 rounded-full" />
             </div>
           </div>
         ))}
@@ -86,7 +92,7 @@ const Feed = () => {
   }
 
   const feedContent = (
-    <div className="max-w-lg mx-auto space-y-6 px-4 md:px-0 pb-20">
+    <div className="max-w-lg mx-auto space-y-6 px-4 md:px-0 pb-20 animate-page-enter">
       {/* Show suggestions after first 2 posts */}
       {posts.slice(0, 2).map((post, index) => (
         <div 

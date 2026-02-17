@@ -33,9 +33,9 @@ const Explore = () => {
 
   return (
     <MainLayout>
-      <div className="max-w-4xl mx-auto pb-20">
+      <div className="max-w-4xl mx-auto pb-20 animate-page-enter">
         {/* Header with Search */}
-        <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-lg border-b border-border">
+        <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-xl border-b border-border/30 rounded-b-2xl">
           <div className="px-4 py-3">
             <div className="flex items-center justify-between mb-3">
               <h1 className="text-xl font-bold gradient-text flex items-center gap-2">
@@ -61,7 +61,7 @@ const Explore = () => {
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Search hashtags, users..."
-                  className="pl-10 nova-input"
+                  className="pl-10 nova-input rounded-2xl"
                 />
                 {query && (
                   <button
@@ -94,7 +94,7 @@ const Explore = () => {
                   {searchHashtags.map((tag: any) => (
                     <button
                       key={tag.id}
-                      className="px-4 py-2 bg-secondary rounded-full text-sm hover:bg-primary/20 transition-all duration-200 hover:scale-105"
+                      className="px-4 py-2 bg-secondary rounded-2xl text-sm hover:bg-primary/20 transition-all duration-300 hover:scale-105"
                     >
                       #{tag.name}
                       <span className="ml-2 text-xs text-muted-foreground">{tag.post_count}</span>
@@ -113,7 +113,7 @@ const Explore = () => {
                     <Link
                       key={profile.id}
                       to={`/profile/${profile.username}`}
-                      className="flex items-center gap-3 p-3 rounded-xl hover:bg-secondary transition-all duration-200"
+                      className="flex items-center gap-3 p-3 rounded-2xl hover:bg-secondary transition-all duration-300"
                     >
                       <Avatar className="w-10 h-10">
                         <AvatarImage src={profile.avatar_url || ''} />
@@ -150,7 +150,7 @@ const Explore = () => {
                   trendingHashtags.map((tag: any, index: number) => (
                     <button
                       key={tag.id}
-                      className="px-4 py-2 bg-gradient-to-r from-primary/10 to-accent/10 rounded-full text-sm hover:from-primary/20 hover:to-accent/20 transition-all duration-200 hover:scale-105 border border-primary/20"
+                      className="px-4 py-2 bg-gradient-to-r from-primary/10 to-accent/10 rounded-2xl text-sm hover:from-primary/20 hover:to-accent/20 transition-all duration-300 hover:scale-105 border border-primary/20"
                       style={{ animationDelay: `${index * 50}ms` }}
                     >
                       #{tag.name}

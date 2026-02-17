@@ -86,9 +86,9 @@ const StoriesBar = () => {
       <div className="w-full overflow-x-auto scrollbar-hide">
         <div className="flex gap-4 px-4 py-4 min-w-max">
           {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="flex flex-col items-center gap-2">
+            <div key={i} className="flex flex-col items-center gap-2" style={{ animationDelay: `${i * 80}ms` }}>
               <Skeleton className="w-16 h-16 rounded-full" />
-              <Skeleton className="w-12 h-3" />
+              <Skeleton className="w-12 h-3 rounded-full" />
             </div>
           ))}
         </div>

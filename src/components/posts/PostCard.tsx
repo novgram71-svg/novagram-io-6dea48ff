@@ -120,7 +120,7 @@ const PostCard = ({ post }: PostCardProps) => {
   };
 
   return (
-    <article className="nova-card overflow-hidden animate-fade-in transition-all duration-300 hover:shadow-lg hover:border-primary/20">
+    <article className="nova-card overflow-hidden animate-fade-in transition-all duration-400 ease-out hover:shadow-xl hover:shadow-primary/10 hover:border-primary/20 rounded-2xl">
       {/* Header */}
       <div className="flex items-center justify-between p-4">
         <Link to={`/profile/${post.profiles.username}`} className="flex items-center gap-3 group">
@@ -159,7 +159,7 @@ const PostCard = ({ post }: PostCardProps) => {
 
       {/* Image with double-tap to like */}
       <div 
-        className="relative aspect-square bg-secondary cursor-pointer select-none overflow-hidden"
+        className="relative aspect-square bg-secondary cursor-pointer select-none overflow-hidden rounded-none"
         onClick={handleDoubleTap}
       >
         <img
