@@ -121,11 +121,51 @@ const Admin = () => {
 
   return (
     <MainLayout>
-      <div className="max-w-6xl mx-auto pb-8">
-        <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-lg border-b border-border">
-          <div className="px-4 py-3">
+      <div className="max-w-6xl mx-auto pb-8 animate-page-enter">
+        <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-xl border-b border-border/30">
+          <div className="px-4 py-4">
             <h1 className="text-2xl font-bold gradient-text">Admin Panel</h1>
-            <p className="text-sm text-muted-foreground">Manage users, posts, reports, and messages</p>
+            <p className="text-sm text-muted-foreground mt-1">Manage users, posts, reports, and messages</p>
+            
+            {/* Stats Overview */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+              <div className="bg-card/80 border border-border/50 rounded-2xl p-3 flex items-center gap-3 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <Users className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-lg font-bold">{users?.length || 0}</p>
+                  <p className="text-xs text-muted-foreground">Users</p>
+                </div>
+              </div>
+              <div className="bg-card/80 border border-border/50 rounded-2xl p-3 flex items-center gap-3 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5">
+                <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
+                  <Image className="w-5 h-5 text-accent" />
+                </div>
+                <div>
+                  <p className="text-lg font-bold">{posts?.length || 0}</p>
+                  <p className="text-xs text-muted-foreground">Posts</p>
+                </div>
+              </div>
+              <div className="bg-card/80 border border-border/50 rounded-2xl p-3 flex items-center gap-3 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5">
+                <div className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center">
+                  <AlertTriangle className="w-5 h-5 text-destructive" />
+                </div>
+                <div>
+                  <p className="text-lg font-bold">{pendingReportsCount}</p>
+                  <p className="text-xs text-muted-foreground">Pending</p>
+                </div>
+              </div>
+              <div className="bg-card/80 border border-border/50 rounded-2xl p-3 flex items-center gap-3 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5">
+                <div className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center">
+                  <Ban className="w-5 h-5 text-destructive" />
+                </div>
+                <div>
+                  <p className="text-lg font-bold">{bannedUsers?.length || 0}</p>
+                  <p className="text-xs text-muted-foreground">Banned</p>
+                </div>
+              </div>
+            </div>
           </div>
         </header>
 
@@ -144,7 +184,7 @@ const Admin = () => {
               <AlertTriangle className="w-4 h-4" />
               Reports
               {pendingReportsCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center animate-scale-in">
                   {pendingReportsCount}
                 </span>
               )}
@@ -157,7 +197,7 @@ const Admin = () => {
               <Bot className="w-4 h-4" />
               AI Reports
               {unreviewedAIReportsCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center animate-scale-in">
                   {unreviewedAIReportsCount}
                 </span>
               )}
@@ -166,7 +206,7 @@ const Admin = () => {
               <KeyRound className="w-4 h-4" />
               Password Resets
               {pendingResetCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center animate-scale-in">
                   {pendingResetCount}
                 </span>
               )}
@@ -175,7 +215,7 @@ const Admin = () => {
               <FileWarning className="w-4 h-4" />
               App Issues
               {pendingAppReportsCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center animate-scale-in">
                   {pendingAppReportsCount}
                 </span>
               )}
@@ -229,7 +269,7 @@ const Admin = () => {
 
           {/* Users Tab */}
           <TabsContent value="users" className="animate-fade-in">
-            <Card>
+            <Card className="rounded-2xl border-border/50 shadow-lg shadow-primary/5">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Users className="w-5 h-5" />
@@ -249,8 +289,8 @@ const Admin = () => {
                         return (
                           <div
                             key={u.id}
-                            className={`flex items-center gap-4 p-4 rounded-xl transition-colors animate-fade-in ${
-                              isBanned ? 'bg-destructive/10' : 'bg-secondary/50 hover:bg-secondary'
+                           className={`flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 animate-fade-in ${
+                              isBanned ? 'bg-destructive/10 border border-destructive/20' : 'bg-secondary/50 hover:bg-secondary hover:shadow-md'
                             }`}
                           >
                             <Avatar className="w-12 h-12">
@@ -362,7 +402,7 @@ const Admin = () => {
 
           {/* Posts Tab */}
           <TabsContent value="posts" className="animate-fade-in">
-            <Card>
+            <Card className="rounded-2xl border-border/50 shadow-lg shadow-primary/5">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Image className="w-5 h-5" />
@@ -380,7 +420,7 @@ const Admin = () => {
                       posts?.map((post: any) => (
                         <div
                           key={post.id}
-                          className="relative group overflow-hidden rounded-xl animate-fade-in"
+                          className="relative group overflow-hidden rounded-2xl animate-fade-in transition-all duration-300 hover:shadow-xl"
                         >
                           <img
                             src={post.image_url}
@@ -440,7 +480,7 @@ const Admin = () => {
 
           {/* Reports Tab */}
           <TabsContent value="reports" className="animate-fade-in">
-            <Card>
+            <Card className="rounded-2xl border-border/50 shadow-lg shadow-primary/5">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <AlertTriangle className="w-5 h-5" />
@@ -460,7 +500,7 @@ const Admin = () => {
                         return (
                           <div
                             key={report.id}
-                            className="p-4 rounded-xl bg-secondary/50 border border-border animate-fade-in"
+                            className="p-4 rounded-2xl bg-secondary/50 border border-border/50 animate-fade-in transition-all duration-300 hover:shadow-md"
                           >
                             <div className="flex items-start justify-between mb-3">
                               <div className="flex items-center gap-3">
@@ -578,8 +618,8 @@ const Admin = () => {
                             setSelectedUser(u.id);
                             setSelectedChatPartner(null);
                           }}
-                          className={`w-full flex items-center gap-3 p-3 rounded-lg transition-colors ${
-                            selectedUser === u.id ? 'bg-primary text-primary-foreground' : 'hover:bg-secondary'
+                          className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-all duration-300 ${
+                            selectedUser === u.id ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20' : 'hover:bg-secondary hover:shadow-md'
                           }`}
                         >
                           <Avatar className="w-8 h-8">
@@ -611,8 +651,8 @@ const Admin = () => {
                             <button
                               key={partner.id}
                               onClick={() => setSelectedChatPartner(partner.id)}
-                              className={`w-full flex items-center gap-3 p-3 rounded-lg transition-colors ${
-                                selectedChatPartner === partner.id ? 'bg-primary text-primary-foreground' : 'hover:bg-secondary'
+                              className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-all duration-300 ${
+                                selectedChatPartner === partner.id ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20' : 'hover:bg-secondary hover:shadow-md'
                               }`}
                             >
                               <Avatar className="w-8 h-8">
@@ -661,7 +701,7 @@ const Admin = () => {
                               className={`flex ${isFromSelected ? 'justify-end' : 'justify-start'}`}
                             >
                               <div
-                                className={`max-w-[80%] p-3 rounded-xl ${
+                                className={`max-w-[80%] p-3 rounded-2xl transition-all duration-200 hover:shadow-md ${
                                   isFromSelected 
                                     ? 'bg-primary text-primary-foreground' 
                                     : 'bg-secondary'
@@ -707,9 +747,9 @@ const Admin = () => {
                       aiReports.map((report) => (
                         <div
                           key={report.id}
-                          className={`p-4 rounded-xl border animate-fade-in ${
+                          className={`p-4 rounded-2xl border animate-fade-in transition-all duration-300 hover:shadow-md ${
                             report.reviewed 
-                              ? 'bg-muted/30 border-muted' 
+                              ? 'bg-muted/30 border-muted/50' 
                               : 'bg-destructive/5 border-destructive/20'
                           }`}
                         >
@@ -831,7 +871,7 @@ const Admin = () => {
                       resetRequests.map((request: any) => (
                         <div
                           key={request.id}
-                          className="p-4 rounded-xl bg-secondary/50 border border-border animate-fade-in"
+                          className="p-4 rounded-2xl bg-secondary/50 border border-border/50 animate-fade-in transition-all duration-300 hover:shadow-md"
                         >
                           <div className="flex items-start justify-between mb-3">
                             <div className="flex items-center gap-3">
@@ -920,7 +960,7 @@ const Admin = () => {
                       appReports.map((report: any) => (
                         <div
                           key={report.id}
-                          className="p-4 rounded-xl bg-secondary/50 border border-border animate-fade-in"
+                          className="p-4 rounded-2xl bg-secondary/50 border border-border/50 animate-fade-in transition-all duration-300 hover:shadow-md"
                         >
                           <div className="flex items-start justify-between mb-3">
                             <div className="flex items-center gap-3">
