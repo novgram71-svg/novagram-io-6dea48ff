@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { Send, ArrowLeft, MoreVertical, Search, Sparkles, Palette } from 'lucide-react';
+import { Send, ArrowLeft, MoreVertical, Search, Sparkles, Palette, Camera } from 'lucide-react';
 import { useLocation, Navigate, useNavigate } from 'react-router-dom';
 import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
@@ -21,13 +21,13 @@ import AttachmentPreview from '@/components/chat/AttachmentPreview';
 import MessageSearchSheet from '@/components/chat/MessageSearchSheet';
 import ChatThemeSheet from '@/components/chat/ChatThemeSheet';
 import NotesBubble from '@/components/chat/NotesBubble';
-import VoiceRecorder from '@/components/chat/VoiceRecorder';
 import ReplyPreview from '@/components/chat/ReplyPreview';
 import ReadReceipt from '@/components/chat/ReadReceipt';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 
 interface ConversationItemProps {
   conversation: Conversation;
@@ -102,6 +102,7 @@ const Messages = () => {
   const [themeSheetOpen, setThemeSheetOpen] = useState(false);
   const [replyingTo, setReplyingTo] = useState<MessageWithProfile | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   
   // Chat theme
   const { data: chatTheme } = useChatTheme(selectedConversation?.id || null);
@@ -246,6 +247,23 @@ const Messages = () => {
 
   const handleFileSelect = (file: { url: string; name: string; type: 'image' | 'file' }) => {
     setAttachment(file);
+  };
+
+  const handleCameraCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage.from('chat-files').upload(fileName, file);
+      if (uploadError) throw uploadError;
+      const { data: urlData } = supabase.storage.from('chat-files').getPublicUrl(fileName);
+      setAttachment({ url: urlData.publicUrl, name: file.name, type: 'image' });
+    } catch (err) {
+      toast.error('Failed to upload photo');
+    }
+    e.target.value = '';
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -446,8 +464,26 @@ const Messages = () => {
                       </Button>
                     )}
                   </div>
+                  {/* Camera button - Instagram style, replaces microphone */}
                   {!newMessage.trim() && !attachment && (
-                    <VoiceRecorder onSend={(url) => handleSendMessage(url)} />
+                    <>
+                      <input
+                        ref={cameraInputRef}
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
+                        className="hidden"
+                        onChange={handleCameraCapture}
+                      />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => cameraInputRef.current?.click()}
+                        className="text-muted-foreground hover:text-foreground flex-shrink-0 transition-all duration-200 hover:scale-110"
+                      >
+                        <Camera className="w-5 h-5" />
+                      </Button>
+                    </>
                   )}
                 </div>
               </div>

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Loader2, Sparkles, AlertTriangle, X, Trash2, ChevronDown, Maximize2 } from 'lucide-react';
+import { Send, Bot, User, Loader2, Sparkles, AlertTriangle, Trash2, ChevronDown, ImagePlus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -15,7 +15,10 @@ export const AIChat = ({ onClose }: AIChatProps) => {
   const { messages, isLoading, sendMessage, clearMessages } = useAIChat();
   const [input, setInput] = useState('');
   const [isClosing, setIsClosing] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -25,17 +28,28 @@ export const AIChat = ({ onClose }: AIChatProps) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (input.trim() && !isLoading) {
-      sendMessage(input);
+    if ((input.trim() || selectedImage) && !isLoading) {
+      sendMessage(input, selectedImage || undefined);
       setInput('');
+      setSelectedImage(null);
+      setSelectedImageFile(null);
     }
+  };
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedImageFile(file);
+      const reader = new FileReader();
+      reader.onload = (ev) => setSelectedImage(ev.target?.result as string);
+      reader.readAsDataURL(file);
+    }
+    e.target.value = '';
   };
 
   const handleClose = () => {
     setIsClosing(true);
-    setTimeout(() => {
-      onClose();
-    }, 300);
+    setTimeout(() => onClose(), 300);
   };
 
   return (
@@ -63,7 +77,7 @@ export const AIChat = ({ onClose }: AIChatProps) => {
           </div>
           <div>
             <h1 className="font-bold text-lg">Nova AI</h1>
-            <p className="text-xs text-muted-foreground">Always here to help ✨</p>
+            <p className="text-xs text-muted-foreground">Ask me anything ✨</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -101,16 +115,16 @@ export const AIChat = ({ onClose }: AIChatProps) => {
               </div>
               <h2 className="font-bold text-2xl mb-3">Hey there!</h2>
               <p className="text-muted-foreground text-base max-w-sm mb-8">
-                I'm Nova, your AI companion. Ask me anything about Novagram, get help, or just have a chat!
+                I'm Nova, your AI companion. Ask me anything — I can answer questions, analyze photos, help with tasks, and more!
               </p>
               
               {/* Quick suggestions */}
               <div className="flex flex-wrap gap-2 justify-center max-w-md">
                 {[
-                  "How do I post a story?",
-                  "What's new in Novagram?",
-                  "Help me find friends",
-                  "Tell me a fun fact"
+                  "What's the weather like?",
+                  "Tell me a fun fact",
+                  "Help me write a caption",
+                  "Explain quantum physics"
                 ].map((suggestion, i) => (
                   <button
                     key={i}
@@ -157,13 +171,38 @@ export const AIChat = ({ onClose }: AIChatProps) => {
 
       {/* Input - Fixed at bottom for mobile */}
       <div className="relative z-10 border-t border-border/50 bg-background/95 backdrop-blur-lg pb-safe">
+        {/* Image preview above input */}
+        {selectedImage && (
+          <div className="px-4 pt-3 max-w-3xl mx-auto">
+            <div className="relative inline-block">
+              <img src={selectedImage} alt="Upload preview" className="h-20 w-20 rounded-xl object-cover border border-border/50" />
+              <button
+                onClick={() => { setSelectedImage(null); setSelectedImageFile(null); }}
+                className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-destructive flex items-center justify-center"
+              >
+                <X className="w-3 h-3 text-destructive-foreground" />
+              </button>
+            </div>
+          </div>
+        )}
         <form onSubmit={handleSubmit} className="p-3 sm:p-4 max-w-3xl mx-auto">
           <div className="flex gap-2 sm:gap-3 items-center">
+            {/* Image upload button */}
+            <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => fileInputRef.current?.click()}
+              className="h-11 w-11 rounded-2xl flex-shrink-0 text-muted-foreground hover:text-foreground transition-all duration-200 hover:scale-110"
+            >
+              <ImagePlus className="w-5 h-5" />
+            </Button>
             <div className="flex-1 relative">
               <Input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Message Nova..."
+                placeholder="Ask me anything..."
                 className="h-11 sm:h-12 rounded-2xl pl-4 sm:pl-5 pr-10 sm:pr-12 bg-secondary/50 border-border/50 focus:bg-secondary/80 transition-colors text-base"
                 disabled={isLoading}
               />
@@ -173,7 +212,7 @@ export const AIChat = ({ onClose }: AIChatProps) => {
             </div>
             <Button 
               type="submit" 
-              disabled={isLoading || !input.trim()} 
+              disabled={isLoading || (!input.trim() && !selectedImage)} 
               size="icon"
               className="h-11 w-11 sm:h-12 sm:w-12 rounded-2xl bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg flex-shrink-0"
             >
@@ -210,7 +249,7 @@ const MessageBubble = ({ message, isLatest }: { message: Message; isLatest: bool
       </Avatar>
       <div
         className={cn(
-          'max-w-[75%] rounded-2xl px-4 py-3 shadow-sm',
+          'max-w-[75%] rounded-2xl px-4 py-3 shadow-sm space-y-2',
           isUser
             ? 'bg-gradient-to-r from-primary to-accent text-primary-foreground rounded-tr-md'
             : 'bg-secondary/50 rounded-tl-md',
@@ -222,6 +261,9 @@ const MessageBubble = ({ message, isLatest }: { message: Message; isLatest: bool
             <AlertTriangle className="w-3 h-3" />
             <span>Content reported</span>
           </div>
+        )}
+        {message.imageUrl && (
+          <img src={message.imageUrl} alt="Uploaded" className="rounded-xl max-w-full max-h-48 object-cover" />
         )}
         <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
       </div>

@@ -79,7 +79,7 @@ serve(async (req) => {
       return validationErrorResponse(validation.errors);
     }
 
-    const { message, userId } = validation.sanitizedData as { message: string; userId: string };
+    const { message, userId, imageDataUrl } = validation.sanitizedData as { message: string; userId: string; imageDataUrl?: string };
 
     // Check rate limit
     const rateLimit = await checkRateLimit(req, 'ai-chat', userId);
@@ -87,7 +87,6 @@ serve(async (req) => {
       return rateLimitResponse(rateLimit.retryAfter!);
     }
 
-    // Get environment variables (never hardcoded)
     const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -132,6 +131,13 @@ serve(async (req) => {
       );
     }
 
+    // Build user message content - supports both text and image
+    const userContent: any[] = [];
+    if (imageDataUrl) {
+      userContent.push({ type: 'image_url', image_url: { url: imageDataUrl } });
+    }
+    userContent.push({ type: 'text', text: message });
+
     // Call Lovable AI Gateway
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -144,21 +150,11 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `You are Nova, a friendly and helpful AI assistant for Novagram - a social media platform similar to Instagram. 
-            
-You help users with:
-- Understanding how to use the platform features
-- Tips for creating great content
-- Answering questions about privacy and security
-- General social media advice
-- Being a friendly companion to chat with
-
-Keep responses concise, friendly, and helpful. Use emojis occasionally to keep the tone light and engaging.
-If users ask about inappropriate topics, politely redirect the conversation.`
+            content: `You are Nova, a helpful and knowledgeable AI assistant for Novagram. You can answer ANY question on any topic - science, history, math, coding, creative writing, general knowledge, and more. You also analyze images when provided. Be friendly, accurate, and helpful. Use emojis occasionally to keep the tone light.`
           },
-          { role: 'user', content: message }
+          { role: 'user', content: imageDataUrl ? userContent : message }
         ],
-        max_tokens: 500,
+        max_tokens: 1000,
         temperature: 0.7
       }),
     });
