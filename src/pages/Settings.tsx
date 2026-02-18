@@ -417,6 +417,17 @@ const Settings = () => {
               rightElement={null}
             />
           </SettingSection>
+
+          {/* Gama branding footer - like Instagram shows Meta */}
+          <div className="flex flex-col items-center gap-2 py-6 animate-fade-in">
+            <div className="flex items-center gap-1.5">
+              <div className="w-6 h-6 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                <span className="text-[10px] font-bold text-primary-foreground">G</span>
+              </div>
+              <span className="text-sm font-semibold text-muted-foreground tracking-wide">Gama</span>
+            </div>
+            <span className="text-xs text-muted-foreground/60">Version 4.11.2007</span>
+          </div>
         </div>
       </div>
 

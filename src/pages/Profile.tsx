@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useParams, Navigate, Link, useNavigate } from 'react-router-dom';
-import { Grid3X3, Bookmark, LogOut, UserPlus, UserCheck, MessageCircle, Flag, Ban, MoreHorizontal, Settings, Lock, Clock, UserX } from 'lucide-react';
+import { Grid3X3, Bookmark, LogOut, UserPlus, UserCheck, MessageCircle, Flag, Ban, MoreHorizontal, Settings, Lock, Clock, UserX, X } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 import PullToRefresh from '@/components/posts/PullToRefresh';
 import { useAuth } from '@/hooks/useAuth';
@@ -11,6 +11,7 @@ import { useIsBlocked, useToggleBlock } from '@/hooks/useUserModeration';
 import { useSavedPosts } from '@/hooks/useSavedPosts';
 import { useFollowRequests } from '@/hooks/useFollowRequests';
 import { useUserVerificationStatus } from '@/hooks/useVerification';
+import { useStories } from '@/hooks/useStories';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -44,6 +45,7 @@ const Profile = () => {
   const [followersOpen, setFollowersOpen] = useState(false);
   const [followingOpen, setFollowingOpen] = useState(false);
   const [followRequestsOpen, setFollowRequestsOpen] = useState(false);
+  const [photoViewerOpen, setPhotoViewerOpen] = useState(false);
   
   // If no username in URL, show current user's profile
   const targetUsername = username || currentUserProfile?.username;
@@ -58,9 +60,13 @@ const Profile = () => {
   const { data: hasPendingRequest } = useHasPendingRequest(profile?.id);
   const { receivedRequests } = useFollowRequests();
   const { isVerified } = useUserVerificationStatus(profile?.id);
+  const { data: allStories } = useStories();
   const toggleFollow = useToggleFollow();
   const toggleBlock = useToggleBlock();
   const { savedPosts, isLoading: savedLoading } = useSavedPosts();
+
+  // Check if this profile has active stories
+  const hasActiveStory = allStories?.some(s => s.profiles?.id === profile?.id) ?? false;
 
   const isOwnProfile = user?.id === profile?.id;
 
@@ -199,13 +205,23 @@ const Profile = () => {
           {/* Profile Info */}
           <div className="p-6 animate-slide-up">
             <div className="flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-12">
-              {/* Avatar */}
-              <div className="story-ring p-1 transition-all duration-500 hover:scale-110 cursor-pointer">
-                <Avatar className="w-24 h-24 md:w-36 md:h-36 border-4 border-background">
-                  <AvatarImage src={profile.avatar_url || ''} alt={profile.username} />
-                <AvatarFallback className="text-2xl">{profile.username[0].toUpperCase()}</AvatarFallback>
-              </Avatar>
-            </div>
+              {/* Avatar - Clickable with story ring when has stories */}
+              <button
+                onClick={() => setPhotoViewerOpen(true)}
+                className={cn(
+                  "relative p-1 rounded-full transition-all duration-500 hover:scale-105 active:scale-95 cursor-pointer",
+                  hasActiveStory
+                    ? "bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 p-[3px]"
+                    : "p-0"
+                )}
+              >
+                <div className={cn(hasActiveStory ? "bg-background p-[2px] rounded-full" : "")}>
+                  <Avatar className="w-24 h-24 md:w-36 md:h-36">
+                    <AvatarImage src={profile.avatar_url || ''} alt={profile.username} />
+                    <AvatarFallback className="text-2xl">{profile.username[0].toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                </div>
+              </button>
 
             {/* Info */}
             <div className="flex-1 text-center md:text-left animate-slide-up stagger-1">
@@ -521,6 +537,46 @@ const Profile = () => {
         )}
         </div>
       </PullToRefresh>
+
+      {/* Profile Photo Viewer - Full screen with blur */}
+      {photoViewerOpen && profile?.avatar_url && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center animate-fade-in"
+          onClick={() => setPhotoViewerOpen(false)}
+        >
+          {/* Blurred background */}
+          <div
+            className="absolute inset-0 bg-cover bg-center"
+            style={{
+              backgroundImage: `url(${profile.avatar_url})`,
+              filter: 'blur(40px)',
+              transform: 'scale(1.1)',
+              opacity: 0.7,
+            }}
+          />
+          <div className="absolute inset-0 bg-background/50" />
+          
+          {/* Close button */}
+          <button
+            className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-background/80 flex items-center justify-center hover:bg-background transition-colors"
+            onClick={() => setPhotoViewerOpen(false)}
+          >
+            <X className="w-5 h-5" />
+          </button>
+
+          {/* Photo */}
+          <div
+            className="relative z-10 w-72 h-72 md:w-96 md:h-96 rounded-full overflow-hidden shadow-2xl border-4 border-white/20 animate-scale-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={profile.avatar_url}
+              alt={profile.username}
+              className="w-full h-full object-cover"
+            />
+          </div>
+        </div>
+      )}
     </MainLayout>
   );
 };

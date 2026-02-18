@@ -8,6 +8,7 @@ export interface Message {
   content: string;
   timestamp: Date;
   reported?: boolean;
+  imageUrl?: string;
 }
 
 export const useAIChat = () => {
@@ -15,14 +16,16 @@ export const useAIChat = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const sendMessage = async (content: string) => {
-    if (!content.trim() || isLoading) return;
+  const sendMessage = async (content: string, imageDataUrl?: string) => {
+    if (!content.trim() && !imageDataUrl) return;
+    if (isLoading) return;
 
     const userMessage: Message = {
       id: crypto.randomUUID(),
       role: 'user',
-      content: content.trim(),
+      content: content.trim() || '📷 Image',
       timestamp: new Date(),
+      imageUrl: imageDataUrl,
     };
 
     setMessages(prev => [...prev, userMessage]);
@@ -31,8 +34,9 @@ export const useAIChat = () => {
     try {
       const { data, error } = await supabase.functions.invoke('ai-chat', {
         body: { 
-          message: content.trim(),
-          userId: user?.id 
+          message: content.trim() || 'Please analyze this image.',
+          userId: user?.id,
+          imageDataUrl,
         },
       });
 
