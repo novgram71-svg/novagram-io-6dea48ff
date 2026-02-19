@@ -24,7 +24,7 @@ const MobileNav = () => {
       
       <div className="flex items-center justify-around py-2 px-2 relative">
         {navItems.map((item, index) => {
-          const isActive = location.pathname === item.path;
+          const isActive = item.path === '/' ? location.pathname === '/' : location.pathname === item.path;
           const Icon = item.icon;
 
           return (
