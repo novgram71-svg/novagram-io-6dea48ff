@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Home, Search, PlusSquare, MessageCircle, User, Heart, LogOut, Shield, Compass } from 'lucide-react';
 import Logo3D from '@/components/ui/Logo3D';
 import { Link, useLocation } from 'react-router-dom';
@@ -7,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin } from '@/hooks/useAdmin';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useSidebar } from '@/contexts/SidebarContext';
 
 const navItems = [
   { icon: Home, path: '/', label: 'Home', activeColor: 'text-primary' },
@@ -22,10 +22,15 @@ const DesktopSidebar = () => {
   const location = useLocation();
   const { user, profile, signOut } = useAuth();
   const { data: isAdmin } = useIsAdmin();
-  const [expanded, setExpanded] = useState(false);
+  const { expanded, setExpanded } = useSidebar();
 
   const handleSignOut = async () => {
     await signOut();
+  };
+
+  const isItemActive = (path: string) => {
+    if (path === '/') return location.pathname === '/';
+    return location.pathname === path;
   };
 
   return (
@@ -57,7 +62,7 @@ const DesktopSidebar = () => {
         <nav className="flex-1 mt-2 px-2">
           <ul className="space-y-1">
             {navItems.map((item, index) => {
-              const isActive = location.pathname === item.path;
+              const isActive = isItemActive(item.path);
               const Icon = item.icon;
 
               return (
