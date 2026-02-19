@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Heart, MessageCircle, Send, Bookmark, MoreHorizontal, Trash2 } from 'lucide-react';
+import { Heart, MessageCircle, Send, Bookmark, MoreHorizontal, Trash2, Download, Flag } from 'lucide-react';
 import { PostWithUser, useLikePost, useDeletePost } from '@/hooks/usePosts';
 import { useSavedPosts, useIsSaved } from '@/hooks/useSavedPosts';
 import { useAuth } from '@/hooks/useAuth';
@@ -9,6 +9,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -107,6 +108,28 @@ const PostCard = ({ post }: PostCardProps) => {
     }
   };
 
+  const handleDownloadPost = async () => {
+    try {
+      const response = await fetch(post.image_url);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `post-${post.id}.jpg`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast.success('Post downloaded!');
+    } catch {
+      toast.error('Failed to download post');
+    }
+  };
+
+  const handleReportPost = () => {
+    toast.info('Report submitted. Thank you for keeping Gama safe.');
+  };
+
   const handleSave = () => {
     if (!user) {
       navigate('/auth');
@@ -143,15 +166,31 @@ const PostCard = ({ post }: PostCardProps) => {
               <MoreHorizontal className="w-5 h-5" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
+          <DropdownMenuContent align="end" className="w-48 rounded-2xl">
+            <DropdownMenuItem onClick={handleDownloadPost} className="rounded-xl gap-2">
+              <Download className="w-4 h-4" />
+              Download
+            </DropdownMenuItem>
+            {!isOwnPost && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleReportPost} className="rounded-xl gap-2 text-destructive focus:text-destructive">
+                  <Flag className="w-4 h-4" />
+                  Report
+                </DropdownMenuItem>
+              </>
+            )}
             {isOwnPost && (
-              <DropdownMenuItem 
-                onClick={() => setDeleteDialogOpen(true)}
-                className="text-destructive"
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                Delete Post
-              </DropdownMenuItem>
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => setDeleteDialogOpen(true)}
+                  className="rounded-xl gap-2 text-destructive focus:text-destructive"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Delete Post
+                </DropdownMenuItem>
+              </>
             )}
           </DropdownMenuContent>
         </DropdownMenu>

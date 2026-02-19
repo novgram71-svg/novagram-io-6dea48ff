@@ -13,7 +13,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
   return (
     <div className="min-h-screen bg-background">
       <DesktopSidebar />
-      <main className="md:ml-64 pb-20 md:pb-0">
+      <main className="md:ml-[72px] pb-20 md:pb-0 transition-[margin] duration-300">
         {children}
       </main>
       {!isViewingStory && <MobileNav />}
