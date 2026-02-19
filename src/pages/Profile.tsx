@@ -408,25 +408,26 @@ const Profile = () => {
               ) : posts && posts.length > 0 ? (
                 <div className="grid grid-cols-3 gap-1 md:gap-2">
                   {posts.map((post, index) => (
-                    <button
+                    <Link
                       key={post.id}
-                      className="aspect-square relative group overflow-hidden animate-fade-in"
+                      to={`/post/${post.id}`}
+                      className="aspect-square relative group overflow-hidden animate-fade-in rounded-sm md:rounded-lg"
                       style={{ animationDelay: `${index * 50}ms` }}
                     >
                       <img
                         src={post.image_url}
                         alt=""
-                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                       />
-                      <div className="absolute inset-0 bg-background/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
-                        <span className="flex items-center gap-1 text-foreground font-semibold">
+                      <div className="absolute inset-0 bg-background/60 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center gap-4 backdrop-blur-[2px]">
+                        <span className="flex items-center gap-1 text-foreground font-semibold text-sm">
                           ❤️ {post.likes.length}
                         </span>
-                        <span className="flex items-center gap-1 text-foreground font-semibold">
+                        <span className="flex items-center gap-1 text-foreground font-semibold text-sm">
                           💬 {post.comments.length}
                         </span>
                       </div>
-                    </button>
+                    </Link>
                   ))}
                 </div>
               ) : (

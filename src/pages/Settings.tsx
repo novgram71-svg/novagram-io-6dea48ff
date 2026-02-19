@@ -419,14 +419,24 @@ const Settings = () => {
           </SettingSection>
 
           {/* Gama branding footer - like Instagram shows Meta */}
-          <div className="flex flex-col items-center gap-2 py-6 animate-fade-in">
-            <div className="flex items-center gap-1.5">
-              <div className="w-6 h-6 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                <span className="text-[10px] font-bold text-primary-foreground">G</span>
+          <div className="flex flex-col items-center gap-3 py-8 animate-fade-in">
+            <div className="relative group cursor-default">
+              {/* Glow ring */}
+              <div className="absolute -inset-3 rounded-full bg-gradient-to-tr from-primary/30 via-accent/20 to-primary/30 opacity-0 group-hover:opacity-100 blur-xl transition-all duration-700" />
+              {/* Icon container */}
+              <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-primary via-accent to-primary/80 flex items-center justify-center shadow-xl shadow-primary/30 group-hover:shadow-primary/50 transition-all duration-500 group-hover:scale-110 group-hover:rotate-3">
+                {/* Inner shine */}
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-tr from-white/20 to-transparent" />
+                <span className="text-2xl font-black text-primary-foreground relative z-10 tracking-tight">G</span>
               </div>
-              <span className="text-sm font-semibold text-muted-foreground tracking-wide">Gama</span>
             </div>
-            <span className="text-xs text-muted-foreground/60">Version 4.11.2007</span>
+            <div className="flex flex-col items-center gap-0.5">
+              <span className="text-base font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent tracking-wider">Gama</span>
+              <span className="text-[11px] text-muted-foreground/50 tracking-widest uppercase font-medium">Version 4.11.2007</span>
+            </div>
+            <p className="text-[11px] text-muted-foreground/40 text-center max-w-[200px] leading-relaxed">
+              Made with ♥ by Gama
+            </p>
           </div>
         </div>
       </div>
