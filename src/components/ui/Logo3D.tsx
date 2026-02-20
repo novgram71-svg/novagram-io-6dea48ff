@@ -61,13 +61,13 @@ const Logo3D = ({ size = 'md', showText = true, className }: Logo3DProps) => {
           </div>
           {/* Glass overlay */}
           <div className="absolute inset-0 rounded-xl bg-gradient-to-b from-white/20 via-white/5 to-transparent" />
-          {/* G letter */}
+          {/* N letter */}
           <span className={cn(
             "text-primary-foreground relative z-10 font-black drop-shadow-lg transition-all duration-500 group-hover:scale-110",
             letterSizes[size]
           )}
           style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }}>
-            G
+            N
           </span>
         </div>
       </div>
@@ -76,10 +76,10 @@ const Logo3D = ({ size = 'md', showText = true, className }: Logo3DProps) => {
       {showText && (
         <h1 className={cn("font-bold tracking-tight relative", textSizes[size])}>
           <span className="bg-gradient-to-r from-primary via-accent via-60% to-primary bg-[length:200%_auto] animate-text-shimmer bg-clip-text text-transparent">
-            Gama
+            Novagram
           </span>
           <span className="absolute inset-0 bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent blur-sm opacity-30 animate-pulse-soft">
-            Gama
+            Novagram
           </span>
         </h1>
       )}
