@@ -44,6 +44,48 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_user_profiles: {
+        Row: {
+          age: string | null
+          conversation_summary: string | null
+          created_at: string
+          id: string
+          interests: string[] | null
+          last_updated: string
+          location: string | null
+          name: string | null
+          occupation: string | null
+          personality_notes: string | null
+          user_id: string
+        }
+        Insert: {
+          age?: string | null
+          conversation_summary?: string | null
+          created_at?: string
+          id?: string
+          interests?: string[] | null
+          last_updated?: string
+          location?: string | null
+          name?: string | null
+          occupation?: string | null
+          personality_notes?: string | null
+          user_id: string
+        }
+        Update: {
+          age?: string | null
+          conversation_summary?: string | null
+          created_at?: string
+          id?: string
+          interests?: string[] | null
+          last_updated?: string
+          location?: string | null
+          name?: string | null
+          occupation?: string | null
+          personality_notes?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       app_reports: {
         Row: {
           created_at: string

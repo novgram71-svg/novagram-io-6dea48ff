@@ -9,6 +9,7 @@ export interface Message {
   timestamp: Date;
   reported?: boolean;
   imageUrl?: string;
+  generatedImageUrl?: string;
 }
 
 export const useAIChat = () => {
@@ -48,6 +49,7 @@ export const useAIChat = () => {
         content: data.response,
         timestamp: new Date(),
         reported: data.reported,
+        generatedImageUrl: data.generatedImageUrl,
       };
 
       setMessages(prev => [...prev, assistantMessage]);
