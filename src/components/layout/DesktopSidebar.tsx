@@ -53,7 +53,7 @@ const DesktopSidebar = () => {
             <Logo3D size="md" />
           ) : (
             <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg shadow-primary/30 flex-shrink-0">
-              <span className="text-sm font-black text-primary-foreground">G</span>
+              <span className="text-sm font-black text-primary-foreground">N</span>
             </div>
           )}
         </Link>
@@ -72,25 +72,33 @@ const DesktopSidebar = () => {
                       <Link
                         to={item.path}
                         className={cn(
-                          'flex items-center gap-3 rounded-xl px-3 py-3 transition-all duration-300 group relative overflow-hidden',
-                          'hover:bg-sidebar-accent/50',
-                          isActive && 'bg-gradient-to-r from-primary/10 to-accent/5'
+                          'flex items-center gap-3 rounded-xl px-3 py-3 relative overflow-hidden',
+                          'transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
+                          isActive
+                            ? 'bg-gradient-to-r from-primary/15 to-accent/8'
+                            : 'hover:bg-transparent'
                         )}
                       >
+                        {/* Active glow - only shows for active item */}
                         <div className={cn(
-                          "absolute inset-0 bg-gradient-to-r from-primary/10 to-accent/5 opacity-0 transition-opacity duration-300 rounded-xl",
-                          isActive && "opacity-100"
+                          "absolute inset-0 rounded-xl transition-opacity duration-300",
+                          "bg-gradient-to-r from-primary/10 to-accent/5",
+                          isActive ? "opacity-100" : "opacity-0"
                         )} />
                         <Icon
                           className={cn(
-                            'w-6 h-6 transition-all duration-300 relative z-10 group-hover:scale-110 flex-shrink-0',
-                            isActive ? item.activeColor : 'text-muted-foreground group-hover:text-foreground'
+                            'w-6 h-6 relative z-10 flex-shrink-0',
+                            'transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
+                            isActive
+                              ? `${item.activeColor} scale-110`
+                              : 'text-muted-foreground'
                           )}
                           fill={isActive ? 'currentColor' : 'none'}
                           strokeWidth={isActive ? 2.5 : 2}
                         />
                         <span className={cn(
-                          "font-medium relative z-10 transition-all duration-300 whitespace-nowrap",
+                          "font-medium relative z-10 whitespace-nowrap",
+                          "transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]",
                           isActive ? item.activeColor : 'text-foreground/80',
                           expanded ? 'opacity-100 translate-x-0 w-auto' : 'opacity-0 -translate-x-2 w-0 overflow-hidden'
                         )}>
@@ -111,7 +119,6 @@ const DesktopSidebar = () => {
               );
             })}
 
-            {/* Admin Link */}
             {isAdmin && (
               <li className="animate-slide-up opacity-0 [animation-fill-mode:forwards]" style={{ animationDelay: '350ms' }}>
                 <Tooltip>
@@ -119,25 +126,32 @@ const DesktopSidebar = () => {
                     <Link
                       to="/admin"
                       className={cn(
-                        'flex items-center gap-3 rounded-xl px-3 py-3 transition-all duration-300 group relative overflow-hidden',
-                        'hover:bg-sidebar-accent/50',
-                        location.pathname === '/admin' && 'bg-gradient-to-r from-primary/20 to-accent/10'
+                        'flex items-center gap-3 rounded-xl px-3 py-3 relative overflow-hidden',
+                        'transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
+                        location.pathname === '/admin'
+                          ? 'bg-gradient-to-r from-primary/15 to-accent/8'
+                          : 'hover:bg-transparent'
                       )}
                     >
                       <div className={cn(
-                        "absolute inset-0 bg-gradient-to-r from-primary/20 to-accent/10 opacity-0 transition-opacity duration-300 rounded-xl",
-                        location.pathname === '/admin' && "opacity-100"
+                        "absolute inset-0 rounded-xl transition-opacity duration-300",
+                        "bg-gradient-to-r from-primary/20 to-accent/10",
+                        location.pathname === '/admin' ? "opacity-100" : "opacity-0"
                       )} />
                       <Shield
                         className={cn(
-                          'w-6 h-6 transition-all duration-300 relative z-10 group-hover:scale-110 flex-shrink-0',
-                          location.pathname === '/admin' ? 'text-primary' : 'text-primary/70 group-hover:text-primary'
+                          'w-6 h-6 relative z-10 flex-shrink-0',
+                          'transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
+                          location.pathname === '/admin'
+                            ? 'text-primary scale-110'
+                            : 'text-primary/70'
                         )}
                         fill={location.pathname === '/admin' ? 'currentColor' : 'none'}
                       />
                       <span className={cn(
-                        "font-medium relative z-10 transition-all duration-300 whitespace-nowrap",
-                        location.pathname === '/admin' ? 'text-primary' : 'text-primary/70 group-hover:text-primary',
+                        "font-medium relative z-10 whitespace-nowrap",
+                        "transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]",
+                        location.pathname === '/admin' ? 'text-primary' : 'text-primary/70',
                         expanded ? 'opacity-100 translate-x-0 w-auto' : 'opacity-0 -translate-x-2 w-0 overflow-hidden'
                       )}>
                         Admin
