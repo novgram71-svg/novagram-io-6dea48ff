@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { Users, Image, MessageSquare, Download, ChevronRight, AlertTriangle, Ban, CheckCircle, XCircle, Bot, Eye, KeyRound, Loader2, FileWarning, BadgeCheck, Trash2 } from 'lucide-react';
+import { Users, Image, MessageSquare, Download, ChevronRight, AlertTriangle, Ban, CheckCircle, XCircle, Bot, Eye, KeyRound, Loader2, FileWarning, BadgeCheck, Trash2, BrainCircuit, MapPin, Briefcase, Heart } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin, useAllUsers, useAllPosts, useConversationPartners, useConversation, useAdminDeletePost } from '@/hooks/useAdmin';
@@ -9,6 +9,8 @@ import { useAIAbuseReports } from '@/hooks/useAIAbuseReports';
 import { usePasswordResetRequests } from '@/hooks/usePasswordReset';
 import { useAllAppReports, useUpdateAppReportStatus } from '@/hooks/useAppReports';
 import { useAdminGrantBadge } from '@/hooks/useVerification';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -52,6 +54,18 @@ const Admin = () => {
   const unbanUser = useUnbanUser();
   const grantBadge = useAdminGrantBadge();
   const deletePost = useAdminDeletePost();
+
+  const { data: aiProfiles, isLoading: aiProfilesLoading } = useQuery({
+    queryKey: ['admin-ai-profiles'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('ai_user_profiles')
+        .select('*, profiles!ai_user_profiles_user_id_fkey(username, avatar_url)')
+        .order('last_updated', { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
 
   const selectedUserProfile = users?.find(u => u.id === selectedUser);
   const selectedPartnerProfile = chatPartners?.find((p: any) => p.id === selectedChatPartner);
@@ -220,6 +234,15 @@ const Admin = () => {
                 </span>
               )}
             </TabsTrigger>
+            <TabsTrigger value="nova-profiles" className="gap-2">
+              <BrainCircuit className="w-4 h-4" />
+              Nova Profiles
+              {aiProfiles && aiProfiles.length > 0 && (
+                <span className="ml-1 bg-primary/20 text-primary text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  {aiProfiles.length}
+                </span>
+              )}
+            </TabsTrigger>
           </TabsList>
 
           {/* Mobile Tabs - Scrollable horizontal list */}
@@ -264,6 +287,9 @@ const Admin = () => {
                   {pendingAppReportsCount}
                 </span>
               )}
+            </TabsTrigger>
+            <TabsTrigger value="nova-profiles" className="flex-shrink-0 px-3 py-2 text-xs">
+              <BrainCircuit className="w-4 h-4" />
             </TabsTrigger>
           </TabsList>
 
@@ -1017,6 +1043,100 @@ const Admin = () => {
                         <p>No app issue reports</p>
                         <p className="text-sm mt-2">User-submitted app issues will appear here</p>
                       </div>
+                    )}
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Nova AI Profiles Tab */}
+          <TabsContent value="nova-profiles" className="animate-fade-in">
+            <Card className="rounded-2xl border-border/50 shadow-lg shadow-primary/5">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BrainCircuit className="w-5 h-5 text-primary" />
+                  Nova AI User Profiles ({aiProfiles?.length || 0})
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">Personal data Nova has learned about users through conversations</p>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-[60vh]">
+                  <div className="space-y-4">
+                    {aiProfilesLoading ? (
+                      Array.from({ length: 4 }).map((_, i) => (
+                        <Skeleton key={i} className="h-32 w-full rounded-2xl" />
+                      ))
+                    ) : aiProfiles?.length === 0 ? (
+                      <div className="text-center py-12 text-muted-foreground">
+                        <BrainCircuit className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                        <p>No user profiles collected yet.</p>
+                        <p className="text-xs mt-1">Profiles are built as users chat with Nova AI.</p>
+                      </div>
+                    ) : (
+                      aiProfiles?.map((profile: any) => (
+                        <div key={profile.id} className="bg-secondary/50 rounded-2xl p-4 border border-border/30 animate-fade-in transition-all hover:shadow-md hover:bg-secondary/70">
+                          <div className="flex items-start gap-3 mb-3">
+                            <Avatar className="w-11 h-11 ring-2 ring-primary/20">
+                              <AvatarImage src={profile.profiles?.avatar_url || ''} />
+                              <AvatarFallback className="bg-gradient-to-br from-primary/20 to-accent/20">
+                                {profile.profiles?.username?.[0]?.toUpperCase() || '?'}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1">
+                              <p className="font-semibold">{profile.profiles?.username || 'Unknown'}</p>
+                              {profile.name && <p className="text-sm text-muted-foreground">"{profile.name}"</p>}
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                Updated {formatDistanceToNow(new Date(profile.last_updated))} ago
+                              </p>
+                            </div>
+                          </div>
+                          
+                          {profile.conversation_summary && (
+                            <div className="mb-3 px-3 py-2 bg-primary/5 border border-primary/10 rounded-xl">
+                              <p className="text-sm font-medium text-primary mb-0.5">Summary</p>
+                              <p className="text-sm">{profile.conversation_summary}</p>
+                            </div>
+                          )}
+
+                          <div className="grid grid-cols-2 gap-2 text-xs">
+                            {profile.age && (
+                              <div className="flex items-center gap-1.5 text-muted-foreground">
+                                <span className="text-base">🎂</span>
+                                <span>Age: <span className="text-foreground font-medium">{profile.age}</span></span>
+                              </div>
+                            )}
+                            {profile.location && (
+                              <div className="flex items-center gap-1.5 text-muted-foreground">
+                                <MapPin className="w-3 h-3" />
+                                <span className="text-foreground font-medium">{profile.location}</span>
+                              </div>
+                            )}
+                            {profile.occupation && (
+                              <div className="flex items-center gap-1.5 text-muted-foreground">
+                                <Briefcase className="w-3 h-3" />
+                                <span className="text-foreground font-medium">{profile.occupation}</span>
+                              </div>
+                            )}
+                          </div>
+
+                          {profile.interests?.length > 0 && (
+                            <div className="mt-2 flex flex-wrap gap-1">
+                              {profile.interests.map((interest: string, i: number) => (
+                                <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 bg-accent/10 text-accent text-xs rounded-full border border-accent/20">
+                                  <Heart className="w-2.5 h-2.5" /> {interest}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+
+                          {profile.personality_notes && (
+                            <p className="mt-2 text-xs text-muted-foreground italic border-l-2 border-primary/30 pl-2">
+                              {profile.personality_notes}
+                            </p>
+                          )}
+                        </div>
+                      ))
                     )}
                   </div>
                 </ScrollArea>
