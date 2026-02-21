@@ -55,6 +55,111 @@ function isImageGenerationRequest(message: string): boolean {
   return imgPatterns.some(p => p.test(message));
 }
 
+// Detect admin commands in AI messages
+function detectAdminCommand(message: string): { command: string | null; target: string | null } {
+  const banMatch = message.match(/\b(?:ban|block)\s+(?:user\s+)?@?(\w+)/i);
+  if (banMatch) return { command: 'ban', target: banMatch[1] };
+
+  const unbanMatch = message.match(/\b(?:unban|unblock)\s+(?:user\s+)?@?(\w+)/i);
+  if (unbanMatch) return { command: 'unban', target: unbanMatch[1] };
+
+  const verifyMatch = message.match(/\b(?:verify|give\s+badge|grant\s+badge|give\s+verified)\s+(?:to\s+)?(?:user\s+)?@?(\w+)/i);
+  if (verifyMatch) return { command: 'verify', target: verifyMatch[1] };
+
+  const removePostMatch = message.match(/\b(?:remove|delete)\s+post\s+([a-f0-9-]{36})/i);
+  if (removePostMatch) return { command: 'remove_post', target: removePostMatch[1] };
+
+  return { command: null, target: null };
+}
+
+// Execute admin command securely (server-side role check)
+async function executeAdminCommand(
+  supabase: any,
+  userId: string,
+  command: string,
+  target: string
+): Promise<{ success: boolean; message: string }> {
+  // CRITICAL: Server-side admin check
+  const { data: roleData } = await supabase
+    .from('user_roles')
+    .select('role')
+    .eq('user_id', userId)
+    .eq('role', 'admin')
+    .maybeSingle();
+
+  if (!roleData) {
+    return { success: false, message: '⛔ Access denied. Only admins can execute commands.' };
+  }
+
+  if (command === 'ban') {
+    const { data: targetUser } = await supabase
+      .from('profiles')
+      .select('id, username')
+      .ilike('username', target)
+      .maybeSingle();
+    if (!targetUser) return { success: false, message: `❌ User @${target} not found.` };
+    if (targetUser.id === userId) return { success: false, message: `❌ You cannot ban yourself.` };
+
+    const { data: existing } = await supabase.from('banned_users').select('id').eq('user_id', targetUser.id).maybeSingle();
+    if (existing) return { success: false, message: `⚠️ @${target} is already banned.` };
+
+    const { error } = await supabase.from('banned_users').insert({
+      user_id: targetUser.id,
+      banned_by: userId,
+      reason: 'Banned via Nova AI admin command'
+    });
+    if (error) return { success: false, message: `❌ Failed to ban: ${error.message}` };
+    return { success: true, message: `✅ @${target} has been banned successfully.` };
+  }
+
+  if (command === 'unban') {
+    const { data: targetUser } = await supabase
+      .from('profiles')
+      .select('id, username')
+      .ilike('username', target)
+      .maybeSingle();
+    if (!targetUser) return { success: false, message: `❌ User @${target} not found.` };
+
+    const { error } = await supabase.from('banned_users').delete().eq('user_id', targetUser.id);
+    if (error) return { success: false, message: `❌ Failed to unban: ${error.message}` };
+    return { success: true, message: `✅ @${target} has been unbanned successfully.` };
+  }
+
+  if (command === 'verify') {
+    const { data: targetUser } = await supabase
+      .from('profiles')
+      .select('id, username')
+      .ilike('username', target)
+      .maybeSingle();
+    if (!targetUser) return { success: false, message: `❌ User @${target} not found.` };
+
+    const { error } = await supabase.from('user_verification').update({
+      is_verified: true,
+      admin_granted: true,
+      verified_until: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(), // 2 months
+    }).eq('user_id', targetUser.id);
+    if (error) return { success: false, message: `❌ Failed to verify: ${error.message}` };
+
+    await supabase.from('notifications').insert({
+      user_id: targetUser.id,
+      actor_id: userId,
+      type: 'verification_gift'
+    });
+    return { success: true, message: `✅ @${target} has been given the Nova verified badge (2 months).` };
+  }
+
+  if (command === 'remove_post') {
+    const { data: post } = await supabase.from('posts').select('id, user_id').eq('id', target).maybeSingle();
+    if (!post) return { success: false, message: `❌ Post not found.` };
+
+    const { error } = await supabase.from('posts').delete().eq('id', target);
+    if (error) return { success: false, message: `❌ Failed to delete post: ${error.message}` };
+    return { success: true, message: `✅ Post has been deleted successfully.` };
+  }
+
+  return { success: false, message: `❌ Unknown command.` };
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -110,26 +215,38 @@ serve(async (req) => {
       }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    // Fetch existing user memory profile
+    // Fetch existing user memory profile + check admin status
     let userMemory = '';
     let currentProfile: any = null;
+    let isAdmin = false;
     if (userId) {
-      const { data: profileData } = await supabase
-        .from('ai_user_profiles')
-        .select('*')
-        .eq('user_id', userId)
-        .single();
-      currentProfile = profileData;
-      if (profileData) {
+      const [profileResult, roleResult] = await Promise.all([
+        supabase.from('ai_user_profiles').select('*').eq('user_id', userId).single(),
+        supabase.from('user_roles').select('role').eq('user_id', userId).eq('role', 'admin').maybeSingle()
+      ]);
+      currentProfile = profileResult.data;
+      isAdmin = !!roleResult.data;
+      if (currentProfile) {
         const parts = [];
-        if (profileData.name) parts.push(`Name: ${profileData.name}`);
-        if (profileData.age) parts.push(`Age: ${profileData.age}`);
-        if (profileData.location) parts.push(`Location: ${profileData.location}`);
-        if (profileData.occupation) parts.push(`Occupation: ${profileData.occupation}`);
-        if (profileData.interests?.length) parts.push(`Interests: ${profileData.interests.join(', ')}`);
-        if (profileData.personality_notes) parts.push(`Notes: ${profileData.personality_notes}`);
+        if (currentProfile.name) parts.push(`Name: ${currentProfile.name}`);
+        if (currentProfile.age) parts.push(`Age: ${currentProfile.age}`);
+        if (currentProfile.location) parts.push(`Location: ${currentProfile.location}`);
+        if (currentProfile.occupation) parts.push(`Occupation: ${currentProfile.occupation}`);
+        if (currentProfile.interests?.length) parts.push(`Interests: ${currentProfile.interests.join(', ')}`);
+        if (currentProfile.personality_notes) parts.push(`Notes: ${currentProfile.personality_notes}`);
         if (parts.length) userMemory = `\n\nUser profile (remembered from previous chats):\n${parts.join('\n')}`;
       }
+    }
+
+    // Check for admin commands BEFORE image generation
+    const adminCmd = detectAdminCommand(message);
+    if (adminCmd.command && adminCmd.target) {
+      const result = await executeAdminCommand(supabase, userId, adminCmd.command, adminCmd.target);
+      return new Response(JSON.stringify({
+        response: result.message,
+        reported: false,
+        adminAction: true
+      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
     // Handle image generation
@@ -162,10 +279,12 @@ serve(async (req) => {
     if (imageDataUrl) userContent.push({ type: 'image_url', image_url: { url: imageDataUrl } });
     userContent.push({ type: 'text', text: message });
 
-    // System prompt with memory instructions
+    // System prompt with memory + admin instructions
+    const adminBlock = isAdmin ? `\n\nADMIN POWERS (you have admin access):\nYou can execute these commands when the user asks:\n- "ban @username" — Ban a user\n- "unban @username" — Unban a user\n- "verify @username" or "give badge to @username" — Grant Nova verified badge (2 months)\n- "remove post <post-id>" — Delete a post\nNote: These are processed automatically. If asked, tell the user the command format.` : '';
+
     const systemPrompt = `You are Nova, a friendly and knowledgeable AI assistant for Novagram — like a smart best friend who remembers things about you.
 
-You can answer ANY question on any topic, analyze images, and you genuinely care about the people you talk to.${userMemory}
+You can answer ANY question on any topic, analyze images, and you genuinely care about the people you talk to.${userMemory}${adminBlock}
 
 MEMORY INSTRUCTIONS:
 - Naturally weave in what you know about the user when relevant (e.g., "Since you're interested in photography...")
