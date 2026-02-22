@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useLoginActivity, terminateSession, terminateAllOtherSessions } from '@/hooks/useLoginActivity';
+import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Smartphone, Monitor, Globe, Clock, CheckCircle, LogOut, Loader2, Shield } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
@@ -29,6 +30,30 @@ export const LoginActivitySheet = ({ open, onOpenChange }: LoginActivitySheetPro
   const [terminatingId, setTerminatingId] = useState<string | null>(null);
   const [showLogoutAllDialog, setShowLogoutAllDialog] = useState(false);
   const [isLoggingOutAll, setIsLoggingOutAll] = useState(false);
+
+  // Real-time subscription for login activity changes
+  useEffect(() => {
+    if (!open) return;
+    
+    const channel = supabase
+      .channel('login-activity-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'login_activity',
+        },
+        () => {
+          refetch();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [open, refetch]);
 
   const getDeviceIcon = (deviceInfo: string | null) => {
     if (!deviceInfo) return <Globe className="w-5 h-5" />;
