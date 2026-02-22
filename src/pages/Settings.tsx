@@ -30,6 +30,7 @@ import {
 import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserSettings, UserSettings } from '@/hooks/useUserSettings';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
@@ -43,6 +44,7 @@ import { SavedPostsSheet } from '@/components/settings/SavedPostsSheet';
 import { LoginActivitySheet } from '@/components/settings/LoginActivitySheet';
 import { ChangePasswordSheet } from '@/components/settings/ChangePasswordSheet';
 import { ReportIssueSheet } from '@/components/settings/ReportIssueSheet';
+import { AboutSheet } from '@/components/settings/AboutSheet';
 import { VerificationSheet } from '@/components/settings/VerificationSheet';
 import { useVerification } from '@/hooks/useVerification';
 import { toast } from 'sonner';
@@ -95,6 +97,7 @@ const Settings = () => {
   const navigate = useNavigate();
   const { user, profile, signOut, loading } = useAuth();
   const { settings, isLoading: settingsLoading, updateSetting, isUpdating } = useUserSettings();
+  const { setLanguage } = useLanguage();
   const { isSupported, permission, requestPermission, pushToken } = usePushNotifications();
   const { verification } = useVerification();
   
@@ -108,6 +111,7 @@ const Settings = () => {
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   const [reportIssueOpen, setReportIssueOpen] = useState(false);
   const [verificationOpen, setVerificationOpen] = useState(false);
+  const [aboutOpen, setAboutOpen] = useState(false);
 
   const handleEnablePushNotifications = async () => {
     try {
@@ -401,8 +405,8 @@ const Settings = () => {
             <SettingItem
               icon={<Info className="w-5 h-5" />}
               label="About"
-              description="Learn more about the app"
-              onClick={() => toast.info('Novagram v1.0.0')}
+              description="App info, developer & links"
+              onClick={() => setAboutOpen(true)}
             />
           </SettingSection>
 
@@ -448,7 +452,10 @@ const Settings = () => {
         open={languageOpen} 
         onOpenChange={setLanguageOpen}
         currentLanguage={settings?.language ?? 'en'}
-        onLanguageChange={(code) => handleSettingToggle('language', code)}
+        onLanguageChange={(code) => {
+          handleSettingToggle('language', code);
+          setLanguage(code);
+        }}
       />
       <NotificationSettingsSheet
         open={notificationsOpen}
@@ -475,6 +482,10 @@ const Settings = () => {
       <VerificationSheet
         open={verificationOpen}
         onOpenChange={setVerificationOpen}
+      />
+      <AboutSheet
+        open={aboutOpen}
+        onOpenChange={setAboutOpen}
       />
     </MainLayout>
   );
