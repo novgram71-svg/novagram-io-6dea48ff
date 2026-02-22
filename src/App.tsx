@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { StoryViewerProvider } from "@/contexts/StoryViewerContext";
+import { LanguageProvider } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 // MissingInfoDialog removed - security question is now optional
 import { useNotificationListener } from "@/hooks/usePushNotifications";
@@ -81,17 +82,19 @@ const App = () => (
   <HelmetProvider>
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <StoryViewerProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <NotificationSetup>
-                <AppRoutes />
-              </NotificationSetup>
-            </BrowserRouter>
-          </TooltipProvider>
-        </StoryViewerProvider>
+        <LanguageProvider>
+          <StoryViewerProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <NotificationSetup>
+                  <AppRoutes />
+                </NotificationSetup>
+              </BrowserRouter>
+            </TooltipProvider>
+          </StoryViewerProvider>
+        </LanguageProvider>
       </AuthProvider>
     </QueryClientProvider>
   </HelmetProvider>
