@@ -3,10 +3,10 @@
  * Sends push notifications via Firebase Cloud Messaging
  * 
  * Security features:
+ * - JWT authentication required
  * - Rate limiting (50 requests per minute)
  * - Input validation and sanitization
  * - Secure API key handling (environment variables only)
- * - No sensitive data in notification payloads
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -22,12 +22,10 @@ import {
 } from "../_shared/security.ts";
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Only allow POST requests
   if (req.method !== 'POST') {
     return new Response(
       JSON.stringify({ error: 'Method not allowed' }),
@@ -36,8 +34,36 @@ serve(async (req) => {
   }
 
   try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+    // Authenticate the caller
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const callerId = claimsData.claims.sub;
+
     // Parse request body safely
-    const parseResult = await parseRequestBody(req, 20 * 1024); // 20KB max
+    const parseResult = await parseRequestBody(req, 20 * 1024);
     if (!parseResult.success) {
       return validationErrorResponse([parseResult.error!]);
     }
@@ -58,15 +84,13 @@ serve(async (req) => {
       };
 
     // Check rate limit
-    const rateLimit = await checkRateLimit(req, 'send-push-notification', userId);
+    const rateLimit = await checkRateLimit(req, 'send-push-notification', callerId);
     if (!rateLimit.allowed) {
       return rateLimitResponse(rateLimit.retryAfter!);
     }
 
     console.log('Sending push notification to user:', userId);
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const firebaseServerKey = Deno.env.get('FIREBASE_SERVER_KEY');
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -107,7 +131,6 @@ serve(async (req) => {
                 body: notificationBody,
                 icon: '/favicon.ico',
               },
-              // Sanitize data payload - only allow string values
               data: data ? Object.fromEntries(
                 Object.entries(data).filter(([_, v]) => typeof v === 'string' || typeof v === 'number')
               ) : undefined,

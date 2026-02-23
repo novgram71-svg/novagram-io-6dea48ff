@@ -17,10 +17,8 @@ interface ForgotPasswordSheetProps {
 export const ForgotPasswordSheet = ({ open, onOpenChange }: ForgotPasswordSheetProps) => {
   const [step, setStep] = useState<'email' | 'verify' | 'password' | 'success'>('email');
   const [email, setEmail] = useState('');
-  const [userId, setUserId] = useState<string | null>(null);
+  const [requestId, setRequestId] = useState<string | null>(null);
   const [verificationCode, setVerificationCode] = useState('');
-  const [generatedCode, setGeneratedCode] = useState('');
-  const [codeExpiresAt, setCodeExpiresAt] = useState(0);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -37,17 +35,6 @@ export const ForgotPasswordSheet = ({ open, onOpenChange }: ForgotPasswordSheetP
     }
   }, [resendCountdown]);
 
-  const generateCode = (): string => {
-    return Math.floor(100000 + Math.random() * 900000).toString();
-  };
-
-  const sendVerificationEmail = async (emailAddress: string, code: string) => {
-    const { error } = await supabase.functions.invoke('send-verification-email', {
-      body: { email: emailAddress, code, username: 'User' },
-    });
-    return { error };
-  };
-
   const handleFindAccount = async () => {
     if (!email.trim()) {
       toast({ title: 'Please enter your email', variant: 'destructive' });
@@ -56,35 +43,17 @@ export const ForgotPasswordSheet = ({ open, onOpenChange }: ForgotPasswordSheetP
 
     setIsLoading(true);
     try {
-      // Find user by email using secure RPC function
-      const { data: userId, error } = await supabase.rpc('check_user_exists_by_email', {
-        user_email: email.trim()
+      // Call edge function to initiate reset (code generated server-side)
+      const response = await supabase.functions.invoke('approve-password-reset', {
+        body: { action: 'initiate', email: email.trim() },
       });
 
-      if (error) throw error;
-      if (!userId) {
-        toast({ title: 'No account found with this email', variant: 'destructive' });
-        return;
-      }
-      
-      // Store the user ID for password reset
-      setUserId(userId);
+      if (response.error) throw new Error(response.error.message);
+      if (response.data?.error) throw new Error(response.data.error);
 
-      // Generate and send verification code
-      const code = generateCode();
-      setGeneratedCode(code);
-      setCodeExpiresAt(Date.now() + 10 * 60 * 1000); // 10 minutes
-
-      const { error: emailError } = await sendVerificationEmail(email.trim(), code);
-      
-      if (emailError) {
-        console.error('Failed to send verification email:', emailError);
-        toast({ 
-          title: 'Failed to send verification code', 
-          description: 'Please try again later.',
-          variant: 'destructive' 
-        });
-        return;
+      // Store the request ID for verification
+      if (response.data?.requestId) {
+        setRequestId(response.data.requestId);
       }
 
       setResendCountdown(60);
@@ -106,42 +75,30 @@ export const ForgotPasswordSheet = ({ open, onOpenChange }: ForgotPasswordSheetP
       return;
     }
 
-    // Check if code has expired
-    if (Date.now() > codeExpiresAt) {
-      toast({ 
-        title: 'Code expired', 
-        description: 'Please request a new verification code.',
-        variant: 'destructive' 
-      });
-      return;
-    }
-
-    // Verify the code matches
-    if (verificationCode !== generatedCode) {
-      toast({ title: 'Invalid code', description: 'Please check and try again.', variant: 'destructive' });
-      return;
-    }
-
+    // Code will be verified server-side during password reset
     setStep('password');
   };
 
   const handleResendCode = async () => {
     setIsResending(true);
     try {
-      const code = generateCode();
-      setGeneratedCode(code);
-      setCodeExpiresAt(Date.now() + 10 * 60 * 1000);
+      // Initiate a new reset request with a fresh code
+      const response = await supabase.functions.invoke('approve-password-reset', {
+        body: { action: 'initiate', email: email.trim() },
+      });
 
-      const { error } = await sendVerificationEmail(email, code);
-      
-      if (error) {
-        toast({ title: 'Failed to resend code', variant: 'destructive' });
-        return;
+      if (response.error) throw new Error(response.error.message);
+      if (response.data?.error) throw new Error(response.data.error);
+
+      if (response.data?.requestId) {
+        setRequestId(response.data.requestId);
       }
 
       setResendCountdown(60);
       setVerificationCode('');
       toast({ title: 'New code sent!', description: 'Check your email for the new verification code.' });
+    } catch (error: any) {
+      toast({ title: 'Failed to resend code', variant: 'destructive' });
     } finally {
       setIsResending(false);
     }
@@ -159,18 +116,19 @@ export const ForgotPasswordSheet = ({ open, onOpenChange }: ForgotPasswordSheetP
 
     setIsLoading(true);
     try {
-      if (!userId) {
+      if (!requestId) {
         toast({ title: 'Session expired. Please start over.', variant: 'destructive' });
         setStep('email');
         return;
       }
 
-      // SECURITY FIX: Send password directly to edge function instead of storing in database
-      // This prevents password exposure in database storage
+      // Server-side verification: pass code + password together
       const response = await supabase.functions.invoke('approve-password-reset', {
-        body: { 
-          userId: userId,
-          newPassword: newPassword 
+        body: {
+          action: 'verify_and_reset',
+          requestId: requestId,
+          verificationCode: verificationCode,
+          newPassword: newPassword,
         },
       });
 
@@ -193,9 +151,8 @@ export const ForgotPasswordSheet = ({ open, onOpenChange }: ForgotPasswordSheetP
   const handleClose = () => {
     setStep('email');
     setEmail('');
-    setUserId(null);
+    setRequestId(null);
     setVerificationCode('');
-    setGeneratedCode('');
     setNewPassword('');
     setConfirmPassword('');
     setResendCountdown(0);
