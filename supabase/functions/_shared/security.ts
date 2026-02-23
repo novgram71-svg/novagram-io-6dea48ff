@@ -176,28 +176,31 @@ export const validationSchemas: Record<string, ValidationSchema> = {
     },
   },
   'approve-password-reset': {
+    action: {
+      type: 'string',
+      required: true,
+      pattern: /^(initiate|verify_and_reset|approve|reject)$/,
+    },
+    email: {
+      type: 'email',
+      required: false,
+    },
     requestId: {
       type: 'uuid',
       required: false,
     },
-    action: {
+    verificationCode: {
       type: 'string',
       required: false,
-      pattern: /^(approve|reject)$/,
-    },
-    userId: {
-      type: 'uuid',
-      required: false,
+      minLength: 6,
+      maxLength: 6,
+      pattern: /^[0-9]+$/,
     },
     newPassword: {
       type: 'string',
       required: false,
       minLength: 6,
       maxLength: 128,
-    },
-    skipAdminCheck: {
-      type: 'boolean',
-      required: false,
     },
   },
   'send-push-notification': {

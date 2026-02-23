@@ -809,30 +809,36 @@ export type Database = {
       password_reset_requests: {
         Row: {
           admin_id: string | null
+          code_expires_at: string | null
           created_at: string
           id: string
           new_password_hash: string
           resolved_at: string | null
           status: string
           user_id: string
+          verification_code_hash: string | null
         }
         Insert: {
           admin_id?: string | null
+          code_expires_at?: string | null
           created_at?: string
           id?: string
           new_password_hash: string
           resolved_at?: string | null
           status?: string
           user_id: string
+          verification_code_hash?: string | null
         }
         Update: {
           admin_id?: string | null
+          code_expires_at?: string | null
           created_at?: string
           id?: string
           new_password_hash?: string
           resolved_at?: string | null
           status?: string
           user_id?: string
+          verification_code_hash?: string | null
         }
         Relationships: [
           {
