@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -9,21 +9,24 @@ import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { StoryViewerProvider } from "@/contexts/StoryViewerContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
-// MissingInfoDialog removed - security question is now optional
 import { useNotificationListener } from "@/hooks/usePushNotifications";
-import Index from "./pages/Index";
-import Profile from "./pages/Profile";
-import Search from "./pages/Search";
-import Explore from "./pages/Explore";
-import Messages from "./pages/Messages";
-import Create from "./pages/Create";
-import Notifications from "./pages/Notifications";
-import Auth from "./pages/Auth";
-import Admin from "./pages/Admin";
-import Banned from "./pages/Banned";
-import Settings from "./pages/Settings";
-import Post from "./pages/Post";
-import NotFound from "./pages/NotFound";
+import ErrorBoundary from "@/components/ui/ErrorBoundary";
+import { SkeletonPage } from "@/components/ui/SkeletonCard";
+
+// Lazy-loaded route components for code splitting
+const Index = lazy(() => import("./pages/Index"));
+const Profile = lazy(() => import("./pages/Profile"));
+const Search = lazy(() => import("./pages/Search"));
+const Explore = lazy(() => import("./pages/Explore"));
+const Messages = lazy(() => import("./pages/Messages"));
+const Create = lazy(() => import("./pages/Create"));
+const Notifications = lazy(() => import("./pages/Notifications"));
+const Auth = lazy(() => import("./pages/Auth"));
+const Admin = lazy(() => import("./pages/Admin"));
+const Banned = lazy(() => import("./pages/Banned"));
+const Settings = lazy(() => import("./pages/Settings"));
+const Post = lazy(() => import("./pages/Post"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 // Component that sets up notification listener
 const NotificationSetup = ({ children }: { children: React.ReactNode }) => {
@@ -31,7 +34,15 @@ const NotificationSetup = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 2, // 2 minutes
+      retry: 2,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 // Wrapper component to check ban status
 const BanCheck = ({ children }: { children: React.ReactNode }) => {
@@ -43,8 +54,6 @@ const BanCheck = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-// MissingInfoCheck removed - no longer forcing phone/security question on new users
-
 // Wrapper for auth required routes
 const AuthRequired = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
@@ -55,25 +64,31 @@ const AuthRequired = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+const SuspenseWrapper = ({ children }: { children: React.ReactNode }) => (
+  <Suspense fallback={<SkeletonPage />}>
+    {children}
+  </Suspense>
+);
+
 const AppRoutes = () => {
   const { isBanned, user } = useAuth();
   
   return (
     <Routes>
-      <Route path="/banned" element={user && isBanned ? <Banned /> : <Navigate to="/" replace />} />
-      <Route path="/auth" element={<Auth />} />
-      <Route path="/" element={<AuthRequired><BanCheck><Index /></BanCheck></AuthRequired>} />
-      <Route path="/profile" element={<AuthRequired><BanCheck><Profile /></BanCheck></AuthRequired>} />
-      <Route path="/profile/:username" element={<AuthRequired><BanCheck><Profile /></BanCheck></AuthRequired>} />
-      <Route path="/search" element={<AuthRequired><BanCheck><Search /></BanCheck></AuthRequired>} />
-      <Route path="/explore" element={<AuthRequired><BanCheck><Explore /></BanCheck></AuthRequired>} />
-      <Route path="/messages" element={<AuthRequired><BanCheck><Messages /></BanCheck></AuthRequired>} />
-      <Route path="/create" element={<AuthRequired><BanCheck><Create /></BanCheck></AuthRequired>} />
-      <Route path="/notifications" element={<AuthRequired><BanCheck><Notifications /></BanCheck></AuthRequired>} />
-      <Route path="/admin" element={<AuthRequired><BanCheck><Admin /></BanCheck></AuthRequired>} />
-      <Route path="/settings" element={<AuthRequired><BanCheck><Settings /></BanCheck></AuthRequired>} />
-      <Route path="/post/:postId" element={<AuthRequired><BanCheck><Post /></BanCheck></AuthRequired>} />
-      <Route path="*" element={<NotFound />} />
+      <Route path="/banned" element={<SuspenseWrapper>{user && isBanned ? <Banned /> : <Navigate to="/" replace />}</SuspenseWrapper>} />
+      <Route path="/auth" element={<SuspenseWrapper><Auth /></SuspenseWrapper>} />
+      <Route path="/" element={<AuthRequired><BanCheck><SuspenseWrapper><Index /></SuspenseWrapper></BanCheck></AuthRequired>} />
+      <Route path="/profile" element={<AuthRequired><BanCheck><SuspenseWrapper><Profile /></SuspenseWrapper></BanCheck></AuthRequired>} />
+      <Route path="/profile/:username" element={<AuthRequired><BanCheck><SuspenseWrapper><Profile /></SuspenseWrapper></BanCheck></AuthRequired>} />
+      <Route path="/search" element={<AuthRequired><BanCheck><SuspenseWrapper><Search /></SuspenseWrapper></BanCheck></AuthRequired>} />
+      <Route path="/explore" element={<AuthRequired><BanCheck><SuspenseWrapper><Explore /></SuspenseWrapper></BanCheck></AuthRequired>} />
+      <Route path="/messages" element={<AuthRequired><BanCheck><SuspenseWrapper><Messages /></SuspenseWrapper></BanCheck></AuthRequired>} />
+      <Route path="/create" element={<AuthRequired><BanCheck><SuspenseWrapper><Create /></SuspenseWrapper></BanCheck></AuthRequired>} />
+      <Route path="/notifications" element={<AuthRequired><BanCheck><SuspenseWrapper><Notifications /></SuspenseWrapper></BanCheck></AuthRequired>} />
+      <Route path="/admin" element={<AuthRequired><BanCheck><SuspenseWrapper><Admin /></SuspenseWrapper></BanCheck></AuthRequired>} />
+      <Route path="/settings" element={<AuthRequired><BanCheck><SuspenseWrapper><Settings /></SuspenseWrapper></BanCheck></AuthRequired>} />
+      <Route path="/post/:postId" element={<AuthRequired><BanCheck><SuspenseWrapper><Post /></SuspenseWrapper></BanCheck></AuthRequired>} />
+      <Route path="*" element={<SuspenseWrapper><NotFound /></SuspenseWrapper>} />
     </Routes>
   );
 };
@@ -85,13 +100,15 @@ const App = () => (
         <LanguageProvider>
           <StoryViewerProvider>
             <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              <BrowserRouter>
-                <NotificationSetup>
-                  <AppRoutes />
-                </NotificationSetup>
-              </BrowserRouter>
+              <ErrorBoundary>
+                <Toaster />
+                <Sonner />
+                <BrowserRouter>
+                  <NotificationSetup>
+                    <AppRoutes />
+                  </NotificationSetup>
+                </BrowserRouter>
+              </ErrorBoundary>
             </TooltipProvider>
           </StoryViewerProvider>
         </LanguageProvider>

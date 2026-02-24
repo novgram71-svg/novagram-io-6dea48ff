@@ -6,63 +6,69 @@
 
 @layer base {
   :root {
-    --background: 216 50% 8%;
+    --background: 222 47% 6%;
     --foreground: 210 40% 98%;
 
-    --card: 216 45% 12%;
+    --card: 222 44% 10%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 216 45% 12%;
+    --popover: 222 44% 10%;
     --popover-foreground: 210 40% 98%;
 
     --primary: 217 91% 60%;
     --primary-foreground: 210 40% 98%;
 
-    --secondary: 216 40% 16%;
+    --secondary: 222 40% 14%;
     --secondary-foreground: 210 40% 98%;
 
-    --muted: 216 35% 20%;
+    --muted: 222 30% 18%;
     --muted-foreground: 215 20% 65%;
 
-    --accent: 217 91% 60%;
+    --accent: 250 80% 65%;
     --accent-foreground: 210 40% 98%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 216 30% 20%;
-    --input: 216 30% 20%;
+    --border: 222 25% 16%;
+    --input: 222 25% 16%;
     --ring: 217 91% 60%;
 
-    --radius: 0.75rem;
+    --radius: 0.875rem;
 
-    --sidebar-background: 216 50% 6%;
+    --sidebar-background: 222 50% 5%;
     --sidebar-foreground: 210 40% 98%;
     --sidebar-primary: 217 91% 60%;
     --sidebar-primary-foreground: 210 40% 98%;
-    --sidebar-accent: 216 40% 14%;
+    --sidebar-accent: 222 40% 12%;
     --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 216 30% 18%;
+    --sidebar-border: 222 25% 14%;
     --sidebar-ring: 217 91% 60%;
 
     /* Custom Novagram tokens */
-    --nova-gradient: linear-gradient(135deg, hsl(217 91% 60%) 0%, hsl(280 80% 60%) 50%, hsl(340 80% 60%) 100%);
-    --nova-glow: 0 0 20px hsl(217 91% 60% / 0.4);
+    --nova-gradient: linear-gradient(135deg, hsl(217 91% 60%) 0%, hsl(250 80% 65%) 40%, hsl(280 80% 60%) 70%, hsl(340 80% 60%) 100%);
+    --nova-glow: 0 0 24px hsl(217 91% 60% / 0.35), 0 0 48px hsl(250 80% 65% / 0.15);
     --story-gradient: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
-    --story-viewed: hsl(216 30% 30%);
+    --story-viewed: hsl(222 25% 28%);
     
     /* Liquid Glass tokens - Dark mode */
-    --glass-bg: 216 50% 12% / 0.6;
-    --glass-border: 217 91% 60% / 0.3;
-    --glass-highlight: 210 40% 98% / 0.1;
+    --glass-bg: 222 47% 10% / 0.65;
+    --glass-border: 217 91% 60% / 0.2;
+    --glass-highlight: 210 40% 98% / 0.08;
     --glass-glow: 217 91% 60%;
-    --glass-blur: 20px;
+    --glass-blur: 24px;
     --liquid-primary: 217 91% 65%;
-    --liquid-accent: 280 80% 65%;
+    --liquid-accent: 250 80% 65%;
+
+    /* Gradient accent tokens */
+    --gradient-primary: linear-gradient(135deg, hsl(217 91% 60%), hsl(250 80% 65%));
+    --gradient-accent: linear-gradient(135deg, hsl(250 80% 65%), hsl(280 80% 60%));
+    --shadow-elevated: 0 8px 32px hsl(222 50% 4% / 0.5), 0 2px 8px hsl(217 91% 60% / 0.08);
+    --shadow-card: 0 4px 16px hsl(222 50% 4% / 0.4), 0 1px 4px hsl(217 91% 60% / 0.05);
   }
 
   .light {
-    --background: 0 0% 100%;
+    --background: 220 30% 98%;
     --foreground: 222 47% 11%;
 
     --card: 0 0% 100%;
@@ -71,47 +77,52 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
 
-    --primary: 217 91% 60%;
+    --primary: 217 91% 55%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96%;
+    --secondary: 220 25% 94%;
     --secondary-foreground: 222 47% 11%;
 
-    --muted: 210 40% 96%;
+    --muted: 220 25% 94%;
     --muted-foreground: 215 16% 47%;
 
-    --accent: 217 91% 60%;
+    --accent: 250 80% 60%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 217 91% 60%;
+    --border: 220 20% 90%;
+    --input: 220 20% 90%;
+    --ring: 217 91% 55%;
 
-    --sidebar-background: 0 0% 98%;
+    --sidebar-background: 220 30% 97%;
     --sidebar-foreground: 222 47% 11%;
-    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary: 217 91% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 40% 96%;
+    --sidebar-accent: 220 25% 94%;
     --sidebar-accent-foreground: 222 47% 11%;
-    --sidebar-border: 214 32% 91%;
-    --sidebar-ring: 217 91% 60%;
+    --sidebar-border: 220 20% 90%;
+    --sidebar-ring: 217 91% 55%;
 
-    --nova-gradient: linear-gradient(135deg, hsl(217 91% 60%) 0%, hsl(280 80% 60%) 50%, hsl(340 80% 60%) 100%);
-    --nova-glow: 0 0 20px hsl(217 91% 60% / 0.3);
+    --nova-gradient: linear-gradient(135deg, hsl(217 91% 55%) 0%, hsl(250 80% 60%) 40%, hsl(280 80% 55%) 70%, hsl(340 80% 55%) 100%);
+    --nova-glow: 0 0 20px hsl(217 91% 55% / 0.25);
     --story-gradient: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
-    --story-viewed: hsl(214 32% 85%);
+    --story-viewed: hsl(220 20% 85%);
     
     /* Liquid Glass tokens - Light mode */
-    --glass-bg: 210 40% 98% / 0.7;
-    --glass-border: 217 91% 60% / 0.25;
-    --glass-highlight: 0 0% 100% / 0.5;
-    --glass-glow: 217 91% 60%;
-    --glass-blur: 24px;
-    --liquid-primary: 217 91% 55%;
-    --liquid-accent: 280 80% 60%;
+    --glass-bg: 210 40% 98% / 0.75;
+    --glass-border: 217 91% 55% / 0.2;
+    --glass-highlight: 0 0% 100% / 0.6;
+    --glass-glow: 217 91% 55%;
+    --glass-blur: 28px;
+    --liquid-primary: 217 91% 50%;
+    --liquid-accent: 250 80% 60%;
+
+    --gradient-primary: linear-gradient(135deg, hsl(217 91% 55%), hsl(250 80% 60%));
+    --gradient-accent: linear-gradient(135deg, hsl(250 80% 60%), hsl(280 80% 55%));
+    --shadow-elevated: 0 8px 32px hsl(222 30% 50% / 0.12), 0 2px 8px hsl(217 91% 55% / 0.06);
+    --shadow-card: 0 4px 16px hsl(222 30% 50% / 0.08), 0 1px 4px hsl(217 91% 55% / 0.04);
   }
 }
 
