@@ -1727,6 +1727,7 @@ export type Database = {
         Returns: boolean
       }
       check_badge_expiration: { Args: never; Returns: undefined }
+      check_email_exists: { Args: { user_email: string }; Returns: boolean }
       check_user_exists_by_email: {
         Args: { user_email: string }
         Returns: string
@@ -1758,6 +1759,13 @@ export type Database = {
           id: string
           resolved_at: string
           status: string
+        }[]
+      }
+      get_own_profile_for_linking: {
+        Args: never
+        Returns: {
+          avatar_url: string
+          username: string
         }[]
       }
       get_profile_safe: {

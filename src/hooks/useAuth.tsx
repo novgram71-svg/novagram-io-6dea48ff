@@ -150,14 +150,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signUp = async (email: string, password: string, username: string, phoneNumber?: string) => {
-    // Check if email is already registered
-    const { data: existingProfile } = await supabase
-      .from('profiles')
-      .select('email')
-      .eq('email', email)
-      .maybeSingle();
+    // Check if email is already registered using secure function
+    const { data: emailExists } = await supabase
+      .rpc('check_email_exists', { user_email: email });
 
-    if (existingProfile) {
+    if (emailExists) {
       return { error: { message: 'User already registered' } };
     }
 

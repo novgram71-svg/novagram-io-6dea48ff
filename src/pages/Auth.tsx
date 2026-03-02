@@ -104,12 +104,10 @@ const Auth = () => {
         if (pendingLink) {
           try {
             const previousAccount = JSON.parse(pendingLink);
-            const { data: currentProfile } = await supabase
-              .from('profiles')
-              .select('username, avatar_url, email')
-              .eq('id', user.id)
-              .single();
+            const { data: linkProfile } = await supabase
+              .rpc('get_own_profile_for_linking');
             
+            const currentProfile = linkProfile?.[0];
             if (currentProfile && previousAccount.userId !== user.id) {
               await supabase.from('linked_accounts').upsert({
                 primary_user_id: previousAccount.userId,
