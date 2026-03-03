@@ -1,7 +1,9 @@
 import { useState, useRef } from 'react';
-import { Heart, MessageCircle, Send, Bookmark, MoreHorizontal, Trash2, Download, Flag } from 'lucide-react';
+import { Heart, MessageCircle, Send, Bookmark, MoreHorizontal, Trash2, Download, Flag, Repeat2, Pin, VolumeX, Volume2 } from 'lucide-react';
 import { PostWithUser, useLikePost, useDeletePost } from '@/hooks/usePosts';
 import { useSavedPosts, useIsSaved } from '@/hooks/useSavedPosts';
+import { useIsReposted, useRepostCount, useToggleRepost, usePinPost } from '@/hooks/useReposts';
+import { useIsMuted, useToggleMute } from '@/hooks/useMutedUsers';
 import { useAuth } from '@/hooks/useAuth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -33,15 +35,22 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface PostCardProps {
   post: PostWithUser;
+  repostedBy?: { username: string } | null;
 }
 
-const PostCard = ({ post }: PostCardProps) => {
+const PostCard = ({ post, repostedBy }: PostCardProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const likeMutation = useLikePost();
   const deletePost = useDeletePost();
   const { toggleSave, isToggling } = useSavedPosts();
   const { data: isSaved } = useIsSaved(post.id);
+  const { data: isReposted } = useIsReposted(post.id);
+  const { data: repostCount } = useRepostCount(post.id);
+  const repostMutation = useToggleRepost();
+  const pinMutation = usePinPost();
+  const { data: isMuted } = useIsMuted(post.user_id);
+  const muteMutation = useToggleMute();
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -53,6 +62,21 @@ const PostCard = ({ post }: PostCardProps) => {
   const isOwnPost = user?.id === post.user_id;
   const likeCount = post.likes.length;
   const commentCount = post.comments.length;
+  const isPinned = (post as any).is_pinned ?? false;
+
+  const handleRepost = () => {
+    if (!user) { navigate('/auth'); return; }
+    repostMutation.mutate({ postId: post.id, isReposted: isReposted || false, postOwnerId: post.user_id });
+  };
+
+  const handlePin = () => {
+    pinMutation.mutate({ postId: post.id, isPinned });
+  };
+
+  const handleMute = () => {
+    if (!user) return;
+    muteMutation.mutate({ targetUserId: post.user_id, isMuted: isMuted || false });
+  };
 
   // Check if post owner has public account
   const { data: isPublicPost } = useQuery({
@@ -144,6 +168,20 @@ const PostCard = ({ post }: PostCardProps) => {
 
   return (
     <article className="nova-card overflow-hidden animate-fade-in transition-all duration-400 ease-out hover:shadow-xl hover:shadow-primary/10 hover:border-primary/20 rounded-2xl">
+      {/* Reposted by header */}
+      {repostedBy && (
+        <div className="flex items-center gap-2 px-4 pt-3 pb-1 text-xs text-muted-foreground">
+          <Repeat2 className="w-3.5 h-3.5" />
+          <span><span className="font-semibold">{repostedBy.username}</span> reposted</span>
+        </div>
+      )}
+      {/* Pinned indicator */}
+      {isPinned && !repostedBy && (
+        <div className="flex items-center gap-2 px-4 pt-3 pb-1 text-xs text-muted-foreground">
+          <Pin className="w-3.5 h-3.5" />
+          <span>Pinned post</span>
+        </div>
+      )}
       {/* Header */}
       <div className="flex items-center justify-between p-4">
         <Link to={`/profile/${post.profiles.username}`} className="flex items-center gap-3 group">
@@ -171,9 +209,22 @@ const PostCard = ({ post }: PostCardProps) => {
               <Download className="w-4 h-4" />
               Download
             </DropdownMenuItem>
+            {isOwnPost && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handlePin} className="rounded-xl gap-2">
+                  <Pin className="w-4 h-4" />
+                  {isPinned ? 'Unpin Post' : 'Pin to Profile'}
+                </DropdownMenuItem>
+              </>
+            )}
             {!isOwnPost && (
               <>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleMute} className="rounded-xl gap-2">
+                  {isMuted ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+                  {isMuted ? 'Unmute User' : 'Mute User'}
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleReportPost} className="rounded-xl gap-2 text-destructive focus:text-destructive">
                   <Flag className="w-4 h-4" />
                   Report
@@ -251,6 +302,16 @@ const PostCard = ({ post }: PostCardProps) => {
               <MessageCircle className="w-6 h-6" />
             </button>
             <button 
+              onClick={handleRepost}
+              disabled={repostMutation.isPending}
+              className={cn(
+                'transition-all duration-200 hover:scale-125 active:scale-95',
+                isReposted ? 'text-primary' : 'text-foreground hover:text-primary'
+              )}
+            >
+              <Repeat2 className={cn("w-6 h-6", isReposted && "animate-bounce-gentle")} />
+            </button>
+            <button 
               onClick={() => setShareOpen(true)}
               className="text-foreground hover:text-primary transition-all duration-200 hover:scale-125 active:scale-95"
             >
@@ -269,8 +330,13 @@ const PostCard = ({ post }: PostCardProps) => {
           </button>
         </div>
 
-        {/* Like Count */}
-        <p className="font-semibold text-sm mb-2 transition-all duration-200">{formatCount(likeCount)} likes</p>
+        {/* Like & Repost Count */}
+        <div className="flex items-center gap-3 mb-2">
+          <p className="font-semibold text-sm">{formatCount(likeCount)} likes</p>
+          {(repostCount ?? 0) > 0 && (
+            <p className="text-sm text-muted-foreground">{formatCount(repostCount ?? 0)} reposts</p>
+          )}
+        </div>
 
         {/* Caption */}
         {post.caption && (

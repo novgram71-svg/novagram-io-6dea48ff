@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useParams, Navigate, Link, useNavigate } from 'react-router-dom';
-import { Grid3X3, Bookmark, LogOut, UserPlus, UserCheck, MessageCircle, Flag, Ban, MoreHorizontal, Settings, Lock, Clock, UserX, X } from 'lucide-react';
+import { Grid3X3, Bookmark, LogOut, UserPlus, UserCheck, MessageCircle, Flag, Ban, MoreHorizontal, Settings, Lock, Clock, UserX, X, Pin, VolumeX, Volume2 } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 import PullToRefresh from '@/components/posts/PullToRefresh';
 import { useAuth } from '@/hooks/useAuth';
@@ -8,6 +8,7 @@ import { useProfile, useProfileStats, useIsFollowing, useToggleFollow, useHasPen
 import { useUserPosts } from '@/hooks/usePosts';
 import { useIsPrivateAccount, useCanViewProfile } from '@/hooks/usePrivateAccount';
 import { useIsBlocked, useToggleBlock } from '@/hooks/useUserModeration';
+import { useIsMuted, useToggleMute } from '@/hooks/useMutedUsers';
 import { useSavedPosts } from '@/hooks/useSavedPosts';
 import { useFollowRequests } from '@/hooks/useFollowRequests';
 import { useUserVerificationStatus } from '@/hooks/useVerification';
@@ -55,6 +56,8 @@ const Profile = () => {
   const { data: posts, isLoading: postsLoading } = useUserPosts(profile?.id);
   const { data: isFollowing } = useIsFollowing(profile?.id);
   const { data: isBlocked } = useIsBlocked(profile?.id);
+  const { data: isMuted } = useIsMuted(profile?.id);
+  const muteMutation = useToggleMute();
   const { data: isPrivate } = useIsPrivateAccount(profile?.id);
   const { data: canViewProfile } = useCanViewProfile(profile?.id, user?.id);
   const { data: hasPendingRequest } = useHasPendingRequest(profile?.id);
@@ -180,6 +183,10 @@ const Profile = () => {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => muteMutation.mutate({ targetUserId: profile!.id, isMuted: isMuted || false })}>
+                        {isMuted ? <Volume2 className="w-4 h-4 mr-2" /> : <VolumeX className="w-4 h-4 mr-2" />}
+                        {isMuted ? 'Unmute' : 'Mute'}
+                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => setReportDialogOpen(true)} className="text-destructive">
                         <Flag className="w-4 h-4 mr-2" />
                         Report
@@ -326,6 +333,10 @@ const Profile = () => {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => muteMutation.mutate({ targetUserId: profile!.id, isMuted: isMuted || false })}>
+                          {isMuted ? <Volume2 className="w-4 h-4 mr-2" /> : <VolumeX className="w-4 h-4 mr-2" />}
+                          {isMuted ? 'Unmute' : 'Mute'}
+                        </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => setReportDialogOpen(true)} className="text-destructive">
                           <Flag className="w-4 h-4 mr-2" />
                           Report
@@ -407,7 +418,13 @@ const Profile = () => {
                 </div>
               ) : posts && posts.length > 0 ? (
                 <div className="grid grid-cols-3 gap-1 md:gap-2">
-                  {posts.map((post, index) => (
+                  {/* Sort: pinned first, then by date */}
+                  {[...posts].sort((a, b) => {
+                    const aPinned = (a as any).is_pinned ? 1 : 0;
+                    const bPinned = (b as any).is_pinned ? 1 : 0;
+                    if (bPinned !== aPinned) return bPinned - aPinned;
+                    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+                  }).map((post, index) => (
                     <Link
                       key={post.id}
                       to={`/post/${post.id}`}
@@ -419,6 +436,12 @@ const Profile = () => {
                         alt=""
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                       />
+                      {/* Pinned indicator */}
+                      {(post as any).is_pinned && (
+                        <div className="absolute top-2 right-2 bg-background/80 rounded-full p-1">
+                          <Pin className="w-3 h-3 text-primary" />
+                        </div>
+                      )}
                       <div className="absolute inset-0 bg-background/60 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center gap-4 backdrop-blur-[2px]">
                         <span className="flex items-center gap-1 text-foreground font-semibold text-sm">
                           ❤️ {post.likes.length}

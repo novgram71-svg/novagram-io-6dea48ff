@@ -708,6 +708,27 @@ export type Database = {
           },
         ]
       }
+      muted_users: {
+        Row: {
+          created_at: string
+          id: string
+          muted_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          muted_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          muted_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       note_reactions: {
         Row: {
           created_at: string
@@ -899,6 +920,7 @@ export type Database = {
           created_at: string
           id: string
           image_url: string
+          is_pinned: boolean
           user_id: string
         }
         Insert: {
@@ -906,6 +928,7 @@ export type Database = {
           created_at?: string
           id?: string
           image_url: string
+          is_pinned?: boolean
           user_id: string
         }
         Update: {
@@ -913,6 +936,7 @@ export type Database = {
           created_at?: string
           id?: string
           image_url?: string
+          is_pinned?: boolean
           user_id?: string
         }
         Relationships: [
@@ -1033,6 +1057,35 @@ export type Database = {
           window_start?: string
         }
         Relationships: []
+      }
+      reposts: {
+        Row: {
+          created_at: string
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reposts_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       saved_posts: {
         Row: {
