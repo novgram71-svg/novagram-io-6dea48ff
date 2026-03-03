@@ -2,12 +2,13 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { PostWithUser } from './usePosts';
+import { useMutedUsers } from './useMutedUsers';
 
 export const useFeedPosts = () => {
   const { user } = useAuth();
-
+  const { data: mutedIds = [] } = useMutedUsers();
   return useQuery({
-    queryKey: ['feed-posts', user?.id],
+    queryKey: ['feed-posts', user?.id, mutedIds],
     queryFn: async () => {
       if (!user) {
         // For non-authenticated users, show recent public posts
@@ -23,7 +24,7 @@ export const useFeedPosts = () => {
           .limit(20);
 
         if (error) throw error;
-        return data as PostWithUser[];
+        return (data as PostWithUser[]).filter(p => !mutedIds.includes(p.user_id));
       }
 
       // Get following list
@@ -55,7 +56,7 @@ export const useFeedPosts = () => {
         .limit(50);
 
       if (error) throw error;
-      return data as PostWithUser[];
+      return (data as PostWithUser[]).filter(p => !mutedIds.includes(p.user_id));
     },
     staleTime: 1000 * 60, // 1 minute
     gcTime: 1000 * 60 * 5, // 5 minutes
