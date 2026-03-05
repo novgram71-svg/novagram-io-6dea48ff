@@ -163,7 +163,7 @@ export const AIChat = ({ onClose }: AIChatProps) => {
       </ScrollArea>
 
       {/* Input */}
-      <div className="relative z-10 border-t border-border/40 bg-background/80 backdrop-blur-xl pb-safe">
+      <div className="relative z-10 border-t border-border/40 bg-background/80 backdrop-blur-xl pb-safe mb-20 md:mb-0">
         {selectedImage && (
           <div className="px-4 pt-3 max-w-2xl mx-auto">
             <div className="relative inline-block">
