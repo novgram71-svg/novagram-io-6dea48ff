@@ -375,8 +375,7 @@ const Auth = () => {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] sm:w-[400px] h-[300px] sm:h-[400px] rounded-full bg-primary/5 blur-[60px] sm:blur-[80px] animate-liquid-pulse" />
       </div>
 
-      {/* Floating icons background - above gradient */}
-      <FloatingIcons />
+      {/* Floating icons removed */}
 
       {/* Subtle grid pattern overlay */}
       <div 

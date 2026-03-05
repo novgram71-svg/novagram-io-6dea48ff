@@ -1,5 +1,6 @@
 import { Home, Search, PlusSquare, MessageCircle, User, Heart, LogOut, Shield, Compass } from 'lucide-react';
 import Logo3D from '@/components/ui/Logo3D';
+import logoImg from '@/assets/novagram-logo.png';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -52,9 +53,7 @@ const DesktopSidebar = () => {
           {expanded ? (
             <Logo3D size="md" />
           ) : (
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg shadow-primary/30 flex-shrink-0">
-              <span className="text-sm font-black text-primary-foreground">N</span>
-            </div>
+            <img src={logoImg} alt="Novagram" className="w-8 h-8 rounded-xl object-contain flex-shrink-0" />
           )}
         </Link>
 
@@ -93,7 +92,7 @@ const DesktopSidebar = () => {
                               ? `${item.activeColor} scale-110`
                               : 'text-muted-foreground'
                           )}
-                          fill={isActive ? 'currentColor' : 'none'}
+                          fill="none"
                           strokeWidth={isActive ? 2.5 : 2}
                         />
                         <span className={cn(
@@ -146,7 +145,7 @@ const DesktopSidebar = () => {
                             ? 'text-primary scale-110'
                             : 'text-primary/70'
                         )}
-                        fill={location.pathname === '/admin' ? 'currentColor' : 'none'}
+                        fill="none"
                       />
                       <span className={cn(
                         "font-medium relative z-10 whitespace-nowrap",

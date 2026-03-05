@@ -10,6 +10,7 @@ import { StoryViewerProvider } from "@/contexts/StoryViewerContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useNotificationListener } from "@/hooks/usePushNotifications";
+import { useLocationPermission } from "@/hooks/useLocationPermission";
 import ErrorBoundary from "@/components/ui/ErrorBoundary";
 import { SkeletonPage } from "@/components/ui/SkeletonCard";
 
@@ -31,6 +32,7 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 // Component that sets up notification listener
 const NotificationSetup = ({ children }: { children: React.ReactNode }) => {
   useNotificationListener();
+  useLocationPermission();
   return <>{children}</>;
 };
 
@@ -65,7 +67,7 @@ const AuthRequired = ({ children }: { children: React.ReactNode }) => {
 };
 
 const SuspenseWrapper = ({ children }: { children: React.ReactNode }) => (
-  <Suspense fallback={<SkeletonPage />}>
+  <Suspense fallback={null}>
     {children}
   </Suspense>
 );

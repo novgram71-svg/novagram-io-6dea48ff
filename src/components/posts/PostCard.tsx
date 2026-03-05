@@ -167,7 +167,7 @@ const PostCard = ({ post, repostedBy }: PostCardProps) => {
   };
 
   return (
-    <article className="nova-card overflow-hidden animate-fade-in transition-all duration-400 ease-out hover:shadow-xl hover:shadow-primary/10 hover:border-primary/20 rounded-2xl">
+    <article className="nova-card overflow-hidden animate-fade-in rounded-2xl">
       {/* Reposted by header */}
       {repostedBy && (
         <div className="flex items-center gap-2 px-4 pt-3 pb-1 text-xs text-muted-foreground">
@@ -255,7 +255,7 @@ const PostCard = ({ post, repostedBy }: PostCardProps) => {
         <img
           src={post.image_url}
           alt={post.caption || ''}
-          className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+          className="w-full h-full object-cover"
           loading="lazy"
           draggable={false}
         />
