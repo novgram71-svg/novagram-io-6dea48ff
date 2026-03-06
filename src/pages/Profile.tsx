@@ -553,6 +553,14 @@ const Profile = () => {
           />
         )}
 
+        {/* Avatar Editor Dialog */}
+        {isOwnProfile && (
+          <AvatarEditorDialog
+            open={avatarEditorOpen}
+            onOpenChange={setAvatarEditorOpen}
+          />
+        )}
+
         {/* Report User Dialog */}
         {!isOwnProfile && profile && (
           <ReportUserDialog
