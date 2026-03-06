@@ -50,7 +50,7 @@ const Profile = () => {
   const [followingOpen, setFollowingOpen] = useState(false);
   const [followRequestsOpen, setFollowRequestsOpen] = useState(false);
   const [photoViewerOpen, setPhotoViewerOpen] = useState(false);
-  
+  const [avatarEditorOpen, setAvatarEditorOpen] = useState(false);
   // If no username in URL, show current user's profile
   const targetUsername = username || currentUserProfile?.username;
   
