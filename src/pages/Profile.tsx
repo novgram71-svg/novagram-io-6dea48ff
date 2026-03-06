@@ -70,6 +70,7 @@ const Profile = () => {
   const toggleFollow = useToggleFollow();
   const toggleBlock = useToggleBlock();
   const { savedPosts, isLoading: savedLoading } = useSavedPosts();
+  const { data: userAvatar } = useUserAvatar(profile?.id);
 
   // Check if this profile has active stories
   const hasActiveStory = allStories?.some(s => s.profiles?.id === profile?.id) ?? false;
