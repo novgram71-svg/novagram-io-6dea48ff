@@ -10,7 +10,8 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import SuggestedUsers from '@/components/feed/SuggestedUsers';
 
 const Feed = () => {
-  const { data: posts, isLoading } = useFeedPosts();
+  const { data: rawPosts, isLoading } = useFeedPosts();
+  const posts = rawPosts?.filter(p => p.profiles != null);
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
