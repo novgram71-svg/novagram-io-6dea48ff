@@ -28,6 +28,7 @@ import { FollowRequestsSheet } from '@/components/profile/FollowRequestsSheet';
 import PrivateAccountNotice from '@/components/profile/PrivateAccountNotice';
 import AccountSwitcher from '@/components/profile/AccountSwitcher';
 import NovaBadge from '@/components/profile/NovaBadge';
+import { useUserAvatar } from '@/hooks/useAvatar';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import {
