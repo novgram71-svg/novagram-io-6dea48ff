@@ -92,8 +92,8 @@ const AvatarEditorDialog = ({ open, onOpenChange }: AvatarEditorDialogProps) => 
                 onClick={() => handleGenderSelect('male')}
                 className="flex flex-col items-center gap-3 p-6 rounded-2xl border-2 border-border hover:border-primary hover:bg-primary/5 transition-all duration-300 hover:scale-105 active:scale-95"
               >
-                <div className="w-20 h-20 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                  <User className="w-10 h-10 text-blue-500" />
+                <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
+                  <User className="w-10 h-10 text-primary" />
                 </div>
                 <span className="font-semibold">Male</span>
               </button>
@@ -101,8 +101,8 @@ const AvatarEditorDialog = ({ open, onOpenChange }: AvatarEditorDialogProps) => 
                 onClick={() => handleGenderSelect('female')}
                 className="flex flex-col items-center gap-3 p-6 rounded-2xl border-2 border-border hover:border-primary hover:bg-primary/5 transition-all duration-300 hover:scale-105 active:scale-95"
               >
-                <div className="w-20 h-20 rounded-full bg-pink-100 dark:bg-pink-900/30 flex items-center justify-center">
-                  <User className="w-10 h-10 text-pink-500" />
+                <div className="w-20 h-20 rounded-full bg-accent/20 flex items-center justify-center">
+                  <User className="w-10 h-10 text-accent-foreground" />
                 </div>
                 <span className="font-semibold">Female</span>
               </button>
