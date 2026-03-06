@@ -20,6 +20,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import EditProfileDialog from '@/components/profile/EditProfileDialog';
+import AvatarEditorDialog from '@/components/profile/AvatarEditorDialog';
+import FlippableAvatar from '@/components/profile/FlippableAvatar';
 import ReportUserDialog from '@/components/profile/ReportUserDialog';
 import FollowListSheet from '@/components/profile/FollowListSheet';
 import { FollowRequestsSheet } from '@/components/profile/FollowRequestsSheet';
