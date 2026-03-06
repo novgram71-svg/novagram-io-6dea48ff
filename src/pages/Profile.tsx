@@ -216,23 +216,14 @@ const Profile = () => {
           {/* Profile Info */}
           <div className="p-6 animate-slide-up">
             <div className="flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-12">
-              {/* Avatar - Clickable with story ring when has stories */}
-              <button
-                onClick={() => setPhotoViewerOpen(true)}
-                className={cn(
-                  "relative p-1 rounded-full transition-all duration-500 hover:scale-105 active:scale-95 cursor-pointer",
-                  hasActiveStory
-                    ? "bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 p-[3px]"
-                    : "p-0"
-                )}
-              >
-                <div className={cn(hasActiveStory ? "bg-background p-[2px] rounded-full" : "")}>
-                  <Avatar className="w-24 h-24 md:w-36 md:h-36">
-                    <AvatarImage src={profile.avatar_url || ''} alt={profile.username} />
-                    <AvatarFallback className="text-2xl">{profile.username[0].toUpperCase()}</AvatarFallback>
-                  </Avatar>
-                </div>
-              </button>
+              {/* Avatar - Flippable with story ring */}
+              <FlippableAvatar
+                photoUrl={profile.avatar_url || null}
+                avatarUrl={userAvatar?.avatar_url || null}
+                username={profile.username}
+                hasActiveStory={hasActiveStory}
+                onPhotoClick={() => setPhotoViewerOpen(true)}
+              />
 
             {/* Info */}
             <div className="flex-1 text-center md:text-left animate-slide-up stagger-1">
