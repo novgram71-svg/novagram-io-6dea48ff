@@ -248,6 +248,14 @@ const Profile = () => {
                     >
                       Edit Profile
                     </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setAvatarEditorOpen(true)}
+                      className="transition-all duration-200 hover:scale-105"
+                    >
+                      🎭 Avatar
+                    </Button>
                     {pendingRequestsCount > 0 && (
                       <Button 
                         variant="outline" 
