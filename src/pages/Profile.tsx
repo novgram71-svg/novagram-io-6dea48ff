@@ -20,12 +20,15 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import EditProfileDialog from '@/components/profile/EditProfileDialog';
+import AvatarEditorDialog from '@/components/profile/AvatarEditorDialog';
+import FlippableAvatar from '@/components/profile/FlippableAvatar';
 import ReportUserDialog from '@/components/profile/ReportUserDialog';
 import FollowListSheet from '@/components/profile/FollowListSheet';
 import { FollowRequestsSheet } from '@/components/profile/FollowRequestsSheet';
 import PrivateAccountNotice from '@/components/profile/PrivateAccountNotice';
 import AccountSwitcher from '@/components/profile/AccountSwitcher';
 import NovaBadge from '@/components/profile/NovaBadge';
+import { useUserAvatar } from '@/hooks/useAvatar';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -47,7 +50,7 @@ const Profile = () => {
   const [followingOpen, setFollowingOpen] = useState(false);
   const [followRequestsOpen, setFollowRequestsOpen] = useState(false);
   const [photoViewerOpen, setPhotoViewerOpen] = useState(false);
-  
+  const [avatarEditorOpen, setAvatarEditorOpen] = useState(false);
   // If no username in URL, show current user's profile
   const targetUsername = username || currentUserProfile?.username;
   
@@ -67,6 +70,7 @@ const Profile = () => {
   const toggleFollow = useToggleFollow();
   const toggleBlock = useToggleBlock();
   const { savedPosts, isLoading: savedLoading } = useSavedPosts();
+  const { data: userAvatar } = useUserAvatar(profile?.id);
 
   // Check if this profile has active stories
   const hasActiveStory = allStories?.some(s => s.profiles?.id === profile?.id) ?? false;
@@ -212,23 +216,14 @@ const Profile = () => {
           {/* Profile Info */}
           <div className="p-6 animate-slide-up">
             <div className="flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-12">
-              {/* Avatar - Clickable with story ring when has stories */}
-              <button
-                onClick={() => setPhotoViewerOpen(true)}
-                className={cn(
-                  "relative p-1 rounded-full transition-all duration-500 hover:scale-105 active:scale-95 cursor-pointer",
-                  hasActiveStory
-                    ? "bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 p-[3px]"
-                    : "p-0"
-                )}
-              >
-                <div className={cn(hasActiveStory ? "bg-background p-[2px] rounded-full" : "")}>
-                  <Avatar className="w-24 h-24 md:w-36 md:h-36">
-                    <AvatarImage src={profile.avatar_url || ''} alt={profile.username} />
-                    <AvatarFallback className="text-2xl">{profile.username[0].toUpperCase()}</AvatarFallback>
-                  </Avatar>
-                </div>
-              </button>
+              {/* Avatar - Flippable with story ring */}
+              <FlippableAvatar
+                photoUrl={profile.avatar_url || null}
+                avatarUrl={userAvatar?.avatar_url || null}
+                username={profile.username}
+                hasActiveStory={hasActiveStory}
+                onPhotoClick={() => setPhotoViewerOpen(true)}
+              />
 
             {/* Info */}
             <div className="flex-1 text-center md:text-left animate-slide-up stagger-1">
@@ -252,6 +247,14 @@ const Profile = () => {
                       className="transition-all duration-200 hover:scale-105"
                     >
                       Edit Profile
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setAvatarEditorOpen(true)}
+                      className="transition-all duration-200 hover:scale-105"
+                    >
+                      🎭 Avatar
                     </Button>
                     {pendingRequestsCount > 0 && (
                       <Button 
@@ -547,6 +550,14 @@ const Profile = () => {
             open={editDialogOpen}
             onOpenChange={setEditDialogOpen}
             profile={profile}
+          />
+        )}
+
+        {/* Avatar Editor Dialog */}
+        {isOwnProfile && (
+          <AvatarEditorDialog
+            open={avatarEditorOpen}
+            onOpenChange={setAvatarEditorOpen}
           />
         )}
 

@@ -1402,6 +1402,48 @@ export type Database = {
           },
         ]
       }
+      user_avatars: {
+        Row: {
+          accessories: string
+          avatar_url: string | null
+          created_at: string
+          gender: string
+          hair_color: string
+          hair_style: string
+          id: string
+          outfit: string
+          skin_tone: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          accessories?: string
+          avatar_url?: string | null
+          created_at?: string
+          gender?: string
+          hair_color?: string
+          hair_style?: string
+          id?: string
+          outfit?: string
+          skin_tone?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          accessories?: string
+          avatar_url?: string | null
+          created_at?: string
+          gender?: string
+          hair_color?: string
+          hair_style?: string
+          id?: string
+          outfit?: string
+          skin_tone?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_presence: {
         Row: {
           id: string
