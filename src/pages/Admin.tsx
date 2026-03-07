@@ -8,7 +8,7 @@ import { useAllReports, useUpdateReportStatus, useAllBannedUsers, useBanUser, us
 import { useAIAbuseReports } from '@/hooks/useAIAbuseReports';
 import { usePasswordResetRequests } from '@/hooks/usePasswordReset';
 import { useAllAppReports, useUpdateAppReportStatus } from '@/hooks/useAppReports';
-import { useAdminGrantBadge } from '@/hooks/useVerification';
+import { useAdminGrantBadge, useAdminRevokeBadge } from '@/hooks/useVerification';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
