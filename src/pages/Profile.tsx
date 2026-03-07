@@ -237,6 +237,11 @@ const Profile = () => {
                 <div className="flex items-center gap-2">
                   <h2 className={cn("text-xl font-semibold gradient-text", isOwnProfile && "md:hidden")}>{profile.username}</h2>
                   {isVerified && <NovaBadge size="md" />}
+                  {isOwnProfile && isVerified && verification?.verified_until && (
+                    <span className="text-xs text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full">
+                      Expires {new Date(verification.verified_until).toLocaleDateString()}
+                    </span>
+                  )}
                 </div>
                 
                 {isOwnProfile ? (

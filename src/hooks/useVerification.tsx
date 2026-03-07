@@ -188,12 +188,39 @@ export const useAdminGrantBadge = () => {
       if (data.success) {
         toast.success('Nova badge sent! User will receive a notification.');
         queryClient.invalidateQueries({ queryKey: ['verification'] });
+        queryClient.invalidateQueries({ queryKey: ['user-verification-status'] });
       } else {
         toast.error(data.error || 'Failed to grant badge');
       }
     },
     onError: (error: any) => {
       toast.error(error.message || 'Failed to grant badge');
+    },
+  });
+};
+
+export const useAdminRevokeBadge = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (targetUserId: string) => {
+      const { data, error } = await supabase
+        .rpc('admin_revoke_badge', { target_user_id: targetUserId });
+      
+      if (error) throw error;
+      return data as { success: boolean; error?: string };
+    },
+    onSuccess: (data) => {
+      if (data.success) {
+        toast.success('Nova badge revoked successfully.');
+        queryClient.invalidateQueries({ queryKey: ['verification'] });
+        queryClient.invalidateQueries({ queryKey: ['user-verification-status'] });
+      } else {
+        toast.error(data.error || 'Failed to revoke badge');
+      }
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to revoke badge');
     },
   });
 };
