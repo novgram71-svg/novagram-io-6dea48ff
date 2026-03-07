@@ -22,7 +22,7 @@ const MainLayoutInner = ({ children }: MainLayoutProps) => {
       </div>
       <DesktopSidebar />
       <main className={cn(
-        'pb-24 md:pb-0 transition-[margin] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
+        'pb-24 md:pb-0 transition-[margin] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] relative z-10',
         expanded ? 'md:ml-64' : 'md:ml-[72px]'
       )}>
         {children}

@@ -167,7 +167,7 @@ const PostCard = ({ post, repostedBy }: PostCardProps) => {
   };
 
   return (
-    <article className="nova-card overflow-hidden animate-fade-in rounded-2xl">
+    <article className="glass-card overflow-hidden animate-fade-in rounded-2xl">
       {/* Reposted by header */}
       {repostedBy && (
         <div className="flex items-center gap-2 px-4 pt-3 pb-1 text-xs text-muted-foreground">

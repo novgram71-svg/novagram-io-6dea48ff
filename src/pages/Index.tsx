@@ -23,16 +23,16 @@ const Index = () => {
   return (
     <MainLayout>
       <PullToRefresh onRefresh={handleRefresh}>
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-2xl mx-auto animate-page-enter">
           <MobileHeader />
 
           {/* Stories */}
-          <section className="border-b border-border bg-card/50">
+          <section className="border-b border-border/30 glass-card rounded-none">
             <MemoizedStoriesBar />
           </section>
 
           {/* Feed */}
-          <section className="py-6">
+          <section className="py-6 space-y-5 px-2 md:px-0">
             <MemoizedFeed />
           </section>
         </div>

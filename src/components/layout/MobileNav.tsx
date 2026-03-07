@@ -30,8 +30,8 @@ const MobileNav = () => {
                 key={item.path}
                 to={item.path}
                 className={cn(
-                  'flex items-center justify-center p-2 rounded-full transition-colors duration-200',
-                  isActive ? 'text-primary' : 'text-muted-foreground'
+                  'flex items-center justify-center p-2.5 rounded-full transition-all duration-300',
+                  isActive ? 'text-primary bg-primary/10 scale-110 shadow-[0_0_12px_hsl(var(--primary)/0.25)]' : 'text-muted-foreground hover:text-foreground hover:scale-105'
                 )}
               >
                 <Icon className="w-[22px] h-[22px]" strokeWidth={isActive ? 2.5 : 1.8} />
