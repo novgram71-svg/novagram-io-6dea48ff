@@ -11,7 +11,7 @@ import { useIsBlocked, useToggleBlock } from '@/hooks/useUserModeration';
 import { useIsMuted, useToggleMute } from '@/hooks/useMutedUsers';
 import { useSavedPosts } from '@/hooks/useSavedPosts';
 import { useFollowRequests } from '@/hooks/useFollowRequests';
-import { useUserVerificationStatus } from '@/hooks/useVerification';
+import { useUserVerificationStatus, useVerification } from '@/hooks/useVerification';
 import { useStories } from '@/hooks/useStories';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
