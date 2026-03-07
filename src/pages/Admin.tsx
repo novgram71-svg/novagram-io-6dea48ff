@@ -53,7 +53,24 @@ const Admin = () => {
   const banUser = useBanUser();
   const unbanUser = useUnbanUser();
   const grantBadge = useAdminGrantBadge();
+  const revokeBadge = useAdminRevokeBadge();
   const deletePost = useAdminDeletePost();
+
+  // Fetch verification status for all users
+  const { data: allVerifications } = useQuery({
+    queryKey: ['admin-all-verifications'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('user_verification')
+        .select('user_id, is_verified, verified_until')
+        .eq('is_verified', true);
+      if (error) throw error;
+      return data;
+    },
+    enabled: isAdmin === true,
+  });
+
+  const verifiedUserIds = new Map(allVerifications?.map(v => [v.user_id, v]) || []);
 
   const { data: aiProfiles, isLoading: aiProfilesLoading } = useQuery({
     queryKey: ['admin-ai-profiles'],
