@@ -66,6 +66,7 @@ const Profile = () => {
   const { data: hasPendingRequest } = useHasPendingRequest(profile?.id);
   const { receivedRequests } = useFollowRequests();
   const { isVerified } = useUserVerificationStatus(profile?.id);
+  const { verification } = useVerification();
   const { data: allStories } = useStories();
   const toggleFollow = useToggleFollow();
   const toggleBlock = useToggleBlock();
