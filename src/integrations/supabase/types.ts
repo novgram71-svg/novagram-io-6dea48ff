@@ -1817,6 +1817,7 @@ export type Database = {
     Functions: {
       accept_badge: { Args: never; Returns: Json }
       admin_grant_badge: { Args: { target_user_id: string }; Returns: Json }
+      admin_revoke_badge: { Args: { target_user_id: string }; Returns: Json }
       can_view_profile_details: {
         Args: { profile_id: string; viewer_id: string }
         Returns: boolean
