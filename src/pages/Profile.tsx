@@ -11,7 +11,7 @@ import { useIsBlocked, useToggleBlock } from '@/hooks/useUserModeration';
 import { useIsMuted, useToggleMute } from '@/hooks/useMutedUsers';
 import { useSavedPosts } from '@/hooks/useSavedPosts';
 import { useFollowRequests } from '@/hooks/useFollowRequests';
-import { useUserVerificationStatus } from '@/hooks/useVerification';
+import { useUserVerificationStatus, useVerification } from '@/hooks/useVerification';
 import { useStories } from '@/hooks/useStories';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -66,6 +66,7 @@ const Profile = () => {
   const { data: hasPendingRequest } = useHasPendingRequest(profile?.id);
   const { receivedRequests } = useFollowRequests();
   const { isVerified } = useUserVerificationStatus(profile?.id);
+  const { verification } = useVerification();
   const { data: allStories } = useStories();
   const toggleFollow = useToggleFollow();
   const toggleBlock = useToggleBlock();
@@ -236,6 +237,11 @@ const Profile = () => {
                 <div className="flex items-center gap-2">
                   <h2 className={cn("text-xl font-semibold gradient-text", isOwnProfile && "md:hidden")}>{profile.username}</h2>
                   {isVerified && <NovaBadge size="md" />}
+                  {isOwnProfile && isVerified && verification?.verified_until && (
+                    <span className="text-xs text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full">
+                      Expires {new Date(verification.verified_until).toLocaleDateString()}
+                    </span>
+                  )}
                 </div>
                 
                 {isOwnProfile ? (

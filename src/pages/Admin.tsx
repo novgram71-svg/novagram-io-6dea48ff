@@ -8,7 +8,7 @@ import { useAllReports, useUpdateReportStatus, useAllBannedUsers, useBanUser, us
 import { useAIAbuseReports } from '@/hooks/useAIAbuseReports';
 import { usePasswordResetRequests } from '@/hooks/usePasswordReset';
 import { useAllAppReports, useUpdateAppReportStatus } from '@/hooks/useAppReports';
-import { useAdminGrantBadge } from '@/hooks/useVerification';
+import { useAdminGrantBadge, useAdminRevokeBadge } from '@/hooks/useVerification';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -53,7 +53,24 @@ const Admin = () => {
   const banUser = useBanUser();
   const unbanUser = useUnbanUser();
   const grantBadge = useAdminGrantBadge();
+  const revokeBadge = useAdminRevokeBadge();
   const deletePost = useAdminDeletePost();
+
+  // Fetch verification status for all users
+  const { data: allVerifications } = useQuery({
+    queryKey: ['admin-all-verifications'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('user_verification')
+        .select('user_id, is_verified, verified_until')
+        .eq('is_verified', true);
+      if (error) throw error;
+      return data;
+    },
+    enabled: isAdmin === true,
+  });
+
+  const verifiedUserIds = new Map(allVerifications?.map(v => [v.user_id, v]) || []);
 
   const { data: aiProfiles, isLoading: aiProfilesLoading } = useQuery({
     queryKey: ['admin-ai-profiles'],
@@ -336,32 +353,65 @@ const Admin = () => {
                               <p>Joined {formatDistanceToNow(new Date(u.created_at))} ago</p>
                             </div>
                             <div className="flex gap-2 flex-wrap">
-                              {/* Grant Nova Badge */}
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button variant="outline" size="sm" className="text-primary hover:text-primary">
-                                    <BadgeCheck className="w-4 h-4 mr-1" />
-                                    Badge
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Give Nova Badge to {u.username}?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      This will send a notification to the user. They can accept the badge which will be valid for 2 months.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction 
-                                      className="bg-gradient-to-r from-primary to-accent"
-                                      onClick={() => grantBadge.mutate(u.id)}
-                                    >
-                                      Send Badge
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
+                              {/* Grant / Revoke Nova Badge */}
+                              {verifiedUserIds.has(u.id) ? (
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
+                                      <XCircle className="w-4 h-4 mr-1" />
+                                      Revoke Badge
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Revoke Nova Badge from {u.username}?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        This will immediately remove the verified badge from this user's profile.
+                                        {verifiedUserIds.get(u.id)?.verified_until && (
+                                          <span className="block mt-2 text-muted-foreground">
+                                            Badge was set to expire: {new Date(verifiedUserIds.get(u.id)!.verified_until!).toLocaleDateString()}
+                                          </span>
+                                        )}
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction 
+                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                        onClick={() => revokeBadge.mutate(u.id)}
+                                      >
+                                        Revoke Badge
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              ) : (
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="outline" size="sm" className="text-primary hover:text-primary">
+                                      <BadgeCheck className="w-4 h-4 mr-1" />
+                                      Badge
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Give Nova Badge to {u.username}?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        This will send a notification to the user. They can accept the badge which will be valid for 2 months.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction 
+                                        className="bg-gradient-to-r from-primary to-accent"
+                                        onClick={() => grantBadge.mutate(u.id)}
+                                      >
+                                        Send Badge
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              )}
 
                               {isBanned ? (
                                 <AlertDialog>
