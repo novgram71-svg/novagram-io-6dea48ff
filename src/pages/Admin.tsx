@@ -411,7 +411,7 @@ const Admin = () => {
                                     </AlertDialogFooter>
                                   </AlertDialogContent>
                                 </AlertDialog>
-                              }
+                              )}
 
                               {isBanned ? (
                                 <AlertDialog>
