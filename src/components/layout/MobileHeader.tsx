@@ -9,7 +9,7 @@ const MobileHeader = () => {
   const { data: unreadCount = 0 } = useUnreadNotificationCount();
 
   return (
-    <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-lg border-b border-border md:hidden">
+    <header className="sticky top-0 z-40 glass-header md:hidden">
       <div className="flex items-center justify-between px-4 py-3">
         <Link to="/">
           <Logo3D size="sm" />

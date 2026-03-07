@@ -18,8 +18,8 @@ const MobileNav = () => {
   ];
 
   return (
-    <nav className="fixed bottom-3 left-3 right-3 z-50 md:hidden">
-      <div className="bg-card/80 backdrop-blur-2xl border border-border/40 rounded-full shadow-xl px-1.5 py-1">
+    <nav className="fixed bottom-3 left-3 right-3 z-50 md:hidden animate-slide-in-up">
+      <div className="glass-nav rounded-full px-1.5 py-1.5">
         <div className="flex items-center justify-around">
           {navItems.map((item) => {
             const isActive = item.path === '/' ? location.pathname === '/' : location.pathname === item.path;
@@ -30,8 +30,8 @@ const MobileNav = () => {
                 key={item.path}
                 to={item.path}
                 className={cn(
-                  'flex items-center justify-center p-2 rounded-full transition-colors duration-200',
-                  isActive ? 'text-primary' : 'text-muted-foreground'
+                  'flex items-center justify-center p-2.5 rounded-full transition-all duration-300',
+                  isActive ? 'text-primary bg-primary/10 scale-110 shadow-[0_0_12px_hsl(var(--primary)/0.25)]' : 'text-muted-foreground hover:text-foreground hover:scale-105'
                 )}
               >
                 <Icon className="w-[22px] h-[22px]" strokeWidth={isActive ? 2.5 : 1.8} />

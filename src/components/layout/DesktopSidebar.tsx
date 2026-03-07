@@ -41,7 +41,7 @@ const DesktopSidebar = () => {
         onMouseLeave={() => setExpanded(false)}
         style={{ width: expanded ? '256px' : '72px' }}
         className={cn(
-          'hidden md:flex flex-col fixed left-0 top-0 h-screen bg-gradient-to-b from-sidebar to-sidebar/95 border-r border-sidebar-border backdrop-blur-xl z-50',
+          'hidden md:flex flex-col fixed left-0 top-0 h-screen glass-sidebar z-50',
           'transition-[width] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] overflow-hidden',
         )}
       >

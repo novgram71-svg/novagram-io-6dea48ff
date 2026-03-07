@@ -677,7 +677,14 @@
 
 @layer components {
   .nova-card {
-    @apply bg-card border border-border rounded-2xl;
+    @apply rounded-2xl;
+    background: hsl(var(--glass-bg));
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid hsl(var(--glass-border));
+    box-shadow: 
+      0 8px 32px hsl(var(--glass-glow) / 0.08),
+      inset 0 1px 0 hsl(var(--glass-highlight));
   }
 
   .nova-button {
@@ -685,15 +692,69 @@
   }
 
   .nova-input {
-    @apply bg-secondary border-border focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-300 rounded-2xl;
+    @apply border-border focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-300 rounded-2xl;
+    background: hsl(var(--glass-bg));
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
   }
 
   .nova-nav-item {
-    @apply flex items-center gap-3 px-4 py-3 rounded-2xl text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-300;
+    @apply flex items-center gap-3 px-4 py-3 rounded-2xl text-muted-foreground hover:text-foreground transition-all duration-300;
   }
 
   .nova-nav-item-active {
-    @apply text-foreground bg-secondary;
+    @apply text-foreground;
+    background: hsl(var(--glass-bg));
+  }
+
+  /* Glass card variant */
+  .glass-card {
+    background: hsl(var(--glass-bg));
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid hsl(var(--glass-border));
+    box-shadow: 
+      0 8px 32px hsl(var(--glass-glow) / 0.12),
+      inset 0 1px 0 hsl(var(--glass-highlight)),
+      inset 0 -1px 0 hsl(var(--glass-border));
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .glass-card:hover {
+    box-shadow: 
+      0 12px 40px hsl(var(--glass-glow) / 0.18),
+      inset 0 1px 0 hsl(var(--glass-highlight)),
+      inset 0 -1px 0 hsl(var(--glass-border));
+    border-color: hsl(var(--glass-border));
+  }
+
+  /* Glass nav bar */
+  .glass-nav {
+    background: hsl(var(--glass-bg));
+    backdrop-filter: blur(28px) saturate(1.8);
+    -webkit-backdrop-filter: blur(28px) saturate(1.8);
+    border: 1px solid hsl(var(--glass-border));
+    box-shadow: 
+      0 -4px 30px hsl(var(--glass-glow) / 0.1),
+      inset 0 1px 0 hsl(var(--glass-highlight));
+  }
+
+  /* Glass header */
+  .glass-header {
+    background: hsl(var(--glass-bg));
+    backdrop-filter: blur(24px) saturate(1.6);
+    -webkit-backdrop-filter: blur(24px) saturate(1.6);
+    border-bottom: 1px solid hsl(var(--glass-border));
+    box-shadow: 0 4px 20px hsl(var(--glass-glow) / 0.06);
+  }
+
+  /* Glass sidebar */
+  .glass-sidebar {
+    background: hsl(var(--glass-bg));
+    backdrop-filter: blur(32px) saturate(1.8);
+    -webkit-backdrop-filter: blur(32px) saturate(1.8);
+    border-right: 1px solid hsl(var(--glass-border));
+    box-shadow: 4px 0 24px hsl(var(--glass-glow) / 0.08);
   }
 
   /* Liquid Glass Components */
